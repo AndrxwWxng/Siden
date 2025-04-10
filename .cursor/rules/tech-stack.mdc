@@ -1,0 +1,125 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Framework & Tech Stack
+
+```markdown
+# Framework & Tech Stack Documentation
+
+## Core Technologies
+
+### Frontend
+- **Framework**: Next.js 15.3.0
+- **Language**: TypeScript 5+
+- **Styling**: Tailwind CSS 4
+- **State Management**: React Built-in Hooks
+
+### Backend
+- **Framework**: Next.js API Routes
+- **Database**: Supabase PostgreSQL
+- **Authentication**: Supabase Auth
+- **Storage**: Supabase Storage
+
+### AI & Agent Technologies
+- **Primary LLMs**: OpenAI GPT-4 & Anthropic Claude 3
+- **Agent Orchestration**: Custom framework
+- **Sandbox Environment**: E2B.dev
+- **Vector Storage**: pgvector in Supabase
+
+## Package Dependencies
+
+### Current Package.json
+```json
+{
+ "name": "nextjs",
+ "version": "0.1.0",
+ "private": true,
+ "scripts": {
+   "dev": "next dev --turbopack",
+   "build": "next build",
+   "start": "next start",
+   "lint": "next lint"
+ },
+ "dependencies": {
+   "react": "^19.0.0",
+   "react-dom": "^19.0.0",
+   "next": "15.3.0",
+   "@fontsource/fira-code": "^5.2.5",
+   "@fontsource/inter": "^5.2.5"
+ },
+ "devDependencies": {
+   "typescript": "^5",
+   "@types/node": "^20",
+   "@types/react": "^19",
+   "@types/react-dom": "^19",
+   "@tailwindcss/postcss": "^4",
+   "tailwindcss": "^4",
+   "eslint": "^9",
+   "eslint-config-next": "15.3.0",
+   "@eslint/eslintrc": "^3"
+ }
+}
+Additional Required Dependencies
+json{
+ "dependencies": {
+   "@supabase/supabase-js": "^2.39.0",
+   "openai": "^4.20.1",
+   "@anthropic-ai/sdk": "^0.10.2",
+   "e2b": "^0.12.0",
+   "socket.io-client": "^4.7.2",
+   "zustand": "^4.4.7",
+   "lucide-react": "^0.298.0",
+   "clsx": "^2.0.0",
+   "tailwind-merge": "^2.1.0",
+   "react-markdown": "^9.0.1",
+   "date-fns": "^2.30.0",
+   "axios": "^1.6.2",
+   "uuid": "^9.0.1",
+   "zod": "^3.22.4"
+ },
+ "devDependencies": {
+   "@types/uuid": "^9.0.7"
+ }
+}
+API Documentation Links
+AI Services
+
+OpenAI API: https://platform.openai.com/docs/api-reference
+Anthropic Claude API: https://docs.anthropic.com/claude/reference
+Hugging Face Inference API: https://huggingface.co/docs/api-inference/index
+
+Infrastructure Services
+
+Supabase JS Client: https://supabase.com/docs/reference/javascript
+Supabase Auth: https://supabase.com/docs/guides/auth
+E2B Sandbox: https://docs.e2b.dev/
+
+Tool Integrations
+
+Google Sheets API: https://developers.google.com/sheets/api/reference/rest
+Gmail API: https://developers.google.com/gmail/api/reference/rest
+GitHub API: https://docs.github.com/en/rest
+
+Integration Architecture
+Supabase Integration
+
+Use Supabase client with server-side instantiation for API routes
+Use Supabase Auth helpers for Next.js
+Configure RLS policies for all tables
+Use Edge Functions for complex backend logic
+
+E2B Integration
+
+Connect via API key authentication
+Use dedicated sandboxes per agent
+Implement custom timeout and resource limiting
+Store sandbox IDs in agent records
+
+LLM Integration
+
+Use server-side API calls in Next.js API routes
+Implement streaming responses for real-time agent interactions
+Configure retry logic and error handling
+Cache common prompts and responses

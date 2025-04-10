@@ -1,0 +1,116 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Backend Architecture Rules
+
+## Database Schema
+
+### Core Tables Structure
+- **projects**: Stores all project metadata and configurations
+  - Must include: `id`, `name`, `owner_id`, `status`, `created_at`
+  - Optional: `description`, `goals` (JSONB), `settings` (JSONB)
+  - Status values: 'active', 'archived', 'completed'
+
+- **agents**: Represents each AI team member
+  - Must include: `id`, `project_id`, `role`, `name`, `status`
+  - Optional: `personality_type`, `sandbox_id`, `settings` (JSONB)
+  - Status values: 'active', 'inactive', 'paused'
+
+- **tasks**: Work items for agents
+  - Must include: `id`, `project_id`, `title`, `status`, `assigned_to`
+  - Optional: `description`, `priority` (1-5), `dependencies` (JSONB)
+  - Status values: 'pending', 'in-progress', 'blocked', 'completed', 'cancelled'
+
+- **agent_messages**: Communication between agents
+  - Must include: `id`, `project_id`, `sender_id`, `content`, `timestamp`
+  - Optional: `recipient_id` (null means broadcast), `intent_type`, `priority`
+  - Intent types: 'task_update', 'question', 'blocker', 'proposal', 'decision', 'general'
+
+- **agent_memory**: Persistent agent memory with vector embeddings
+  - Must include: `id`, `agent_id`, `project_id`, `content`, `embedding`
+  - Optional: `memory_type`, `importance` (1-10), `metadata` (JSONB)
+  - Memory types: 'short_term', 'long_term'
+
+### Relationship Rules
+- CASCADE deletion from projects -> all related data
+- SET NULL for agent references (preserve task/message history if agent is deleted)
+- Self-referencing relationships for task dependencies
+
+## Authentication Logic
+
+### User Authentication
+- Use Supabase Auth with email/password and social providers
+- JWT-based authentication with short-lived tokens (2 hour expiry)
+- Refresh tokens with 7-day expiry
+- Implement Row-Level Security (RLS) on all tables
+
+### Permission Structure
+- Project owners have full access to their projects
+- Projects can have shared access with specified permission levels:
+  - `viewer`: Read-only access
+  - `contributor`: Can interact with agents
+  - `admin`: Can modify project settings
+
+### RLS Policy Rules
+```sql
+-- Example RLS policy for projects table
+CREATE POLICY "Users can view their own projects" 
+ON projects FOR SELECT 
+USING (auth.uid() = owner_id);
+
+-- Example RLS policy for shared projects
+CREATE POLICY "Users can view projects shared with them" 
+ON projects FOR SELECT 
+USING (auth.uid() IN (
+  SELECT user_id FROM project_members WHERE project_id = id
+));
+Storage Rules
+Object Storage Structure
+
+Project assets stored in /projects/{project_id}/
+Agent outputs stored in /projects/{project_id}/agents/{agent_id}/
+User uploads stored in /projects/{project_id}/uploads/
+
+Storage Access Policies
+
+Project owners have full access to project storage
+Contributors can read all files and write to uploads folder
+Viewers can only read files
+All agent-generated files must be scanned for sensitive information
+
+E2B Sandbox Storage Rules
+
+Each agent sandbox is isolated
+File persistence limited to designated directories
+Maximum storage per sandbox: 1GB
+Maximum file size: 100MB
+
+Edge Cases
+Handling Agent Failures
+
+Implement retry logic with exponential backoff
+Maximum 3 retries before marking operation as failed
+Failed tasks should trigger notification to project owner
+Maintain error logs with context for debugging
+
+Rate Limiting
+
+Maximum 10 API calls per second per project
+Maximum 5 concurrent agent operations per project
+Implement token bucket rate limiting with burst allowance
+
+Conflict Resolution
+
+Use optimistic concurrency control with ETags
+Last-write-wins for non-critical updates
+For critical operations, use explicit locking
+Conflicts between agents resolved by authority hierarchy
+
+Security Considerations
+
+All agent code executions logged and auditable
+No direct database access from agent sandboxes
+Regular security scanning of generated code
+Prevent potentially malicious outputs with content filtering
