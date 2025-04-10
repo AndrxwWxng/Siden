@@ -7,48 +7,21 @@ interface LogoProps {
 
 export default function Logo({ size = 'md', className = '' }: LogoProps) {
   const sizeClasses = {
-    sm: 'w-6 h-6',
-    md: 'w-8 h-8',
-    lg: 'w-10 h-10'
+    sm: 'w-8 h-8',
+    md: 'w-10 h-10',
+    lg: 'w-12 h-12'
   };
 
   return (
-    <div className={`flex items-center ${className}`}>
-      <div className={`relative ${sizeClasses[size]} mr-2 bg-[#6366F1] rounded-md overflow-hidden flex items-center justify-center`}>
-        <svg 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full p-1"
-        >
-          <circle cx="12" cy="12" r="3" fill="white" />
-          <path 
-            d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20Z" 
-            fill="white" 
-          />
-          <path 
-            d="M18 12L12 12" 
-            stroke="white" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-          />
-          <path 
-            d="M12 6V12" 
-            stroke="white" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-          />
-          <path 
-            d="M12 18V15" 
-            stroke="white" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-          />
+    <div className={`flex items-center gap-3 ${className}`}>
+      <div className={`${sizeClasses[size]} overflow-hidden flex items-center justify-center`}>
+        <svg viewBox="0 0 197 230" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+          <path d="M89.8182 2.44806C106.938 -2.35095 122.36 3.31082 132.402 18.0127C140.513 29.8861 146.092 43.1494 152.746 55.821C164.203 77.6404 175.693 99.4438 186.933 121.375C192.122 131.5 196.073 142.25 196.209 153.726C196.488 177.287 184.769 194.583 165.964 207.403C150.538 217.919 132.872 221.785 114.495 222.89C114.042 222.918 113.57 222.645 112.863 222.441C113.443 218.735 116.258 216.409 118.081 213.578C133.292 189.961 142.855 164.568 141.564 136.063C140.859 120.509 136.703 105.79 126.645 93.4523C114.133 78.1037 92.6475 79.6223 82.5934 96.7361C73.6531 111.954 74.0064 127.534 83.1156 142.652C86.1974 147.766 89.8775 152.559 93.6219 157.228C104.668 171.002 107.901 186.153 100.733 202.482C93.5733 218.794 80.3971 227.366 62.7656 229.438C31.5659 233.104 6.72235 209.535 1.66864 182.462C-1.26285 166.759 1.93908 152.039 8.39116 137.835C20.3167 111.58 35.1789 86.829 47.9187 60.9867C54.6931 47.245 61.516 33.5221 69.255 20.2824C74.0166 12.1362 80.1989 5.62409 89.8182 2.44806Z" fill="#6366F1"/>
         </svg>
       </div>
-      <div className="flex items-center text-white font-bold">
-        <span className="text-[#6366F1]">Agent</span>
-        <span>Team</span>
+      <div className="flex items-center text-white font-bold text-xl">
+        <span className="text-[#6366F1]">Si</span>
+        <span>den</span>
       </div>
     </div>
   );
