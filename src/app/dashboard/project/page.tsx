@@ -371,28 +371,30 @@ export default function ProjectDetail() {
             <h2 className="text-xl font-medium mb-6">Manage Your Team</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {mockAgents.map(agent => (
-                <div key={agent.id} className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#252525] flex items-center justify-center text-2xl">
+                <div key={agent.id} className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-md p-5 hover:border-[#3e3e3e] transition-all">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-md bg-[#252525] flex items-center justify-center text-2xl mr-4">
                       {agent.avatar}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium">{agent.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium text-white">{agent.name}</h3>
                         <span className={`
-                          px-2 py-1 text-xs rounded-full
-                          ${agent.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}
+                          px-2 py-0.5 text-xs rounded-md border
+                          ${agent.status === 'active' 
+                            ? 'bg-green-500/10 text-green-400 border-green-500/30' 
+                            : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'}
                         `}>
                           {agent.status}
                         </span>
                       </div>
-                      <p className="text-sm text-[#A3A3A3] mt-1">{agent.role}</p>
+                      <p className="text-sm text-[#A3A3A3] mb-4">{agent.role}</p>
                       
-                      <div className="mt-4 flex gap-2">
-                        <button className="px-3 py-1.5 bg-[#252525] hover:bg-[#333] text-sm rounded transition-colors">
+                      <div className="flex gap-2">
+                        <button className="px-3 py-1.5 bg-[#252525] hover:bg-[#333] text-sm rounded-md transition-colors flex-1">
                           Configure
                         </button>
-                        <button className="px-3 py-1.5 border border-[#2e2e2e] hover:border-[#6366F1] text-sm rounded transition-colors">
+                        <button className="px-3 py-1.5 border border-[#2e2e2e] hover:border-[#6366F1] text-sm rounded-md transition-colors flex-1">
                           Manage Access
                         </button>
                       </div>
@@ -401,7 +403,7 @@ export default function ProjectDetail() {
                 </div>
               ))}
               
-              <div className="bg-[#1a1a1a] border border-dashed border-[#2e2e2e] rounded-lg p-4 flex items-center justify-center">
+              <div className="bg-[#1a1a1a] border border-dashed border-[#2e2e2e] rounded-md p-5 flex items-center justify-center hover:border-[#6366F1] transition-colors">
                 <button className="flex items-center gap-2 text-[#A3A3A3] hover:text-[#6366F1] transition-colors">
                   <PlusCircle size={18} />
                   <span>Add New Agent</span>
@@ -418,30 +420,34 @@ export default function ProjectDetail() {
               {mockTools.map(tool => (
                 <div 
                   key={tool.id}
-                  className={`bg-[#1a1a1a] border ${tool.connected ? 'border-green-500/50' : 'border-[#2e2e2e]'} rounded-lg p-4`}
+                  className={`bg-[#1a1a1a] border ${
+                    tool.connected 
+                      ? 'border-green-500/30' 
+                      : 'border-[#2e2e2e] hover:border-[#3e3e3e]'
+                  } rounded-md p-5 transition-all`}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-[#252525] flex items-center justify-center">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-md bg-[#252525] flex items-center justify-center text-xl mr-3">
                       {tool.icon}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium">{tool.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium text-white">{tool.name}</h3>
                         {tool.connected && (
-                          <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                          <span className="text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded-md border border-green-500/30">
                             Connected
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-[#A3A3A3] mt-1">{tool.description}</p>
+                      <p className="text-sm text-[#A3A3A3] mb-4">{tool.description}</p>
                       
-                      <div className="mt-4">
+                      <div>
                         {tool.connected ? (
-                          <button className="w-full px-3 py-1.5 border border-[#2e2e2e] hover:border-[#6366F1] text-sm rounded transition-colors">
+                          <button className="w-full px-3 py-1.5 border border-[#2e2e2e] hover:border-[#6366F1] text-sm rounded-md transition-colors">
                             Configure
                           </button>
                         ) : (
-                          <button className="w-full px-3 py-1.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white text-sm rounded transition-colors">
+                          <button className="w-full px-3 py-1.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white text-sm rounded-md transition-colors">
                             Connect
                           </button>
                         )}
@@ -459,34 +465,40 @@ export default function ProjectDetail() {
             <h2 className="text-xl font-medium mb-6">Work Reports</h2>
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
+                <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-md p-4 hover:border-[#3e3e3e] transition-all">
                   <h3 className="text-sm text-[#A3A3A3]">Tasks Completed</h3>
                   <div className="text-2xl font-bold mt-2">24</div>
-                  <div className="text-xs text-green-400 mt-1">↑ 12% from last week</div>
+                  <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                    <span>↑</span> 12% from last week
+                  </div>
                 </div>
-                <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
+                <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-md p-4 hover:border-[#3e3e3e] transition-all">
                   <h3 className="text-sm text-[#A3A3A3]">Tasks In Progress</h3>
                   <div className="text-2xl font-bold mt-2">8</div>
                   <div className="text-xs text-[#A3A3A3] mt-1">3 due today</div>
                 </div>
-                <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
+                <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-md p-4 hover:border-[#3e3e3e] transition-all">
                   <h3 className="text-sm text-[#A3A3A3]">Agent Activity</h3>
                   <div className="text-2xl font-bold mt-2">86%</div>
-                  <div className="text-xs text-green-400 mt-1">↑ 5% from last week</div>
+                  <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                    <span>↑</span> 5% from last week
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-md p-5 hover:border-[#3e3e3e] transition-all">
                 <h3 className="font-medium mb-4">Recent Activity</h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {mockActivities.map(activity => (
-                    <div key={activity.id} className="flex items-start gap-3 pb-3 border-b border-[#2e2e2e] last:border-0">
-                      <div className="w-8 h-8 rounded-full bg-[#252525] flex items-center justify-center flex-shrink-0">
+                    <div key={activity.id} className="flex items-start gap-3 pb-4 border-b border-[#2e2e2e] last:border-0 last:pb-0">
+                      <div className="w-9 h-9 rounded-md bg-[#252525] flex items-center justify-center flex-shrink-0 text-lg">
                         {activity.agentAvatar}
                       </div>
-                      <div className="flex-1">
-                        <div className="text-sm">{activity.description}</div>
-                        <div className="text-xs text-[#A3A3A3] mt-1">{formatTime(activity.timestamp)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-white">{activity.description}</div>
+                        <div className="text-xs text-[#A3A3A3] mt-1">
+                          <span className="font-medium">{activity.agentName}</span> • {formatTime(activity.timestamp)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -500,11 +512,11 @@ export default function ProjectDetail() {
           <div className="p-6">
             <h2 className="text-xl font-medium mb-6">Project Settings</h2>
             <div className="space-y-6">
-              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-md p-5 hover:border-[#3e3e3e] transition-all">
                 <h3 className="font-medium mb-4">General Settings</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Project Name</label>
+                    <label className="block text-sm font-medium mb-1 text-[#AAAAAA]">Project Name</label>
                     <input
                       type="text"
                       value={projectName}
@@ -513,7 +525,7 @@ export default function ProjectDetail() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Project Description</label>
+                    <label className="block text-sm font-medium mb-1 text-[#AAAAAA]">Project Description</label>
                     <textarea
                       rows={3}
                       value={projectDescription}
@@ -524,13 +536,13 @@ export default function ProjectDetail() {
                 </div>
               </div>
               
-              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-lg p-4">
+              <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-md p-5 hover:border-[#3e3e3e] transition-all">
                 <h3 className="font-medium mb-4">Notification Settings</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm">Email Notifications</label>
+                    <label className="text-sm text-[#AAAAAA]">Email Notifications</label>
                     <div 
-                      className="relative inline-block w-10 h-5 rounded-full bg-[#252525] cursor-pointer"
+                      className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
                       onClick={() => setEmailNotifications(!emailNotifications)}
                     >
                       <input 
@@ -539,13 +551,13 @@ export default function ProjectDetail() {
                         checked={emailNotifications}
                         onChange={() => setEmailNotifications(!emailNotifications)}
                       />
-                      <span className={`block h-5 w-5 rounded-full bg-[#6366F1] absolute left-0 transition-transform transform ${emailNotifications ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                      <span className={`block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform ${emailNotifications ? 'translate-x-5' : 'translate-x-0'}`}></span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm">Daily Summary</label>
+                    <label className="text-sm text-[#AAAAAA]">Daily Summary</label>
                     <div 
-                      className="relative inline-block w-10 h-5 rounded-full bg-[#252525] cursor-pointer"
+                      className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
                       onClick={() => setDailySummary(!dailySummary)}
                     >
                       <input 
@@ -554,13 +566,13 @@ export default function ProjectDetail() {
                         checked={dailySummary}
                         onChange={() => setDailySummary(!dailySummary)}
                       />
-                      <span className={`block h-5 w-5 rounded-full bg-[#6366F1] absolute left-0 transition-transform transform ${dailySummary ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                      <span className={`block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform ${dailySummary ? 'translate-x-5' : 'translate-x-0'}`}></span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm">Agent Activity Alerts</label>
+                    <label className="text-sm text-[#AAAAAA]">Agent Activity Alerts</label>
                     <div 
-                      className="relative inline-block w-10 h-5 rounded-full bg-[#252525] cursor-pointer"
+                      className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
                       onClick={() => setActivityAlerts(!activityAlerts)}
                     >
                       <input 
@@ -569,7 +581,7 @@ export default function ProjectDetail() {
                         checked={activityAlerts}
                         onChange={() => setActivityAlerts(!activityAlerts)}
                       />
-                      <span className={`block h-5 w-5 rounded-full ${activityAlerts ? 'bg-[#6366F1]' : 'bg-[#2e2e2e]'} absolute left-0 transition-transform transform ${activityAlerts ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                      <span className={`block h-5 w-5 rounded-md ${activityAlerts ? 'bg-[#6366F1]' : 'bg-[#2e2e2e]'} absolute left-0 transition-transform transform ${activityAlerts ? 'translate-x-5' : 'translate-x-0'}`}></span>
                     </div>
                   </div>
                 </div>
