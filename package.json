@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@e2b/code-interpreter": "^1.1.1",
+    "dotenv": "^16.4.7",
     "@fontsource/fira-code": "^5.2.5",
     "@fontsource/inter": "^5.2.5",
     "lucide-react": "^0.487.0",
