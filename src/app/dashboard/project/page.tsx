@@ -8,6 +8,7 @@ import {
   MoreHorizontal, ArrowLeft, Search
 } from 'lucide-react';
 import Logo from '@/components/Logo';
+import { AgentFactory } from '@/agents/agentFactory';
 
 // Tab interfaces
 type TabType = 'communication' | 'agents' | 'tools' | 'reports' | 'settings';
@@ -29,7 +30,7 @@ export default function ProjectDetail() {
   const [activityAlerts, setActivityAlerts] = useState<boolean>(false);
   
   // Handle sending a new message
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
     
     const userMessage: Message = {
@@ -49,29 +50,33 @@ export default function ProjectDetail() {
     setNewMessage('');
     
     // Determine which agent should respond based on message content
-    let respondingAgent = determineRespondingAgent(newMessage);
+    const respondingAgent = determineRespondingAgent(newMessage);
+    console.log('Selected agent:', respondingAgent); // Debug log
     
     // Show typing indicator
     setTypingAgent(respondingAgent);
     
-    // Simulate agent response after a delay
-    setTimeout(() => {
+    try {
+      const agent = await AgentFactory.getAgent(respondingAgent);
+      if (!agent) {
+        throw new Error(`Failed to initialize ${respondingAgent} agent`);
+      }
+
+      const response = await agent.generateResponse(newMessage);
+      if (!response) {
+        throw new Error(`No response from ${respondingAgent} agent`);
+      }
+
+      const agentProfile = agent.getProfile();
       const agentResponse: Message = {
         id: `msg-${Date.now() + 1}`,
-        sender: mockAgents.find(a => a.id === respondingAgent) 
-          ? {
-              id: respondingAgent,
-              name: mockAgents.find(a => a.id === respondingAgent)?.name || 'Agent',
-              role: mockAgents.find(a => a.id === respondingAgent)?.role || 'Assistant',
-              avatar: mockAgents.find(a => a.id === respondingAgent)?.avatar || '🤖'
-            }
-          : {
-              id: 'marketing',
-              name: 'Marketing Officer',
-              role: 'Marketing',
-              avatar: '📊'
-            },
-        content: generateAgentResponse(newMessage, respondingAgent),
+        sender: {
+          id: respondingAgent,
+          name: agentProfile.name,
+          role: agentProfile.role,
+          avatar: agentProfile.avatar
+        },
+        content: response,
         timestamp: new Date().toISOString(),
         status: 'sent'
       };
@@ -83,62 +88,89 @@ export default function ProjectDetail() {
       if (Math.random() > 0.6) {
         const secondaryAgent = activeAgents.find(a => a !== respondingAgent) || 'product';
         
-        setTimeout(() => {
-          setTypingAgent(secondaryAgent);
-          
-          setTimeout(() => {
-            const followUpResponse: Message = {
-              id: `msg-${Date.now() + 2}`,
-              sender: {
-                id: secondaryAgent,
-                name: mockAgents.find(a => a.id === `agent-${secondaryAgent.substring(0, 1)}`)?.name || 'Agent',
-                role: mockAgents.find(a => a.id === `agent-${secondaryAgent.substring(0, 1)}`)?.role || 'Assistant',
-                avatar: getAgentAvatar(secondaryAgent)
-              },
-              content: generateFollowUpResponse(newMessage, secondaryAgent),
-              timestamp: new Date().toISOString(),
-              status: 'sent'
-            };
-            
-            setTypingAgent(null);
-            setMessages(prev => [...prev, followUpResponse]);
-          }, 2000 + Math.random() * 2000);
-        }, 1000 + Math.random() * 2000);
+        setTypingAgent(secondaryAgent);
+        const secondAgent = await AgentFactory.getAgent(secondaryAgent);
+        if (!secondAgent) {
+          throw new Error(`Failed to initialize ${secondaryAgent} agent`);
+        }
+
+        const followUpResponse = await secondAgent.generateResponse(newMessage);
+        if (!followUpResponse) {
+          throw new Error(`No response from ${secondaryAgent} agent`);
+        }
+
+        const secondAgentProfile = secondAgent.getProfile();
+        const followUpMessage: Message = {
+          id: `msg-${Date.now() + 2}`,
+          sender: {
+            id: secondaryAgent,
+            name: secondAgentProfile.name,
+            role: secondAgentProfile.role,
+            avatar: secondAgentProfile.avatar
+          },
+          content: followUpResponse,
+          timestamp: new Date().toISOString(),
+          status: 'sent'
+        };
+        
+        setTypingAgent(null);
+        setMessages(prev => [...prev, followUpMessage]);
       }
-    }, 1500 + Math.random() * 1000);
+    } catch (error) {
+      console.error('Error generating agent response:', error);
+      setTypingAgent(null);
+      
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: `msg-${Date.now() + 1}`,
+        sender: {
+          id: 'system',
+          name: 'System',
+          role: 'Error',
+          avatar: '⚠️'
+        },
+        content: `I apologize, but I encountered an error while processing your request. Please try again later. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date().toISOString(),
+        status: 'sent'
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
   
   // Helper function to determine which agent should respond
   const determineRespondingAgent = (message: string): string => {
     const lowerMsg = message.toLowerCase();
     
-    if (lowerMsg.includes('market') || lowerMsg.includes('campaign') || lowerMsg.includes('audience')) {
-      return 'agent-1'; // Marketing
-    } else if (lowerMsg.includes('product') || lowerMsg.includes('feature') || lowerMsg.includes('roadmap')) {
-      return 'agent-2'; // Product
-    } else if (lowerMsg.includes('code') || lowerMsg.includes('develop') || lowerMsg.includes('bug')) {
-      return 'agent-3'; // Developer
-    } else if (lowerMsg.includes('sales') || lowerMsg.includes('client') || lowerMsg.includes('lead')) {
-      return 'agent-4'; // Sales
-    } else {
-      // Default to marketing or random between active agents
-      return `agent-${Math.ceil(Math.random() * 4)}`;
+    if (lowerMsg.includes('market') || lowerMsg.includes('campaign') || lowerMsg.includes('brand') || lowerMsg.includes('audience')) {
+      return 'marketing';
     }
+    
+    if (lowerMsg.includes('product') || lowerMsg.includes('feature') || lowerMsg.includes('roadmap') || lowerMsg.includes('user')) {
+      return 'product';
+    }
+    
+    if (lowerMsg.includes('code') || lowerMsg.includes('develop') || lowerMsg.includes('bug') || lowerMsg.includes('technical')) {
+      return 'developer';
+    }
+    
+    if (lowerMsg.includes('sales') || lowerMsg.includes('client') || lowerMsg.includes('lead') || lowerMsg.includes('deal')) {
+      return 'sales';
+    }
+    
+    // Default to marketing if no specific keywords match
+    return 'marketing';
   };
   
   // Helper function to generate agent avatar
   const getAgentAvatar = (agentId: string): string => {
     switch (agentId) {
-      case 'agent-1':
       case 'marketing':
         return '📊';
-      case 'agent-2':
       case 'product':
         return '🔍';
-      case 'agent-3':
       case 'developer':
         return '👩‍💻';
-      case 'agent-4':
       case 'sales':
         return '📈';
       default:
@@ -150,7 +182,7 @@ export default function ProjectDetail() {
   const generateAgentResponse = (message: string, agentId: string): string => {
     const lowerMsg = message.toLowerCase();
     
-    if (agentId === 'agent-1') { // Marketing
+    if (agentId === 'marketing') { 
       if (lowerMsg.includes('campaign')) {
         return "I've analyzed recent campaign performance and recommend focusing on social media and email for the next product launch. Our engagement metrics show a 32% higher conversion rate when we combine these channels with targeted content.";
       } else if (lowerMsg.includes('audience')) {
@@ -158,7 +190,7 @@ export default function ProjectDetail() {
       } else {
         return "That's a great marketing consideration. I'll create a strategy document outlining key messages, channels, and metrics for this initiative. Would you like me to prioritize any specific aspect?";
       }
-    } else if (agentId === 'agent-2') { // Product
+    } else if (agentId === 'product') { 
       if (lowerMsg.includes('feature')) {
         return "I've reviewed the feature request against our product roadmap. We could prioritize this for the next sprint, though it would require us to reschedule the dashboard improvements. The development effort is estimated at 2-3 weeks.";
       } else if (lowerMsg.includes('roadmap')) {
@@ -174,11 +206,11 @@ export default function ProjectDetail() {
   
   // Helper function to generate follow-up responses
   const generateFollowUpResponse = (message: string, agentId: string): string => {
-    if (agentId === 'agent-1' || agentId === 'marketing') {
+    if (agentId === 'marketing') {
       return "I'd like to add a marketing perspective here. We could leverage this opportunity for content creation and thought leadership, which would support both our brand positioning and lead generation efforts.";
-    } else if (agentId === 'agent-2' || agentId === 'product') {
+    } else if (agentId === 'product') {
       return "Building on that point, our product analytics show that users who engage with these features have 40% higher retention. We should highlight this in our messaging and product development priorities.";
-    } else if (agentId === 'agent-3' || agentId === 'developer') {
+    } else if (agentId === 'developer') {
       return "From a technical standpoint, we can implement this efficiently by leveraging our existing architecture. I estimate 1-2 weeks of development time with minimal impact on other initiatives.";
     } else {
       return "I agree with this approach and would recommend we move forward with it. The ROI potential is substantial based on our preliminary analysis.";
@@ -231,30 +263,30 @@ export default function ProjectDetail() {
                   </div>
                   <div>
                     <h3 className="font-medium">
-                      {showAgentInfo === 'agent-1' || showAgentInfo === 'marketing' ? 'Marketing Officer' : 
-                       showAgentInfo === 'agent-2' || showAgentInfo === 'product' ? 'Product Manager' :
-                       showAgentInfo === 'agent-3' || showAgentInfo === 'developer' ? 'Developer' : 'Sales Representative'}
+                      {showAgentInfo === 'marketing' ? 'Marketing Officer' : 
+                       showAgentInfo === 'product' ? 'Product Manager' :
+                       showAgentInfo === 'developer' ? 'Developer' : 'Sales Representative'}
                     </h3>
                     <p className="text-sm text-[#A3A3A3] mb-2">
-                      {showAgentInfo === 'agent-1' || showAgentInfo === 'marketing' ? 'Specialized in marketing strategy and campaign optimization' : 
-                       showAgentInfo === 'agent-2' || showAgentInfo === 'product' ? 'Focused on product strategy and user experience' :
-                       showAgentInfo === 'agent-3' || showAgentInfo === 'developer' ? 'Expert in full-stack development and system architecture' : 'Skilled in sales strategy and client relationships'}
+                      {showAgentInfo === 'marketing' ? 'Specialized in marketing strategy and campaign optimization' : 
+                       showAgentInfo === 'product' ? 'Focused on product strategy and user experience' :
+                       showAgentInfo === 'developer' ? 'Expert in full-stack development and system architecture' : 'Skilled in sales strategy and client relationships'}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <span className="px-2 py-1 text-xs rounded-full bg-[#252525] text-[#A3A3A3]">
-                        {showAgentInfo === 'agent-1' || showAgentInfo === 'marketing' ? 'Analytics' : 
-                         showAgentInfo === 'agent-2' || showAgentInfo === 'product' ? 'User Research' :
-                         showAgentInfo === 'agent-3' || showAgentInfo === 'developer' ? 'JavaScript' : 'Lead Generation'}
+                        {showAgentInfo === 'marketing' ? 'Analytics' : 
+                         showAgentInfo === 'product' ? 'User Research' :
+                         showAgentInfo === 'developer' ? 'JavaScript' : 'Lead Generation'}
                       </span>
                       <span className="px-2 py-1 text-xs rounded-full bg-[#252525] text-[#A3A3A3]">
-                        {showAgentInfo === 'agent-1' || showAgentInfo === 'marketing' ? 'Content Strategy' : 
-                         showAgentInfo === 'agent-2' || showAgentInfo === 'product' ? 'Roadmapping' :
-                         showAgentInfo === 'agent-3' || showAgentInfo === 'developer' ? 'API Design' : 'Negotiation'}
+                        {showAgentInfo === 'marketing' ? 'Content Strategy' : 
+                         showAgentInfo === 'product' ? 'Roadmapping' :
+                         showAgentInfo === 'developer' ? 'API Design' : 'Negotiation'}
                       </span>
                       <span className="px-2 py-1 text-xs rounded-full bg-[#252525] text-[#A3A3A3]">
-                        {showAgentInfo === 'agent-1' || showAgentInfo === 'marketing' ? 'SEO' : 
-                         showAgentInfo === 'agent-2' || showAgentInfo === 'product' ? 'A/B Testing' :
-                         showAgentInfo === 'agent-3' || showAgentInfo === 'developer' ? 'Database' : 'Relationship Management'}
+                        {showAgentInfo === 'marketing' ? 'SEO' : 
+                         showAgentInfo === 'product' ? 'A/B Testing' :
+                         showAgentInfo === 'developer' ? 'Database' : 'Relationship Management'}
                       </span>
                     </div>
                   </div>
@@ -325,10 +357,10 @@ export default function ProjectDetail() {
                       </div>
                       <div className="mt-1">
                         <span className="text-xs text-[#A3A3A3]">
-                          {typingAgent === 'agent-1' ? 'Marketing Officer' : 
-                           typingAgent === 'agent-2' ? 'Product Manager' :
-                           typingAgent === 'agent-3' ? 'Developer' : 
-                           typingAgent === 'agent-4' ? 'Sales Representative' : 'Agent'} is typing...
+                          {typingAgent === 'marketing' ? 'Marketing Officer' : 
+                           typingAgent === 'product' ? 'Product Manager' :
+                           typingAgent === 'developer' ? 'Developer' : 
+                           typingAgent === 'sales' ? 'Sales Representative' : 'Agent'} is typing...
                         </span>
                       </div>
                     </div>
@@ -424,7 +456,7 @@ export default function ProjectDetail() {
                     tool.connected 
                       ? 'border-green-500/30' 
                       : 'border-[#2e2e2e] hover:border-[#3e3e3e]'
-                  } rounded-md p-5 transition-all`}
+                  } rounded-md p-5 hover:border-[#3e3e3e] transition-all`}
                 >
                   <div className="flex items-start">
                     <div className="flex-shrink-0 w-10 h-10 rounded-md bg-[#252525] flex items-center justify-center text-xl mr-3">
@@ -835,28 +867,28 @@ const mockMessages: Message[] = [
 
 const mockAgents = [
   {
-    id: 'agent-1',
+    id: 'marketing',
     name: 'Marketing Officer',
     role: 'Marketing Specialist',
     avatar: '📊',
     status: 'active'
   },
   {
-    id: 'agent-2',
+    id: 'product',
     name: 'Product Manager',
     role: 'Product Strategy',
     avatar: '🔍',
     status: 'active'
   },
   {
-    id: 'agent-3',
+    id: 'developer',
     name: 'Developer',
     role: 'Full-stack Engineer',
     avatar: '👩‍💻',
     status: 'idle'
   },
   {
-    id: 'agent-4',
+    id: 'sales',
     name: 'Sales Representative',
     role: 'Sales & Business Development',
     avatar: '📈',

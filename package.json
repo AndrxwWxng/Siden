@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@e2b/code-interpreter": "^1.1.1",
-    "dotenv": "^16.4.7",
     "@fontsource/fira-code": "^5.2.5",
     "@fontsource/inter": "^5.2.5",
+    "dotenv": "^16.4.7",
     "lucide-react": "^0.487.0",
     "next": "15.3.0",
     "react": "^19.0.0",
@@ -27,6 +27,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.0",
     "tailwindcss": "^4",
+    "tsx": "^4.19.3",
     "typescript": "^5"
   }
 }
