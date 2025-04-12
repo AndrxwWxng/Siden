@@ -35,7 +35,15 @@ yarn-error.log*
 
 # vercel
 .vercel
+.cursorrules
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# documentation
+app-flow.mdc
+backend-rules.mdc
+frontend-rules.mdc
+prd-rules.mdc
+tech-stack.mdc

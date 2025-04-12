@@ -6,7 +6,8 @@ import Logo from '@/components/Logo';
 import { 
   PlusCircle, Settings, Users, ChevronRight, Briefcase, ArrowRight, 
   Database, Bell, Search, Grid, Heart, Filter, Home, MessageSquare,
-  BarChart3, Calendar, HelpCircle, ChevronLeft, User, Bot, Paperclip, Send
+  BarChart3, Calendar, HelpCircle, ChevronLeft, User, Bot, Paperclip, Send,
+  FileText, Code, BookOpen
 } from 'lucide-react';
 
 // Agent role definitions with capabilities
@@ -14,39 +15,39 @@ const agentRoles = [
   {
     id: 'ceo',
     name: 'CEO',
-    icon: '👨‍💼',
-    description: 'Manages team and provides strategic direction',
-    capabilities: ['Team coordination', 'Strategic planning', 'Decision making'],
+    icon: '/roleheadshots/kenard.png',
+    description: 'Leads the overall strategy and vision',
+    capabilities: ['Strategic planning', 'Team leadership', 'Decision making'],
     recommended: true
   },
   {
     id: 'dev',
     name: 'Developer',
-    icon: '👩‍💻',
-    description: 'Writes code and builds features',
-    capabilities: ['Full-stack development', 'Code optimization', 'Technical architecture'],
+    icon: '/roleheadshots/alex.png',
+    description: 'Builds and implements technical solutions',
+    capabilities: ['Full-stack development', 'Code architecture', 'API integration'],
     recommended: true
   },
   {
     id: 'marketing',
     name: 'Marketing Officer',
-    icon: '📊',
-    description: 'Handles promotion and user acquisition',
-    capabilities: ['Campaign creation', 'Content strategy', 'Performance analysis'],
+    icon: '/roleheadshots/chloe.png',
+    description: 'Creates and executes marketing strategies',
+    capabilities: ['Content creation', 'Campaign planning', 'Analytics'],
     recommended: true
   },
   {
     id: 'product',
     name: 'Product Manager',
-    icon: '🔍',
-    description: 'Defines product roadmap and features',
-    capabilities: ['User research', 'Feature prioritization', 'Product strategy'],
-    recommended: true
+    icon: '/roleheadshots/mark.png',
+    description: 'Defines product vision and roadmap',
+    capabilities: ['Feature prioritization', 'User research', 'Roadmap planning'],
+    recommended: false
   },
   {
     id: 'sales',
     name: 'Sales Representative',
-    icon: '📈',
+    icon: '/roleheadshots/hannah.png',
     description: 'Converts leads into customers',
     capabilities: ['Lead qualification', 'Demos and pitches', 'Relationship building'],
     recommended: false
@@ -54,7 +55,7 @@ const agentRoles = [
   {
     id: 'finance',
     name: 'Finance Advisor',
-    icon: '💰',
+    icon: '/roleheadshots/jenna.png',
     description: 'Manages budgets and financial strategy',
     capabilities: ['Budget planning', 'Financial analysis', 'Investment strategy'],
     recommended: false
@@ -62,7 +63,7 @@ const agentRoles = [
   {
     id: 'design',
     name: 'Designer',
-    icon: '🎨',
+    icon: '/roleheadshots/maisie.png',
     description: 'Creates visuals and user experiences',
     capabilities: ['UI/UX design', 'Brand identity', 'Visual systems'],
     recommended: false
@@ -70,7 +71,7 @@ const agentRoles = [
   {
     id: 'research',
     name: 'Research Analyst',
-    icon: '🔬',
+    icon: '/roleheadshots/garek.png',
     description: 'Gathers and analyzes market data',
     capabilities: ['Competitive analysis', 'Market trends', 'User insights'],
     recommended: false
@@ -112,7 +113,13 @@ import {
   FilterType
 } from '@/components/dashboard';
 
-export default function Dashboard() {
+// Define the Tool type
+interface Tool {
+  name: string;
+  icon: React.ReactNode;
+}
+
+const Dashboard = () => {
   const router = useRouter();
   const [selectedView, setSelectedView] = useState<'projects' | 'new-project' | 'select-agents' | 'configure' | 'chat'>('projects');
   const [projectName, setProjectName] = useState('');
@@ -125,6 +132,7 @@ export default function Dashboard() {
   const [agentPersonality, setAgentPersonality] = useState("");
   const [isEditingAgent, setIsEditingAgent] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   const toggleAgentSelection = (agentId: string) => {
     if (selectedAgents.includes(agentId)) {
@@ -355,10 +363,14 @@ export default function Dashboard() {
                     >
             <div className="flex items-center">
                         <div className="relative mr-5">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
-                            isSelected ? 'bg-[#6366F1]/10 text-[#6366F1]' : 'bg-[#202020] text-white'
+                          <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${
+                            isSelected ? 'ring-2 ring-[#6366F1]' : 'ring-1 ring-[#444]'
                           }`}>
-                            {role.icon}
+                            <img 
+                              src={role.icon} 
+                              alt={role.name} 
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         </div>
                         
@@ -488,7 +500,11 @@ export default function Dashboard() {
                       <div className="px-6 py-6">
                         <div className="flex items-center mb-8">
                           <div className="w-16 h-16 rounded-full bg-[#2E2E2E] flex items-center justify-center text-3xl mr-5">
-                            {agent.icon}
+                            <img 
+                              src={agent.icon} 
+                              alt={agent.name} 
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <div>
                             {isEditingAgent ? (
@@ -599,9 +615,9 @@ export default function Dashboard() {
                             <div className="mb-6">
                               <h4 className="text-sm uppercase text-[#8A8F98] tracking-wider mb-3">Integrated Tools</h4>
                               <div className="grid grid-cols-2 gap-2.5">
-                                {getAgentTools(agent.id).map((tool, index) => (
+                                {getToolsForAgent(agent.id).map((tool, index) => (
                                   <div key={index} className="flex items-center gap-2.5 p-2.5 bg-[#2E2E2E] rounded-md">
-                                    <div className="w-6 h-6 bg-[#202020] rounded-md flex items-center justify-center text-xs">
+                                    <div className="w-6 h-6 bg-[#202020] rounded-md flex items-center justify-center">
                                       {tool.icon}
                                     </div>
                                     <span className="text-sm">{tool.name}</span>
@@ -795,7 +811,11 @@ export default function Dashboard() {
                         <div key={agent.id} className="px-6 py-4 hover:bg-[#202020] transition-colors">
                           <div className="flex items-center">
                             <div className="w-10 h-10 rounded-lg bg-[#202020] flex items-center justify-center text-xl mr-3">
-                              {agent.icon}
+                              <img 
+                                src={agent.icon} 
+                                alt={agent.name} 
+                                className="w-full h-full object-cover"
+                              />
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-medium text-white mb-0.5">{agent.name}</h3>
@@ -866,7 +886,11 @@ export default function Dashboard() {
                       
                       return (
                         <div key={agent.id} className="w-8 h-8 rounded-full bg-[#2E2E2E] flex items-center justify-center ring-2 ring-[#202020]">
-                          <span className="text-sm">{agent.icon}</span>
+                          <img 
+                            src={agent.icon} 
+                            alt={agent.name} 
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       );
                     })}
@@ -994,98 +1018,56 @@ export default function Dashboard() {
     return descriptions[capability] || 'Specialized capability for this agent role';
   };
   
-  // Helper function to get agent tools
-  const getAgentTools = (agentId: string) => {
-    const commonTools = [
-      { name: 'Web Search', icon: '🔍' },
-      { name: 'Document Analysis', icon: '📄' },
-    ];
-    
-    const agentSpecificTools: {[key: string]: Array<{name: string, icon: string}>} = {
-      'ceo': [
-        { name: 'Data Visualization', icon: '📊' },
-        { name: 'Decision Support', icon: '🧠' },
-        { name: 'Strategy Planning', icon: '🎯' },
-      ],
-      'dev': [
-        { name: 'Code Generation', icon: '💻' },
-        { name: 'API Integration', icon: '🔄' },
-        { name: 'Debugging Assistant', icon: '🐞' },
-        { name: 'Code Review', icon: '✅' },
-      ],
-      'marketing': [
-        { name: 'Ad Creation', icon: '📣' },
-        { name: 'Social Media', icon: '📱' },
-        { name: 'Analytics', icon: '📈' },
-        { name: 'Email Marketing', icon: '✉️' },
-      ],
-      'product': [
-        { name: 'Roadmap Builder', icon: '🗺️' },
-        { name: 'User Research', icon: '👥' },
-        { name: 'Feature Planning', icon: '📝' },
-      ],
-      'sales': [
-        { name: 'CRM Integration', icon: '🤝' },
-        { name: 'Email Composer', icon: '📧' },
-        { name: 'Proposal Builder', icon: '📑' },
-      ],
-      'finance': [
-        { name: 'Financial Modeling', icon: '💰' },
-        { name: 'Budget Analysis', icon: '💵' },
-        { name: 'Forecast Tools', icon: '📊' },
-      ],
-      'design': [
-        { name: 'Design Systems', icon: '🎨' },
-        { name: 'Mockup Creation', icon: '🖼️' },
-        { name: 'Asset Library', icon: '🗂️' },
-      ],
-      'research': [
-        { name: 'Data Analysis', icon: '📊' },
-        { name: 'Survey Tools', icon: '📋' },
-        { name: 'Research Library', icon: '📚' },
-      ],
+  const commonTools = [
+    { name: 'Chat', icon: <MessageSquare size={16} className="text-[#94A3B8]" /> },
+    { name: 'Document Analysis', icon: <FileText size={16} className="text-[#94A3B8]" /> },
+  ];
+  
+  const contentCreatorTools = [
+    ...commonTools,
+    { name: 'Content Generation', icon: <BookOpen size={16} className="text-[#94A3B8]" /> },
+  ];
+
+  const developerTools = [
+    ...commonTools,
+    { name: 'Code Interpreter', icon: <Code size={16} className="text-[#94A3B8]" /> },
+  ];
+  
+  const getToolsForAgent = (agentId: string) => {
+    const agentSpecificTools: Record<string, Tool[]> = {
+      'content-creator': contentCreatorTools,
+      'developer': developerTools,
     };
     
     return [...commonTools, ...(agentSpecificTools[agentId] || [])];
   };
-  
+
   return (
     <div className="flex min-h-screen bg-[#151515] text-white">
-      <Sidebar projects={mockProjects} onNewProject={startNewProject} />
+      {/* Sidebar */}
+      <Sidebar 
+        projects={mockProjects} 
+        selectedProject={null} 
+        onNewProject={startNewProject}
+        onCollapse={setSidebarCollapsed}
+      />
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header for inner pages */}
-        {selectedView !== 'projects' && (
-          <div className="h-16 border-b border-[#313131] flex items-center px-6 bg-[#202020]">
-            <button
-              onClick={() => {
-                if (selectedView === 'new-project') {
-                  setSelectedView('projects');
-                } else if (selectedView === 'select-agents') {
-                  setSelectedView('new-project');
-                } else if (selectedView === 'configure') {
-                  setSelectedView('select-agents');
-                }
-              }}
-              className="flex items-center mr-4 text-[#8A8F98] hover:text-white transition-colors"
-            >
-              <ChevronRight className="rotate-180" size={20} />
-            </button>
-            <h1 className="text-lg font-medium">
-              {selectedView === 'new-project' && 'Create Project'}
-              {selectedView === 'select-agents' && 'Select Agent Roles'}
-              {selectedView === 'configure' && 'Configure Team'}
-            </h1>
-          </div>
-        )}
+      <main 
+        className="flex-1 flex flex-col transition-all duration-200"
+        style={{ marginLeft: sidebarCollapsed ? '60px' : '280px' }}
+      >
+        <div className="h-16 border-b border-[#313131] flex items-center px-6 bg-[#202020]">
+        </div>
         
-        <div className="flex-1 overflow-auto bg-[#202020]">
-          <div className="max-w-6xl mx-auto p-6 h-full">
+        <div className="flex-1 overflow-auto bg-[#202020] p-6">
+          <div className="max-w-6xl mx-auto">
             {renderContent()}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
-} 
+}
+
+export default Dashboard; 
