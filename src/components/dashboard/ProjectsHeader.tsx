@@ -16,7 +16,6 @@ const ProjectsHeader: React.FC<ProjectsHeaderProps> = ({ onCreateProject }) => {
         onClick={onCreateProject}
         className="flex items-center gap-2 px-5 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors shadow-md hover:shadow-lg"
       >
-        <PlusCircle size={18} />
         Create Project
       </button>
     </div>
