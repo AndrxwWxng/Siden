@@ -133,6 +133,11 @@ const Dashboard = () => {
   const [isEditingAgent, setIsEditingAgent] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [agentCapabilities, setAgentCapabilities] = useState<Record<string, boolean>>({});
+  const [permissions, setPermissions] = useState<Record<string, boolean>>({
+    webBrowsing: true,
+    projectFiles: true
+  });
   
   const toggleAgentSelection = (agentId: string) => {
     if (selectedAgents.includes(agentId)) {
@@ -498,15 +503,15 @@ const Dashboard = () => {
                     
                     return (
                       <div className="px-6 py-6">
-                        <div className="flex items-center mb-8">
-                          <div className="w-16 h-16 rounded-full bg-[#2E2E2E] flex items-center justify-center text-3xl mr-5">
+                        <div className="flex items-start mb-8">
+                          <div className="w-16 h-16 rounded-lg bg-[#2E2E2E] flex items-center justify-center text-3xl mr-5 overflow-hidden">
                             <img 
                               src={agent.icon} 
                               alt={agent.name} 
                               className="w-full h-full object-cover"
                             />
                           </div>
-                          <div>
+                          <div className="flex flex-col justify-start">
                             {isEditingAgent ? (
                               <input
                                 type="text"
@@ -537,24 +542,91 @@ const Dashboard = () => {
                             <div className="mb-6">
                               <label className="block text-sm font-medium mb-3">Agent Capabilities</label>
                               <div className="space-y-2.5">
-                                {agent.capabilities.map((capability, index) => (
+                                {agent.capabilities.map((capability, index) => {
+                                  const checkboxId = `cap-${selectedProfile}-${index}`;
+                                  // Initialize capability state if needed
+                                  const capabilityKey = `${selectedProfile}-${capability}`;
+                                  if (agentCapabilities[capabilityKey] === undefined) {
+                                    // Use a state update function to avoid race conditions
+                                    setAgentCapabilities(prev => ({
+                                      ...prev,
+                                      [capabilityKey]: true // Default to checked
+                                    }));
+                                  }
+                                  
+                                  return (
                                   <div key={index} className="flex items-center">
-                                    <input 
-                                      type="checkbox" 
-                                      id={`cap-${index}`} 
-                                      defaultChecked
-                                      className="w-4 h-4 mr-2 accent-[#6366F1]"
-                                    />
-                                    <label htmlFor={`cap-${index}`} className="text-sm">{capability}</label>
+                                    <div className="relative flex items-center group">
+                                      <input 
+                                        type="checkbox" 
+                                        id={checkboxId} 
+                                        checked={agentCapabilities[capabilityKey] !== false}
+                                        className="sr-only"
+                                        onChange={(e) => {
+                                          setAgentCapabilities(prev => ({
+                                            ...prev,
+                                            [capabilityKey]: e.target.checked
+                                          }));
+                                        }}
+                                      />
+                                      <label htmlFor={checkboxId} className="flex items-center cursor-pointer select-none">
+                                        <div 
+                                          className={`w-5 h-5 border-2 rounded flex items-center justify-center cursor-pointer transition-colors ${
+                                            agentCapabilities[capabilityKey] !== false 
+                                              ? 'bg-[#6366F1] border-[#6366F1]' 
+                                              : 'bg-transparent border-[#444]'
+                                          }`}
+                                        >
+                                          <svg 
+                                            className={`w-3 h-3 text-white transition-opacity ${
+                                              agentCapabilities[capabilityKey] !== false ? 'opacity-100' : 'opacity-0'
+                                            }`} 
+                                            viewBox="0 0 10 8" 
+                                            fill="none" 
+                                            xmlns="http://www.w3.org/2000/svg"
+                                          >
+                                            <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        </div>
+                                        <span className="ml-2 text-sm">{capability}</span>
+                                      </label>
+                                    </div>
                                   </div>
-                                ))}
+                                  );
+                                })}
                                 <div className="flex items-center">
-                                  <input 
-                                    type="checkbox" 
-                                    id="cap-new" 
-                                    className="w-4 h-4 mr-2 accent-[#6366F1]"
-                                  />
-                                  <label htmlFor="cap-new" className="text-sm text-[#8A8F98]">Add custom capability...</label>
+                                  <div className="relative flex items-center flex-1">
+                                    <div className="flex items-center w-full">
+                                      <div className="w-5 h-5 border-2 border-[#444] rounded flex items-center justify-center mr-2 flex-shrink-0">
+                                        <svg className="w-3 h-3 text-white opacity-0" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                      </div>
+                                      <input 
+                                        type="text" 
+                                        placeholder="Add custom capability..."
+                                        className="w-full bg-transparent text-sm text-[#8A8F98] focus:text-white placeholder-[#8A8F98] focus:outline-none cursor-pointer focus:cursor-text"
+                                        onKeyPress={(e) => {
+                                          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                            const newCapability = e.currentTarget.value.trim();
+                                            
+                                            // Add the capability to the agent's capabilities
+                                            agent.capabilities.push(newCapability);
+                                            
+                                            // Initialize the capability state
+                                            const capabilityKey = `${selectedProfile}-${newCapability}`;
+                                            setAgentCapabilities(prev => ({
+                                              ...prev,
+                                              [capabilityKey]: true
+                                            }));
+                                            
+                                            // Clear the input
+                                            e.currentTarget.value = '';
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -568,9 +640,30 @@ const Dashboard = () => {
                                     <p className="text-xs text-[#8A8F98]">Allow agent to search the internet</p>
                                   </div>
                                   <div className="relative inline-block w-12 h-6">
-                                    <input type="checkbox" className="opacity-0 w-0 h-0" defaultChecked />
-                                    <span className="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-[#6366F1] rounded-full"></span>
-                                    <span className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform translate-x-6"></span>
+                                    <input 
+                                      type="checkbox" 
+                                      id="webBrowsing" 
+                                      className="opacity-0 w-0 h-0 absolute" 
+                                      checked={permissions.webBrowsing}
+                                      onChange={(e) => {
+                                        setPermissions(prev => ({
+                                          ...prev,
+                                          webBrowsing: e.target.checked
+                                        }));
+                                      }}
+                                    />
+                                    <label 
+                                      htmlFor="webBrowsing"
+                                      className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-md transition-colors ${
+                                        permissions.webBrowsing ? 'bg-[#6366F1]' : 'bg-[#444]'
+                                      }`}
+                                    >
+                                      <span 
+                                        className={`absolute w-4 h-4 bg-white rounded transition-transform duration-200 ${
+                                          permissions.webBrowsing ? 'right-1' : 'left-1'
+                                        } top-1`}
+                                      />
+                                    </label>
                                   </div>
                                 </div>
                                 
@@ -580,9 +673,30 @@ const Dashboard = () => {
                                     <p className="text-xs text-[#8A8F98]">Access to project documents</p>
                                   </div>
                                   <div className="relative inline-block w-12 h-6">
-                                    <input type="checkbox" className="opacity-0 w-0 h-0" defaultChecked />
-                                    <span className="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-[#6366F1] rounded-full"></span>
-                                    <span className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform translate-x-6"></span>
+                                    <input 
+                                      type="checkbox" 
+                                      id="projectFiles" 
+                                      className="opacity-0 w-0 h-0 absolute" 
+                                      checked={permissions.projectFiles}
+                                      onChange={(e) => {
+                                        setPermissions(prev => ({
+                                          ...prev,
+                                          projectFiles: e.target.checked
+                                        }));
+                                      }}
+                                    />
+                                    <label 
+                                      htmlFor="projectFiles"
+                                      className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-md transition-colors ${
+                                        permissions.projectFiles ? 'bg-[#6366F1]' : 'bg-[#444]'
+                                      }`}
+                                    >
+                                      <span 
+                                        className={`absolute w-4 h-4 bg-white rounded transition-transform duration-200 ${
+                                          permissions.projectFiles ? 'right-1' : 'left-1'
+                                        } top-1`}
+                                      />
+                                    </label>
                                   </div>
                                 </div>
                               </div>
