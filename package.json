@@ -14,6 +14,7 @@
     "@e2b/code-interpreter": "^1.1.1",
     "@fontsource/fira-code": "^5.2.5",
     "@fontsource/inter": "^5.2.5",
+    "@mastra/core": "^0.8.2",
     "ai": "^4.3.5",
     "dotenv": "^16.4.7",
     "lucide-react": "^0.487.0",
