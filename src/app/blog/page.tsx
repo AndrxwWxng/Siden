@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import NavBar from '@/components/NavBar';
@@ -8,6 +8,26 @@ import Footer from '@/components/Footer';
 
 export default function BlogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isInView, setIsInView] = useState(false);
+  const blogRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (blogRef.current) {
+      observer.observe(blogRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, []);
   
   const categories = [
     { id: 'all', name: 'All Posts' },
@@ -48,177 +68,141 @@ export default function BlogPage() {
     },
     {
       id: 3,
-      title: 'Introducing Advanced Analytics for Agent Teams',
-      excerpt: 'Our latest platform update brings powerful analytics capabilities to help you understand and optimize your AI agent teams.',
-      category: 'product',
+      title: 'The Future of AI Agent Orchestration: 2023 and Beyond',
+      excerpt: 'Our predictions for the evolving landscape of AI agent technologies and how businesses can prepare for upcoming trends.',
+      category: 'industry',
       date: 'May 15, 2023',
-      readTime: '4 min read',
+      readTime: '5 min read',
       image: '/blog/blog-3.jpg',
       author: {
-        name: 'Emma Wilson',
+        name: 'Alex Johnson',
         avatar: '/team/avatar-3.jpg',
-        title: 'Product Manager'
+        title: 'Head of Product'
       }
-    }
-  ];
-  
-  const recentPosts = [
+    },
     {
       id: 4,
-      title: 'The Future of Work: How AI Agent Teams Are Reshaping Industries',
-      excerpt: 'Explore how AI agent teams are transforming various industries and what this means for the future of work.',
-      category: 'industry',
-      date: 'Jun 8, 2023',
-      readTime: '7 min read',
+      title: 'Introducing Advanced Agent Memory: Our Latest Feature',
+      excerpt: 'A deep dive into our new agent memory system that dramatically improves context handling and long-term task execution.',
+      category: 'product',
+      date: 'May 10, 2023',
+      readTime: '4 min read',
       image: '/blog/blog-4.jpg',
       author: {
-        name: 'David Kim',
+        name: 'Emma Davis',
         avatar: '/team/avatar-4.jpg',
-        title: 'Content Strategist'
+        title: 'Product Manager'
       }
     },
     {
       id: 5,
-      title: 'Best Practices for Prompt Engineering in Multi-Agent Systems',
-      excerpt: 'Learn advanced techniques for crafting effective prompts that help your agents collaborate efficiently.',
+      title: 'Optimizing AI Agent Communication Protocols',
+      excerpt: 'Technical insights into developing efficient communication systems between collaborative AI agents.',
       category: 'tutorials',
-      date: 'Jun 3, 2023',
-      readTime: '10 min read',
+      date: 'Apr 28, 2023',
+      readTime: '7 min read',
       image: '/blog/blog-5.jpg',
       author: {
-        name: 'Alex Johnson',
+        name: 'James Wilson',
         avatar: '/team/avatar-5.jpg',
-        title: 'AI Engineer'
+        title: 'Senior Engineer'
       }
     },
     {
       id: 6,
-      title: 'New Integration: Connect Your Agent Teams with Slack',
-      excerpt: 'Our new Slack integration allows you to interact with your AI agent teams directly from your workspace.',
-      category: 'product',
-      date: 'May 30, 2023',
-      readTime: '3 min read',
+      title: 'Healthcare Provider Reduces Patient Wait Times by 40% Using AI Agents',
+      excerpt: 'How a major healthcare provider implemented our agent team platform to streamline patient care and reduce wait times.',
+      category: 'case-studies',
+      date: 'Apr 20, 2023',
+      readTime: '6 min read',
       image: '/blog/blog-6.jpg',
       author: {
-        name: 'Emma Wilson',
-        avatar: '/team/avatar-3.jpg',
-        title: 'Product Manager'
-      }
-    },
-    {
-      id: 7,
-      title: 'E-commerce Giant Reduces Customer Service Response Time by 80%',
-      excerpt: 'How a leading e-commerce company used our platform to revolutionize their customer service operations.',
-      category: 'case-studies',
-      date: 'May 22, 2023',
-      readTime: '5 min read',
-      image: '/blog/blog-7.jpg',
-      author: {
-        name: 'Michael Torres',
-        avatar: '/team/avatar-2.jpg',
-        title: 'Customer Success Manager'
-      }
-    },
-    {
-      id: 8,
-      title: 'The Role of AI Agents in Enterprise Digital Transformation',
-      excerpt: 'A comprehensive analysis of how AI agent teams fit into broader digital transformation strategies.',
-      category: 'industry',
-      date: 'May 18, 2023',
-      readTime: '9 min read',
-      image: '/blog/blog-8.jpg',
-      author: {
-        name: 'David Kim',
-        avatar: '/team/avatar-4.jpg',
-        title: 'Content Strategist'
-      }
-    },
-    {
-      id: 9,
-      title: 'Tutorial: Creating Your First Autonomous Agent Workflow',
-      excerpt: 'A step-by-step guide to building your first fully autonomous workflow with multiple specialized agents.',
-      category: 'tutorials',
-      date: 'May 12, 2023',
-      readTime: '12 min read',
-      image: '/blog/blog-9.jpg',
-      author: {
-        name: 'Sarah Chen',
-        avatar: '/team/avatar-1.jpg',
-        title: 'AI Research Lead'
+        name: 'Sophia Lee',
+        avatar: '/team/avatar-6.jpg',
+        title: 'Healthcare Solutions Specialist'
       }
     }
   ];
   
+  // Filter posts based on selected category
   const filteredPosts = selectedCategory === 'all' 
-    ? recentPosts 
-    : recentPosts.filter(post => post.category === selectedCategory);
+    ? featuredPosts 
+    : featuredPosts.filter(post => post.category === selectedCategory);
+  
+  // Get featured post
+  const featuredPost = featuredPosts[0];
   
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col">
       <NavBar />
       
       <main className="flex flex-col flex-grow pt-24">
-        {/* Hero Section */}
-        <section className="pt-16 pb-24 px-6">
-          <div className="container mx-auto max-w-6xl">
-            <div className="text-center mb-12">
-              <div className="inline-block py-1 px-3 bg-[#6366F1]/10 rounded-full text-[#6366F1] text-sm font-semibold mb-4">
-                Our Blog
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight tracking-tight max-w-4xl mx-auto">
-                Insights on AI Agent Teams & Orchestration
+        {/* Hero Section - Simplified and Modern */}
+        <section className="pt-16 pb-20 px-6 relative">
+          <div className="container mx-auto max-w-6xl relative">
+            <div className="text-center mb-16 animate-fade-in">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight tracking-tight max-w-4xl mx-auto hero-title" style={{ lineHeight: '1.3' }}>
+                Insights on AI Agent Teams
               </h1>
               <p className="text-xl text-[#AAAAAA] max-w-2xl mx-auto">
                 Tutorials, case studies, and industry insights to help you build better AI agent systems.
               </p>
             </div>
             
-            {/* Featured Posts */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-              {featuredPosts.map((post, index) => (
-                <Link key={post.id} href={`/blog/${post.id}`} className="block group">
-                  <div className="bg-[#171717] border border-[#2e2e2e] rounded-xl overflow-hidden hover:border-[#6366F1]/40 transition-all duration-300 hover:shadow-lg hover:shadow-[#6366F1]/5 h-full flex flex-col">
-                    <div className="relative h-48 bg-[#1a1a1a]">
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121212] opacity-50 z-10"></div>
-                      <div className="absolute top-4 left-4 z-20">
-                        <span className="px-3 py-1 bg-[#6366F1] text-white text-xs rounded-full">
-                          {categories.find(cat => cat.id === post.category)?.name}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-6 flex flex-col flex-grow">
-                      <h3 className="text-xl font-bold mb-3 group-hover:text-[#6366F1] transition-colors">
-                        {post.title}
-                      </h3>
-                      <p className="text-[#AAAAAA] mb-4 flex-grow">
-                        {post.excerpt}
-                      </p>
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-[#252525] mr-3"></div>
-                          <div>
-                            <div className="text-sm font-medium">{post.author.name}</div>
-                            <div className="text-xs text-[#AAAAAA]">{post.author.title}</div>
-                          </div>
+            {/* Featured Post - Clean and Minimal */}
+            <div className="mb-20 animate-slide-up animate-delay-100">
+              <div className="group relative h-[450px] rounded-xl overflow-hidden border border-[#2e2e2e] transition-all duration-300 hover:border-[#6366F1] shadow-md">
+                {/* Minimalist gradient for image placeholder */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#080808]"></div>
+                
+                {/* Simple overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#00000070] to-transparent"></div>
+                
+                <div className="absolute bottom-0 left-0 right-0 p-8 md:p-10">
+                  <div className="flex flex-col items-start">
+                    <span className="px-3 py-1 bg-[#6366F1] rounded-full text-xs font-semibold mb-4 transform translate-y-0 transition-all duration-300">
+                      {featuredPost.category}
+                    </span>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-4 transition-colors duration-300">
+                      {featuredPost.title}
+                    </h2>
+                    <p className="text-[#AAAAAA] mb-6 max-w-3xl">
+                      {featuredPost.excerpt}
+                    </p>
+                    
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-[#2e2e2e] mr-4"></div>
+                        <div>
+                          <div className="font-medium">{featuredPost.author.name}</div>
+                          <div className="text-sm text-[#AAAAAA]">{featuredPost.author.title}</div>
                         </div>
-                        <div className="text-xs text-[#AAAAAA]">{post.date} · {post.readTime}</div>
+                      </div>
+                      <div className="flex items-center text-sm text-[#AAAAAA]">
+                        <span>{featuredPost.date}</span>
+                        <span className="mx-2">•</span>
+                        <span>{featuredPost.readTime}</span>
                       </div>
                     </div>
                   </div>
+                </div>
+                
+                <Link href={`/blog/${featuredPost.id}`} className="absolute inset-0 z-10">
+                  <span className="sr-only">Read article</span>
                 </Link>
-              ))}
+              </div>
             </div>
             
-            {/* Category Filter */}
-            <div className="flex justify-center mb-12 overflow-x-auto pb-2 scrollbar-hide">
-              <div className="flex p-1 bg-[#1a1a1a] rounded-full border border-[#2e2e2e] space-x-1">
+            {/* Category Filters - Cleaner Design */}
+            <div className="mb-12 flex justify-center animate-slide-up animate-delay-200">
+              <div className="flex flex-wrap justify-center gap-2">
                 {categories.map((category) => (
                   <button
                     key={category.id}
-                    className={`py-2 px-5 rounded-full whitespace-nowrap transition-all duration-200 ${
+                    className={`py-2 px-5 rounded-md whitespace-nowrap transition-all duration-300 text-sm font-medium ${
                       selectedCategory === category.id 
-                        ? 'bg-[#6366F1] text-white' 
-                        : 'text-[#AAAAAA] hover:text-white'
+                        ? 'bg-[#6366F1] text-white shadow-sm' 
+                        : 'bg-[#191919] text-[#AAAAAA] hover:text-white hover:bg-[#222]'
                     }`}
                     onClick={() => setSelectedCategory(category.id)}
                   >
@@ -228,61 +212,67 @@ export default function BlogPage() {
               </div>
             </div>
             
-            {/* Recent Posts Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
-                <Link key={post.id} href={`/blog/${post.id}`} className="block group">
-                  <div className="bg-[#171717] border border-[#2e2e2e] rounded-xl overflow-hidden hover:border-[#6366F1]/40 transition-all duration-300 hover:shadow-lg hover:shadow-[#6366F1]/5 h-full flex flex-col">
-                    <div className="relative h-48 bg-[#1a1a1a]">
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121212] opacity-50 z-10"></div>
-                      <div className="absolute top-4 left-4 z-20">
-                        <span className="px-3 py-1 bg-[#6366F1] text-white text-xs rounded-full">
-                          {categories.find(cat => cat.id === post.category)?.name}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-6 flex flex-col flex-grow">
-                      <h3 className="text-xl font-bold mb-3 group-hover:text-[#6366F1] transition-colors">
-                        {post.title}
-                      </h3>
-                      <p className="text-[#AAAAAA] mb-4 flex-grow">
-                        {post.excerpt}
-                      </p>
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-[#252525] mr-3"></div>
-                          <div>
-                            <div className="text-sm font-medium">{post.author.name}</div>
-                            <div className="text-xs text-[#AAAAAA]">{post.author.title}</div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-[#AAAAAA]">{post.date} · {post.readTime}</div>
-                      </div>
+            {/* Blog Posts Grid - Minimalist Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" ref={blogRef}>
+              {filteredPosts.map((post, index) => (
+                <div 
+                  key={post.id}
+                  className={`group bg-[#161616] rounded-xl border border-transparent hover:border-[#6366F1] shadow-sm transition-all duration-300 flex flex-col transform ${
+                    isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`}
+                  style={{ transitionDelay: `${index * 80}ms` }}
+                >
+                  <div className="relative h-44 bg-[#0a0a0a] overflow-hidden rounded-t-xl">
+                    {/* Minimal gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#161616] to-[#0a0a0a] group-hover:scale-105 transition-transform duration-500"></div>
+                    
+                    {/* Clean category label */}
+                    <div className="absolute top-4 left-4 px-2 py-1 bg-[#6366F1] rounded-md text-xs font-medium">
+                      {post.category}
                     </div>
                   </div>
-                </Link>
+                  
+                  <div className="p-6 flex-grow flex flex-col">
+                    <h3 className="text-lg font-bold mb-3 line-clamp-2 group-hover:text-[#6366F1] transition-colors duration-300">
+                      {post.title}
+                    </h3>
+                    <p className="text-[#AAAAAA] text-sm mb-4 flex-grow line-clamp-3">
+                      {post.excerpt}
+                    </p>
+                    
+                    <div className="flex justify-between items-center mt-2 text-xs text-[#888]">
+                      <span>{post.date}</span>
+                      <span>{post.readTime}</span>
+                    </div>
+                  </div>
+                  
+                  <Link href={`/blog/${post.id}`} className="absolute inset-0">
+                    <span className="sr-only">Read article</span>
+                  </Link>
+                </div>
               ))}
             </div>
             
-            {/* Newsletter Section */}
-            <div className="mt-24 bg-gradient-to-br from-[#1a1a1a] to-[#131313] rounded-2xl p-12 border border-[#2e2e2e] shadow-xl">
-              <div className="max-w-3xl mx-auto text-center">
-                <h2 className="text-2xl md:text-3xl font-bold mb-4">Stay updated with our latest insights</h2>
-                <p className="text-lg text-[#AAAAAA] mb-8">
-                  Subscribe to our newsletter to receive the latest articles, tutorials, and product updates.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email" 
-                    className="flex-grow py-3 px-4 bg-[#0D0D0D] border border-[#2e2e2e] rounded-lg focus:outline-none focus:border-[#6366F1]"
-                  />
-                  <button className="py-3 px-6 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded-lg transition-all duration-200">
-                    Subscribe
-                  </button>
+            {/* Newsletter Signup - Cleaner Design */}
+            <div className="mt-16 bg-[#161616] p-8 rounded-xl border border-[#252525] animate-fade-in shadow-sm" style={{ animationDelay: '400ms' }}>
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="md:w-2/3 md:pr-10">
+                  <h3 className="text-xl font-bold mb-2">Subscribe to our newsletter</h3>
+                  <p className="text-[#AAAAAA]">
+                    Get the latest insights on AI agent technology delivered straight to your inbox.
+                  </p>
                 </div>
-                <div className="text-xs text-[#777777] mt-4">
-                  We respect your privacy. Unsubscribe at any time.
+                <div className="md:w-1/3 w-full">
+                  <div className="flex">
+                    <input 
+                      type="email" 
+                      placeholder="Your email" 
+                      className="flex-grow px-4 py-3 bg-[#121212] border-y border-l border-[#252525] rounded-l-lg focus:outline-none focus:border-[#6366F1] text-white"
+                    />
+                    <button className="px-5 py-3 bg-[#6366F1] text-white rounded-r-lg hover:bg-[#4F46E5] transition-colors duration-300">
+                      Subscribe
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

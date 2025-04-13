@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import NavBar from '@/components/NavBar';
@@ -15,8 +15,68 @@ const CodeAnimation = dynamic(() => import('@/components/CodeAnimation'), {
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
   
+  // Add animation tracking refs
+  const heroRef = useRef<HTMLDivElement>(null);
+  const logosRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const productRef = useRef<HTMLDivElement>(null);
+  const integrationsRef = useRef<HTMLDivElement>(null);
+  const testimonialsRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  
+  // Animation state
+  const [heroVisible, setHeroVisible] = useState(false);
+  const [logosVisible, setLogosVisible] = useState(false);
+  const [featuresVisible, setFeaturesVisible] = useState(false);
+  const [productVisible, setProductVisible] = useState(false);
+  const [integrationsVisible, setIntegrationsVisible] = useState(false);
+  const [testimonialsVisible, setTestimonialsVisible] = useState(false);
+  const [ctaVisible, setCtaVisible] = useState(false);
+  
   useEffect(() => {
     setIsClient(true);
+    
+    // Setup intersection observer for animations
+    const observerOptions = {
+      threshold: 0.15,
+      rootMargin: '0px 0px -100px 0px'
+    };
+    
+    const observers: IntersectionObserver[] = [];
+    
+    // Helper function to create an observer
+    const createObserver = (
+      ref: React.RefObject<HTMLDivElement | null>, 
+      setVisible: React.Dispatch<React.SetStateAction<boolean>>
+    ) => {
+      if (!ref.current) return;
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+      
+      observer.observe(ref.current);
+      observers.push(observer);
+    };
+    
+    // Create observers for each section
+    createObserver(heroRef, setHeroVisible);
+    createObserver(logosRef, setLogosVisible);
+    createObserver(featuresRef, setFeaturesVisible);
+    createObserver(productRef, setProductVisible);
+    createObserver(integrationsRef, setIntegrationsVisible);
+    createObserver(testimonialsRef, setTestimonialsVisible);
+    createObserver(ctaRef, setCtaVisible);
+    
+    return () => {
+      // Cleanup observers
+      observers.forEach(observer => observer.disconnect());
+    };
   }, []);
   
   return (
@@ -24,13 +84,20 @@ export default function Home() {
       <NavBar />
       
       <main className="flex flex-col flex-grow">
-        {/* Hero Section */}
-        <section className="flex flex-col items-center justify-center px-6 pt-32 pb-48 relative overflow-hidden">
+        {/* Hero Section with animations */}
+        <section 
+          ref={heroRef}
+          className="flex flex-col items-center justify-center px-6 pt-32 pb-48 relative overflow-hidden"
+        >
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
           <div className="absolute inset-0 bg-gradient-to-b from-[#121212] via-transparent to-[#121212] pointer-events-none"></div>
           
           <div className="container mx-auto max-w-6xl relative z-10">
-            <div className="flex flex-col items-center text-center mb-16">
+            <div 
+              className={`flex flex-col items-center text-center mb-16 transition-all duration-1000 ${
+                heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
               <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight tracking-tight max-w-4xl">
                 Build and orchestrate your AI agent team <span className="effortlessly-text">effortlessly</span>
               </h1>
@@ -57,7 +124,11 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="relative w-full max-w-5xl mx-auto h-[700px] mt-16">
+            <div 
+              className={`relative w-full max-w-5xl mx-auto h-[700px] mt-16 transition-all duration-1000 delay-300 ${
+                heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+              }`}
+            >
               {/* 3D perspective UI mockup with layered effect */}
               <div className="absolute inset-0 w-full h-[620px] perspective-[2000px] flex justify-center items-center">
                 {/* Main Dashboard UI */}
@@ -408,35 +479,59 @@ export default function Home() {
           <div className="absolute bottom-[-120px] left-0 right-0 h-[240px] bg-gradient-radial from-[#6366F1]/2 to-transparent opacity-20 blur-3xl"></div>
         </section>
         
-        {/* Logos Section */}
-        <section className="py-24 border-t border-[#1e1e1e]">
+        {/* Logos Section with animations */}
+        <section 
+          ref={logosRef}
+          className="py-24 border-t border-[#1e1e1e]"
+        >
           <div className="container mx-auto px-6">
-            <p className="text-center text-[#AAAAAA] uppercase text-sm tracking-wider mb-10">Trusted by innovative teams at</p>
+            <p 
+              className={`text-center text-[#AAAAAA] uppercase text-sm tracking-wider mb-10 transition-all duration-700 ${
+                logosVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+              }`}
+            >
+              Trusted by innovative teams at
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-8 w-32 bg-[#1e1e1e] rounded opacity-50"></div>
+                <div 
+                  key={i} 
+                  className={`h-8 w-32 bg-[#1e1e1e] rounded opacity-50 transition-all duration-700 ${
+                    logosVisible ? 'opacity-50 translate-y-0' : 'opacity-0 translate-y-10'
+                  }`}
+                  style={{ transitionDelay: `${i * 100}ms` }}
+                ></div>
               ))}
             </div>
           </div>
         </section>
         
-        {/* Features Section */}
-        <section className="py-32 relative overflow-hidden">
+        {/* Features Section with animations */}
+        <section 
+          ref={featuresRef}
+          className="py-32 relative overflow-hidden"
+        >
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto">
-              <div className="flex items-center mb-3">
-                <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Features</span>
+              <div 
+                className={`transition-all duration-700 ${
+                  featuresVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                }`}
+              >
+                <div className="flex items-center mb-3">
+                  <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Features</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                  <span className="text-white">Agent infrastructure </span>
+                  <span className="effortlessly-text">you'll enjoy using</span>
+                </h2>
+                
+                <p className="text-lg text-[#AAAAAA] max-w-2xl mb-16 leading-relaxed">
+                  Optimized for speed and efficiency. Create agents in seconds, orchestrate their interactions,
+                  and breeze through your AI workflows in views tailored to your team.
+                </p>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                <span className="text-white">Agent infrastructure </span>
-                <span className="effortlessly-text">you'll enjoy using</span>
-              </h2>
-              
-              <p className="text-lg text-[#AAAAAA] max-w-2xl mb-16 leading-relaxed">
-                Optimized for speed and efficiency. Create agents in seconds, orchestrate their interactions,
-                and breeze through your AI workflows in views tailored to your team.
-              </p>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10 relative">
                 {[
@@ -495,7 +590,16 @@ export default function Home() {
                     )
                   }
                 ].map((feature, i) => (
-                  <div key={i} className="rounded-xl bg-[#121212] shadow-2xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden border border-[#222] hover:border-[#6366F1]/30">
+                  <div 
+                    key={i} 
+                    className="rounded-xl bg-[#121212] shadow-2xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden border border-[#222] hover:border-[#6366F1]/30"
+                    style={{ 
+                      transitionDelay: `${i * 100}ms`,
+                      transform: featuresVisible ? 'translateY(0)' : 'translateY(40px)',
+                      opacity: featuresVisible ? 1 : 0,
+                      transition: 'all 0.7s ease-out'
+                    }}
+                  >
                     <div className="p-7 relative">
                       <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white mb-5 shadow-lg shadow-[#6366F1]/20">
                         {feature.icon}
@@ -514,11 +618,18 @@ export default function Home() {
           <div className="absolute bottom-[-120px] left-0 right-0 h-[240px] bg-gradient-radial from-[#6366F1]/3 to-transparent opacity-20 blur-3xl"></div>
         </section>
         
-        {/* Product Showcase */}
-        <section className="py-24 bg-[#0E0E0E]">
+        {/* Product Showcase with animations */}
+        <section 
+          ref={productRef}
+          className="py-24 bg-[#0E0E0E]"
+        >
           <div className="container mx-auto px-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-              <div className="md:w-1/2">
+              <div 
+                className={`md:w-1/2 transition-all duration-1000 ${
+                  productVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
+                }`}
+              >
                 <h2 className="text-3xl md:text-4xl font-bold mb-6">
                   <span className="text-white">Build your agent team in </span>
                   <span className="effortlessly-text">minutes</span>
@@ -543,7 +654,16 @@ export default function Home() {
                       desc: "Launch your agent team instantly and leverage real-time analytics to monitor performance, identify bottlenecks, and continuously improve your AI operations."
                     }
                   ].map((step, i) => (
-                    <div key={i} className="flex items-start group">
+                    <div 
+                      key={i} 
+                      className="flex items-start group"
+                      style={{ 
+                        transitionDelay: `${(i+1) * 200}ms`,
+                        transform: productVisible ? 'translateX(0)' : 'translateX(-20px)',
+                        opacity: productVisible ? 1 : 0,
+                        transition: 'all 0.7s ease-out'
+                      }}
+                    >
                       <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white font-bold mr-4 shadow-lg shadow-[#6366F1]/20 group-hover:shadow-[#6366F1]/30 transition-all duration-300">
                         {i + 1}
                       </div>
@@ -555,7 +675,15 @@ export default function Home() {
                   ))}
                 </div>
                 
-                <div className="mt-10">
+                <div 
+                  className="mt-10"
+                  style={{ 
+                    transitionDelay: '700ms',
+                    transform: productVisible ? 'translateY(0)' : 'translateY(20px)',
+                    opacity: productVisible ? 1 : 0,
+                    transition: 'all 0.7s ease-out'
+                  }}
+                >
                   <Link 
                     href="/dashboard" 
                     className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center w-fit group"
@@ -568,7 +696,11 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="md:w-1/2 h-[500px] bg-[#0f0f0f] rounded-xl border border-[#2e2e2e] overflow-hidden relative shadow-2xl">
+              <div 
+                className={`md:w-1/2 h-[500px] bg-[#0f0f0f] rounded-xl border border-[#2e2e2e] overflow-hidden relative shadow-2xl transition-all duration-1000 delay-500 ${
+                  productVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+                }`}
+              >
                 {/* Product UI mockup */}
                 <div className="absolute inset-0 bg-grid-pattern opacity-[0.05]"></div>
                 <div className="absolute inset-0 p-6">
@@ -779,14 +911,21 @@ export default function Home() {
           </div>
         </section>
         
-        {/* Integrations Section */}
-        <section className="py-32 bg-[#0F0F0F] relative overflow-hidden">
+        {/* Integrations Section with animations */}
+        <section 
+          ref={integrationsRef}
+          className="py-32 bg-[#0F0F0F] relative overflow-hidden"
+        >
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none"></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-[#6366F1]/5 to-transparent opacity-30 blur-3xl"></div>
           
           <div className="container mx-auto px-6 relative z-10">
             <div className="flex flex-col lg:flex-row gap-16 items-center">
-              <div className="lg:w-1/2">
+              <div 
+                className={`lg:w-1/2 transition-all duration-1000 ${
+                  integrationsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
+                }`}
+              >
                 <div className="flex items-center mb-3">
                   <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Integrations</span>
                 </div>
@@ -829,7 +968,16 @@ export default function Home() {
                       )
                     }
                   ].map((feature, i) => (
-                    <div key={i} className="flex items-start">
+                    <div 
+                      key={i} 
+                      className="flex items-start"
+                      style={{ 
+                        transitionDelay: `${(i+1) * 200}ms`,
+                        transform: integrationsVisible ? 'translateX(0)' : 'translateX(-20px)',
+                        opacity: integrationsVisible ? 1 : 0,
+                        transition: 'all 0.7s ease-out'
+                      }}
+                    >
                       <div className="flex-shrink-0 mt-1 w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#6366F1]/20 to-[#4F46E5]/20 text-[#6366F1] mr-4">
                         {feature.icon}
                       </div>
@@ -841,7 +989,15 @@ export default function Home() {
                   ))}
                 </div>
                 
-                <div className="flex items-center">
+                <div 
+                  className="flex items-center"
+                  style={{ 
+                    transitionDelay: '800ms',
+                    transform: integrationsVisible ? 'translateY(0)' : 'translateY(20px)',
+                    opacity: integrationsVisible ? 1 : 0,
+                    transition: 'all 0.7s ease-out'
+                  }}
+                >
                   <Link 
                     href="/integrations" 
                     className="text-[#6366F1] hover:text-[#4F46E5] font-medium flex items-center transition-colors duration-200 group"
@@ -854,67 +1010,76 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="lg:w-1/2">
-                <div className="relative">
-                  {/* Floating integration cards */}
-                  <div className="relative mx-auto w-full max-w-xl h-[500px] perspective-[1000px]">
-                    <div className="grid grid-cols-3 grid-rows-3 gap-3 w-full h-full absolute top-0 left-0 transform-gpu">
-                      {[
-                        { name: "Slack", color: "#4A154B", icon: "slack.svg", x: 10, y: 10, z: 70, rotate: 15 },
-                        { name: "GitHub", color: "#181717", icon: "github.svg", x: -15, y: -5, z: 40, rotate: -8 },
-                        { name: "Notion", color: "#000000", icon: "notion.svg", x: 25, y: -10, z: 20, rotate: 12 },
-                        { name: "Salesforce", color: "#00A1E0", icon: "salesforce.svg", x: -20, y: 20, z: 50, rotate: -10 },
-                        { name: "Airtable", color: "#F82B60", icon: "airtable.svg", x: 0, y: 0, z: 80, rotate: 0 },
-                        { name: "Zapier", color: "#FF4A00", icon: "zapier.svg", x: 15, y: 15, z: 30, rotate: 5 },
-                        { name: "MySQL", color: "#4479A1", icon: "mysql.svg", x: -10, y: -15, z: 10, rotate: -5 },
-                        { name: "MongoDB", color: "#47A248", icon: "mongodb.svg", x: 20, y: -20, z: 60, rotate: 10 },
-                        { name: "AWS", color: "#FF9900", icon: "aws.svg", x: -25, y: 5, z: 90, rotate: -12 }
-                      ].map((integration, i) => (
-                        <div 
-                          key={i} 
-                          className="relative rounded-lg p-5 bg-[#151515] border border-[#2a2a2a] hover:border-[#6366F1] transition-all duration-300 shadow-xl flex flex-col items-center justify-center group"
-                          style={{
-                            transform: `translateX(${integration.x}px) translateY(${integration.y}px) translateZ(${integration.z}px) rotateY(${integration.rotate}deg)`,
-                            transition: 'all 0.5s ease-out',
-                            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05)'
-                          }}
-                        >
-                          <div className="w-12 h-12 rounded-lg bg-white bg-opacity-10 flex items-center justify-center mb-3">
-                            <div className="w-6 h-6 opacity-70"></div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-medium text-white mb-1">{integration.name}</div>
-                            <div className="text-xs text-[#888]">Integrated</div>
-                          </div>
-                          <div className="absolute inset-0 bg-gradient-to-br from-[#6366F1]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+              <div 
+                className={`lg:w-1/2 transition-all duration-1000 delay-500 ${
+                  integrationsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+                }`}
+              >
+                {/* Floating integration cards */}
+                <div className="relative mx-auto w-full max-w-xl h-[500px] perspective-[1000px]">
+                  <div className="grid grid-cols-3 grid-rows-3 gap-3 w-full h-full absolute top-0 left-0 transform-gpu">
+                    {[
+                      { name: "Slack", color: "#4A154B", icon: "slack.svg", x: 10, y: 10, z: 70, rotate: 15 },
+                      { name: "GitHub", color: "#181717", icon: "github.svg", x: -15, y: -5, z: 40, rotate: -8 },
+                      { name: "Notion", color: "#000000", icon: "notion.svg", x: 25, y: -10, z: 20, rotate: 12 },
+                      { name: "Salesforce", color: "#00A1E0", icon: "salesforce.svg", x: -20, y: 20, z: 50, rotate: -10 },
+                      { name: "Airtable", color: "#F82B60", icon: "airtable.svg", x: 0, y: 0, z: 80, rotate: 0 },
+                      { name: "Zapier", color: "#FF4A00", icon: "zapier.svg", x: 15, y: 15, z: 30, rotate: 5 },
+                      { name: "MySQL", color: "#4479A1", icon: "mysql.svg", x: -10, y: -15, z: 10, rotate: -5 },
+                      { name: "MongoDB", color: "#47A248", icon: "mongodb.svg", x: 20, y: -20, z: 60, rotate: 10 },
+                      { name: "AWS", color: "#FF9900", icon: "aws.svg", x: -25, y: 5, z: 90, rotate: -12 }
+                    ].map((integration, i) => (
+                      <div 
+                        key={i} 
+                        className="relative rounded-lg p-5 bg-[#151515] border border-[#2a2a2a] hover:border-[#6366F1] transition-all duration-300 shadow-xl flex flex-col items-center justify-center group"
+                        style={{
+                          transform: `translateX(${integration.x}px) translateY(${integration.y}px) translateZ(${integration.z}px) rotateY(${integration.rotate}deg)`,
+                          transition: 'all 0.5s ease-out',
+                          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05)'
+                        }}
+                      >
+                        <div className="w-12 h-12 rounded-lg bg-white bg-opacity-10 flex items-center justify-center mb-3">
+                          <div className="w-6 h-6 opacity-70"></div>
                         </div>
-                      ))}
-                    </div>
+                        <div className="text-center">
+                          <div className="font-medium text-white mb-1">{integration.name}</div>
+                          <div className="text-xs text-[#888]">Integrated</div>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#6366F1]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                      </div>
+                    ))}
                   </div>
-                  
-                  {/* Connection lines between integration cards */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    <svg className="w-full h-full opacity-30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M100,100 C150,120 250,150 300,200" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-                      <path d="M200,50 C220,100 250,200 280,300" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-                      <path d="M50,200 C100,220 200,250 350,280" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-                      <path d="M120,300 C150,250 200,200 250,150" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-                    </svg>
-                  </div>
-                  
-                  {/* Central glow */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#6366F1] rounded-full blur-3xl opacity-10"></div>
                 </div>
+                
+                {/* Connection lines between integration cards */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <svg className="w-full h-full opacity-30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M100,100 C150,120 250,150 300,200" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+                    <path d="M200,50 C220,100 250,200 280,300" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+                    <path d="M50,200 C100,220 200,250 350,280" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+                    <path d="M120,300 C150,250 200,200 250,150" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+                  </svg>
+                </div>
+                
+                {/* Central glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#6366F1] rounded-full blur-3xl opacity-10"></div>
               </div>
             </div>
           </div>
         </section>
         
-        {/* Testimonials */}
-        <section className="py-32 bg-[#0E0E0E] relative overflow-hidden">
+        {/* Testimonials with animations */}
+        <section 
+          ref={testimonialsRef}
+          className="py-32 bg-[#0E0E0E] relative overflow-hidden"
+        >
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none"></div>
           <div className="container mx-auto px-6 relative z-10">
-            <div className="text-center mb-16">
+            <div 
+              className={`text-center mb-16 transition-all duration-700 ${
+                testimonialsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
               <div className="flex items-center justify-center mb-3">
                 <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Testimonials</span>
               </div>
@@ -948,7 +1113,16 @@ export default function Home() {
                   rating: 5
                 }
               ].map((testimonial, i) => (
-                <div key={i} className="bg-[#151515] p-6 rounded-xl border border-[#2a2a2a] hover:border-[#3a3a3a] transition-all duration-300 group h-full flex flex-col">
+                <div 
+                  key={i} 
+                  className="bg-[#151515] p-6 rounded-xl border border-[#2a2a2a] hover:border-[#3a3a3a] transition-all duration-300 group h-full flex flex-col"
+                  style={{ 
+                    transitionDelay: `${i * 200}ms`,
+                    transform: testimonialsVisible ? 'translateY(0)' : 'translateY(40px)',
+                    opacity: testimonialsVisible ? 1 : 0,
+                    transition: 'all 0.7s ease-out'
+                  }}
+                >
                   <div className="mb-5">
                     <svg className="w-8 h-8 text-[#6366F1]/40" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
@@ -983,7 +1157,11 @@ export default function Home() {
               ))}
             </div>
             
-            <div className="flex justify-center mt-10">
+            <div 
+              className={`flex justify-center mt-10 transition-all duration-700 delay-700 ${
+                testimonialsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
               <Link 
                 href="/case-studies" 
                 className="px-6 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center group"
@@ -1000,13 +1178,20 @@ export default function Home() {
           <div className="absolute bottom-[-120px] left-0 right-0 h-[240px] bg-gradient-radial from-[#6366F1]/2 to-transparent opacity-20 blur-3xl"></div>
         </section>
         
-        {/* CTA Section */}
-        <section className="py-32 relative overflow-hidden">
+        {/* CTA Section with animations */}
+        <section 
+          ref={ctaRef}
+          className="py-32 relative overflow-hidden"
+        >
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-radial from-[#6366F1]/10 to-transparent opacity-30 blur-3xl"></div>
           
           <div className="container mx-auto px-6 relative z-10">
-            <div className="max-w-4xl mx-auto text-center">
+            <div 
+              className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${
+                ctaVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+              }`}
+            >
               <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to build your AI team?</h2>
               <p className="text-xl text-[#AAAAAA] mb-10 max-w-2xl mx-auto">
                 Start building powerful AI agent systems today with our flexible pricing plans.
@@ -1061,6 +1246,51 @@ export default function Home() {
         
         .effortlessly-text:hover {
           text-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+        }
+        
+        /* Add animation classes */
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes fadeInRight {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes zoomIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
       `}</style>
     </div>
