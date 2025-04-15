@@ -33,6 +33,28 @@ export async function GET(request: Request) {
       console.log('Code exchange successful, redirecting to dashboard')
       return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
     } else if (token_hash && type) {
+      // Handle password recovery specifically
+      if (type === 'recovery') {
+        console.log('Processing password recovery request')
+        
+        // First verify the token to establish a session
+        const { error } = await supabase.auth.verifyOtp({
+          type: 'recovery',
+          token_hash,
+        })
+
+        if (error) {
+          console.error('Error verifying recovery token:', error)
+          return NextResponse.redirect(
+            new URL(`/auth/auth-error?reason=recovery_failed&error=${encodeURIComponent(error.message)}`, 
+            requestUrl.origin)
+          )
+        }
+        
+        // After verification succeeds, redirect to the reset password page
+        return NextResponse.redirect(new URL('/auth/reset-password', requestUrl.origin))
+      }
+      
       // Handle email confirmation
       console.log('Processing email confirmation with token_hash')
       const { error } = await supabase.auth.verifyOtp({

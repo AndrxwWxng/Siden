@@ -107,7 +107,7 @@ export default function Home() {
               
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
                 <Link 
-                  href="/dashboard" 
+                  href="/signup" 
                   className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[180px]"
                 >
                   Start building
@@ -685,7 +685,7 @@ export default function Home() {
                   }}
                 >
                   <Link 
-                    href="/dashboard" 
+                    href="/signup" 
                     className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center w-fit group"
                   >
                     Start building now
@@ -1199,7 +1199,7 @@ export default function Home() {
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link 
-                  href="/dashboard" 
+                  href="/signup" 
                   className="px-8 py-4 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[200px]"
                 >
                   Get started for free

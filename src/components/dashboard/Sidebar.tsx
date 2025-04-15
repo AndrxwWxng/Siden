@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Folder, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import Logo from '../Logo';
 import UserProfile from './UserProfile';
 import { Project } from './types';
+import { createClient } from '@/utils/supabase/client';
 
 interface SidebarProps {
   projects: Project[];
@@ -15,6 +16,35 @@ interface SidebarProps {
 export const Sidebar = ({ projects, selectedProject, onNewProject, onCollapse }: SidebarProps) => {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [userSession, setUserSession] = useState<any>(null);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      setUserSession(data.session);
+      
+      // If no session, redirect to sign in
+      if (!data.session) {
+        router.push('/signin');
+      }
+    };
+    
+    checkSession();
+    
+    // Set up subscription for auth changes
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserSession(session);
+      if (!session) {
+        router.push('/signin');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
 
   const handleCollapse = () => {
     const newCollapsed = !isCollapsed;
@@ -42,7 +72,7 @@ export const Sidebar = ({ projects, selectedProject, onNewProject, onCollapse }:
           {isCollapsed ? (
             <button 
               onClick={onNewProject}
-              className="w-8 h-8 flex items-center justify-center bg-[#6366F1] hover:bg-[#5254CC] rounded-md transition-colors"
+              className="w-8 h-8 flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 rounded-md transition-colors"
               title="Create Project"
             >
               <Plus size={16} />
@@ -50,7 +80,7 @@ export const Sidebar = ({ projects, selectedProject, onNewProject, onCollapse }:
           ) : (
             <button 
               onClick={onNewProject}
-              className="w-full flex items-center justify-center px-4 py-3 bg-[#6366F1] hover:bg-[#5254CC] rounded-lg transition-colors text-sm font-medium"
+              className="w-full flex items-center justify-center px-4 py-3 bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors text-sm font-medium"
             >
               Create Project
             </button>
@@ -101,7 +131,12 @@ export const Sidebar = ({ projects, selectedProject, onNewProject, onCollapse }:
         
         {/* User profile */}
         <div className={`py-3 ${isCollapsed ? 'px-1 flex justify-center' : 'px-3'}`}>
-          <UserProfile collapsed={isCollapsed} username="Kendall Booker" plan="Professional plan" />
+          <UserProfile 
+            collapsed={isCollapsed} 
+            username={userSession?.user?.user_metadata?.name || userSession?.user?.user_metadata?.full_name} 
+            email={userSession?.user?.email}
+            plan={userSession?.user?.user_metadata?.plan || 'Free plan'} 
+          />
         </div>
       </div>
     </div>

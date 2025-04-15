@@ -37,9 +37,10 @@ export default function AuthStatus() {
         <SignOutButton />
         <Link 
           href="/dashboard" 
-          className="px-6 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:-translate-y-[2px]"
+          className="relative overflow-hidden px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg group"
         >
-          Dashboard
+          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/40 to-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+          <span className="relative z-10 font-medium">Dashboard</span>
         </Link>
       </>
     );
@@ -52,13 +53,14 @@ export default function AuthStatus() {
         className="px-4 py-2 text-[#AAAAAA] hover:text-white transition-all duration-300 relative group"
       >
         <span>Log in</span>
-        <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#6366F1] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+        <span className="absolute inset-x-0 bottom-0 h-[2px] bg-indigo-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
       </Link>
       <Link 
-        href="/dashboard" 
-        className="px-6 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:-translate-y-[2px]"
+        href="/signup" 
+        className="relative overflow-hidden px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg group"
       >
-        Start building
+        <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/40 to-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+        <span className="relative z-10 font-medium">Start building</span>
       </Link>
     </>
   );
