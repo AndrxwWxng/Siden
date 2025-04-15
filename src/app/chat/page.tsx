@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { useChat } from "@ai-sdk/react";
+import { useChat, Message } from "@ai-sdk/react";
 import Image from "next/image";
 import { detectAndDelegate } from "./agent-delegator";
 import MessageFormatter from "@/components/MessageFormatter";
 import { XIcon, MenuIcon, RefreshCcwIcon, AlertCircleIcon, SendIcon } from "lucide-react";
 import React from "react";
+import MultimodalUpload from "@/components/MultimodalUpload";
 
 const agentRoles = [
   {
@@ -104,6 +105,7 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
+  const [attachedFiles, setAttachedFiles] = useState<{ data: File, type: string, preview?: string }[]>([]);
   
   const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, append, setMessages } = useChat({
     api: agentEndpoints[selectedAgent],
@@ -113,6 +115,7 @@ export default function Chat() {
   const resetMessages = useCallback(() => {
     setMessages([]);
     setError(null);
+    setAttachedFiles([]);
   }, [setMessages]);
 
   // Get the selected agent data
@@ -120,42 +123,221 @@ export default function Chat() {
     return agentRoles.find(role => role.id === selectedAgent) || agentRoles[0];
   }, [selectedAgent]);
   
-  // Custom submit handler to intercept delegation requests
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Handle file selection
+  const handleFileSelect = (files: { data: File, type: string, preview?: string }[]) => {
+    setAttachedFiles(files);
+  };
+  
+  // Process files to the format expected by the API
+  const processFilesForMessage = async () => {
+    const contentParts = [];
     
-    if (!input.trim()) return;
+    // Add text content if it exists
+    if (input.trim()) {
+      contentParts.push({ type: 'text', text: input });
+    }
     
-    // Add user message immediately
-    append({ role: "user", content: input });
-    const userInput = input;
-    handleInputChange({ target: { value: "" } } as React.ChangeEvent<HTMLInputElement>);
-    
-    // First check if we need to delegate this to another agent
-    if (selectedAgent === 'ceo') {
+    // Process each file
+    for (const file of attachedFiles) {
       try {
-        setIsProcessing(true);
-        setError(null);
+        const fileData = await readFileAsDataURL(file.data);
+        const base64Data = fileData.split(',')[1]; // Remove the data URL prefix
         
-        const delegationResponse = await detectAndDelegate(userInput);
-        
-        if (delegationResponse) {
-          // If delegation was successful, add the delegated response
-          append({ role: "assistant", content: delegationResponse.result });
-          setIsProcessing(false);
-          return;
+        if (file.type === 'image') {
+          contentParts.push({
+            type: 'image',
+            data: base64Data,
+            mimeType: file.data.type
+          });
+        } else if (file.data.type === 'application/pdf') {
+          contentParts.push({
+            type: 'file',
+            data: base64Data,
+            mimeType: 'application/pdf'
+          });
+        } else {
+          // Other file types as text if possible
+          try {
+            const textContent = await readFileAsText(file.data);
+            contentParts.push({
+              type: 'text',
+              text: `File contents of ${file.data.name}:\n${textContent}`
+            });
+          } catch (error) {
+            console.error('Error reading file as text:', error);
+            contentParts.push({
+              type: 'text',
+              text: `[File attached: ${file.data.name}, but content could not be read]`
+            });
+          }
         }
-      } catch (err) {
-        console.error("Delegation error:", err);
-        setError("An error occurred when delegating to other agents. Falling back to direct response.");
-      } finally {
-        setIsProcessing(false);
+      } catch (error) {
+        console.error('Error processing file:', error);
       }
     }
     
-    // If we didn't delegate or delegation failed, use the original API
-    originalHandleSubmit(e);
-  }, [input, selectedAgent, originalHandleSubmit, append, handleInputChange]);
+    return contentParts;
+  };
+  
+  // Helper function to read file as data URL
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+  
+  // Helper function to read file as text
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  };
+  
+  // Custom submit handler to intercept delegation requests and handle files
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (!input.trim() && attachedFiles.length === 0) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      let userContent: string | any[] = input;
+      
+      // If we have attached files, process them
+      if (attachedFiles.length > 0) {
+        userContent = await processFilesForMessage();
+        
+        // For UI display purposes only - actual content is handled differently
+        const fileNames = attachedFiles.map(f => f.data.name).join(', ');
+        
+        // Visual-only representation for the UI - need to use 'as any' to bypass type checking
+        append({ role: "user", content: userContent as any });
+      } else {
+        // Text-only message
+        append({ role: "user", content: input });
+      }
+      
+      // Keep a copy for delegation
+      const userInput = input;
+      
+      // Clear input and files
+      handleInputChange({ target: { value: "" } } as React.ChangeEvent<HTMLInputElement>);
+      setAttachedFiles([]);
+      
+      // First check if we need to delegate this to another agent (only for text-only messages)
+      if (selectedAgent === 'ceo' && (!attachedFiles.length || typeof userContent === 'string')) {
+        try {
+          const delegationResponse = await detectAndDelegate(userInput);
+          
+          if (delegationResponse) {
+            // If delegation was successful, add the delegated response
+            append({ role: "assistant", content: delegationResponse.result });
+            setIsProcessing(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Delegation error:", err);
+          setError("An error occurred when delegating to other agents. Falling back to direct response.");
+        }
+      }
+      
+      // If we didn't delegate or delegation failed, use the original API
+      // We need to manually call the API with our processed content
+      try {
+        const response = await fetch(agentEndpoints[selectedAgent], {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: [
+              ...messages.slice(0, -1), // All previous messages except the last one we just added
+              { role: "user", content: userContent }
+            ]
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'No error details available');
+          console.error(`API request failed: ${response.status}`, errorText);
+          throw new Error(`API request failed: ${response.status}. ${response.status === 500 ? 'Server error' : errorText}`);
+        }
+        
+        // Handle streaming response
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('Response body is null');
+        }
+        
+        let responseContent = '';
+        
+        // Read the streamed response
+        const read = async () => {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            append({ role: "assistant", content: responseContent });
+            setIsProcessing(false);
+            return;
+          }
+          
+          // Decode and process chunk
+          const chunk = new TextDecoder().decode(value);
+          try {
+            // Process SSE format
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(5);
+                if (data === '[DONE]') continue;
+                
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.choices?.[0]?.delta?.content) {
+                    responseContent += parsed.choices[0].delta.content;
+                  }
+                } catch (e) {
+                  console.error('Error parsing JSON from stream:', e);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error processing stream chunk:', e);
+          }
+          
+          // Continue reading
+          await read();
+        };
+        
+        await read();
+        
+      } catch (err) {
+        console.error("Error in chat:", err);
+        setError(`An error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setIsProcessing(false);
+        
+        // Add fallback message if appropriate
+        if (err instanceof Error && err.message.includes('500')) {
+          append({ 
+            role: "assistant", 
+            content: "I'm having trouble connecting to my backend services. This might be due to high traffic or a temporary issue. Please try again in a moment." 
+          });
+        }
+      }
+      
+    } catch (err) {
+      console.error("Error in chat:", err);
+      setError("An error occurred while processing your message.");
+      setIsProcessing(false);
+    }
+  }, [input, selectedAgent, originalHandleSubmit, append, handleInputChange, messages, attachedFiles]);
   
   // Clear messages when changing agents
   useEffect(() => {
@@ -283,7 +465,7 @@ export default function Chat() {
                     }
                   `}
                 >
-                  {message.content}
+                  <MessageFormatter content={message.content} />
                 </div>
               </div>
             ))
@@ -316,23 +498,39 @@ export default function Chat() {
         </div>
 
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <form onSubmit={handleSubmit} className="flex items-center space-x-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={input}
-                onChange={handleInputChange}
-                placeholder="Type your message..."
-                className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border-0 rounded-lg focus-ring text-zinc-800 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-400"
-              />
+          <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
+            {/* Display attached files preview */}
+            {attachedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 pb-2">
+                {attachedFiles.map((file, index) => (
+                  <div key={index} className="text-xs text-zinc-500">
+                    {file.data.name}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={handleInputChange}
+                  placeholder="Type your message..."
+                  className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border-0 rounded-lg focus-ring text-zinc-800 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-400"
+                />
+                <div className="absolute left-2 bottom-1">
+                  <MultimodalUpload onFileSelect={handleFileSelect} />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={isProcessing || (!input.trim() && attachedFiles.length === 0)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg focus-ring flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <SendIcon className="h-5 w-5" />
+              </button>
             </div>
-            <button
-              type="submit"
-              disabled={isProcessing || !input.trim()}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg focus-ring flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <SendIcon className="h-5 w-5" />
-            </button>
           </form>
         </div>
       </div>

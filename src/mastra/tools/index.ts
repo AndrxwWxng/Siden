@@ -230,3 +230,27 @@ export { webSearchTool, fallbackWebSearchTool } from './web-search';
 
 // Export web browser tools
 export { webBrowserTool, webScraperTool } from './web-browser';
+
+// Define an interface for the promptsTool
+interface PromptsToolType {
+  name: string;
+  description: string;
+  handlers: {
+    searchPrompts: (params?: { searchTerm?: string }) => Promise<any>;
+    listPrompts: (params?: { directory?: string }) => Promise<any>;
+    getPromptContent: (params: { promptPath: string }) => Promise<any>;
+  };
+}
+
+// Export a placeholder for the promptsTool
+// The actual implementation is in promptsTool.js
+export const promptsTool: PromptsToolType = {
+  name: 'promptsTool',
+  description: 'Tool for accessing and searching prompt templates',
+  handlers: {
+    // These will be replaced by the actual implementation
+    searchPrompts: async () => ({}),
+    listPrompts: async () => ({}),
+    getPromptContent: async () => ({})
+  }
+};

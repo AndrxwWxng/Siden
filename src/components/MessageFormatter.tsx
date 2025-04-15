@@ -11,145 +11,165 @@ declare global {
 }
 
 interface MessageFormatterProps {
-  content: string;
+  content: string | { type: string; data?: string; text?: string; mimeType?: string }[];
 }
 
-export const MessageFormatter: React.FC<MessageFormatterProps> = ({ content }) => {
-  // Process code blocks
-  const processedContent = formatMarkdownContent(content);
+// Helper function to format markdown content
+const formatMarkdownContent = (content: string) => {
+  let processedContent = content;
   
+  // Format code blocks
+  processedContent = processedContent.replace(
+    /```(\w+)?\n([\s\S]+?)\n```/g,
+    (match, language, code) => {
+      return `<pre class="code-block language-${language || 'plaintext'}"><code>${
+        code.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      }</code></pre>`;
+    }
+  );
+  
+  // Format inline code
+  processedContent = processedContent.replace(
+    /`([^`]+)`/g, 
+    (match, code) => {
+      return `<code class="inline-code">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>`;
+    }
+  );
+  
+  // Format links
+  processedContent = processedContent.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g, 
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">$1</a>'
+  );
+  
+  // Format lists
+  processedContent = processedContent.replace(
+    /^\s*[-*]\s+(.+)$/gm,
+    '<li>$1</li>'
+  ).replace(
+    /(<li>.+<\/li>)\n(?=<li>)/g,
+    '$1'
+  ).replace(
+    /(<li>.+<\/li>)(?!\n)/g,
+    '<ul class="list-disc pl-5 my-2">$1</ul>'
+  );
+  
+  // Format numbered lists
+  processedContent = processedContent.replace(
+    /^\s*(\d+)\.\s+(.+)$/gm,
+    '<li>$2</li>'
+  ).replace(
+    /(<li>.+<\/li>)\n(?=<li>)/g,
+    '$1'
+  ).replace(
+    /(<li>.+<\/li>)(?!\n)/g,
+    '<ol class="list-decimal pl-5 my-2">$1</ol>'
+  );
+  
+  // Format paragraphs - using [\s\S] instead of . with s flag for cross-platform compatibility 
+  processedContent = processedContent.replace(
+    /\n\n([\s\S]+?)(?=\n\n|$)/g,
+    '<p>$1</p>'
+  );
+  
+  // Format line breaks
+  processedContent = processedContent.replace(/\n/g, '<br/>');
+  
+  return processedContent;
+};
+
+export const MessageFormatter: React.FC<MessageFormatterProps> = ({ content }) => {
+  // If content is a string, format it as before
+  if (typeof content === 'string') {
+    const processedContent = formatMarkdownContent(content);
+    return (
+      <div className="message-content-formatted">
+        <div dangerouslySetInnerHTML={{ __html: processedContent }} />
+      </div>
+    );
+  }
+  
+  // If content is an array (multimodal content), process each part
+  if (Array.isArray(content)) {
+    return (
+      <div className="message-content-formatted">
+        {content.map((part, index) => {
+          if (part.type === 'text' && part.text) {
+            // Text content
+            return (
+              <div key={index} dangerouslySetInnerHTML={{ __html: formatMarkdownContent(part.text) }} />
+            );
+          } else if (part.type === 'image' && part.data) {
+            // Image content
+            return (
+              <div key={index} className="my-2">
+                <img 
+                  src={`data:${part.mimeType || 'image/jpeg'};base64,${part.data}`} 
+                  alt="Uploaded image" 
+                  className="max-w-full rounded-md"
+                  style={{ maxHeight: '400px' }}
+                />
+              </div>
+            );
+          } else if (part.type === 'file' && part.data) {
+            // File attachment (e.g. PDF)
+            if (part.mimeType === 'application/pdf') {
+              return (
+                <div key={index} className="my-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800">
+                  <div className="flex items-center text-sm">
+                    <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="font-medium">PDF Document</span>
+                  </div>
+                  <a 
+                    href={`data:application/pdf;base64,${part.data}`}
+                    download="document.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-block px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200 transition duration-150 ease-in-out"
+                  >
+                    Download PDF
+                  </a>
+                </div>
+              );
+            }
+            
+            return (
+              <div key={index} className="my-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800">
+                <div className="flex items-center text-sm">
+                  <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <span className="font-medium">File Attachment</span>
+                </div>
+                <a 
+                  href={`data:${part.mimeType || 'application/octet-stream'};base64,${part.data}`}
+                  download="file"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200 transition duration-150 ease-in-out"
+                >
+                  Download File
+                </a>
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
+  }
+  
+  // Fallback for any other content format
   return (
     <div className="message-content-formatted">
-      <div dangerouslySetInnerHTML={{ __html: processedContent }} />
+      <div className="text-gray-500 italic">
+        [Content could not be displayed]
+      </div>
     </div>
   );
 };
-
-export function formatMarkdownContent(content: string): string {
-  if (!content) return '';
-  
-  let processedContent = content;
-  
-  // Convert line breaks to paragraphs - this must be done first
-  processedContent = processedContent
-    .split('\n\n')
-    .map(paragraph => paragraph.trim())
-    .filter(paragraph => paragraph.length > 0)
-    .map(paragraph => 
-      // Skip wrapping in <p> if it's a heading, list, or code block
-      /^#{1,5}\s/.test(paragraph) || 
-      /^(\s*-\s)/.test(paragraph) || 
-      /^```/.test(paragraph) ||
-      /^>/.test(paragraph) ? 
-        paragraph : 
-        `<p>${paragraph.replace(/\n/g, '<br/>')}</p>`
-    )
-    .join('\n');
-
-  // Process code blocks with language
-  processedContent = processedContent.replace(
-    /```(\w+)\n([\s\S]*?)```/g, 
-    (_, language, code) => `
-      <div class="${styles.codeCanvas}">
-        <div class="${styles.codeHeader}">
-          <span class="${styles.codeLanguage}">${language}</span>
-          <div class="${styles.codeActions}">
-            <button class="${styles.codeCopyBtn}" onclick="copyCodeToClipboard(this)">Copy</button>
-          </div>
-        </div>
-        <pre class="${styles.codeBlock}"><code class="${styles.codeContent}">${escapeHtml(code.trim())}</code></pre>
-      </div>
-    `
-  );
-  
-  // Process code blocks without language
-  processedContent = processedContent.replace(
-    /```\n([\s\S]*?)```/g, 
-    (_, code) => `
-      <div class="${styles.codeCanvas}">
-        <div class="${styles.codeHeader}">
-          <span class="${styles.codeLanguage}">code</span>
-          <div class="${styles.codeActions}">
-            <button class="${styles.codeCopyBtn}" onclick="copyCodeToClipboard(this)">Copy</button>
-          </div>
-        </div>
-        <pre class="${styles.codeBlock}"><code class="${styles.codeContent}">${escapeHtml(code.trim())}</code></pre>
-      </div>
-    `
-  );
-  
-  // Process inline code
-  processedContent = processedContent.replace(
-    /`([^`]+)`/g, 
-    (_, code) => `<code class="${styles.inlineCode}">${escapeHtml(code)}</code>`
-  );
-  
-  // Process section titles (###)
-  processedContent = processedContent
-    .replace(/^### (.*$)/gim, `<h3 class="${styles.heading3}">$1</h3>`)
-    .replace(/^#### (.*$)/gim, `<h4 class="${styles.heading4}">$1</h4>`)
-    .replace(/^##### (.*$)/gim, `<h5 class="${styles.heading5}">$1</h5>`);
-  
-  // Process lists
-  processedContent = processedContent
-    .replace(/^\s*- (.*$)/gim, `<li class="${styles.listItem}">$1</li>`)
-    .replace(new RegExp(`(<li class="${styles.listItem}">.*<\/li>\\s*)+`, 'gim'), 
-      (match) => `<ul class="${styles.list}">${match}</ul>`);
-  
-  // Process bold
-  processedContent = processedContent.replace(
-    /\*\*(.*?)\*\*/g, 
-    (_, text) => `<strong class="${styles.boldText}">${text}</strong>`
-  );
-  
-  // Process blockquotes
-  processedContent = processedContent.replace(
-    /^>\s*(.*$)/gim,
-    (_, text) => `<blockquote class="${styles.blockquote}">${text}</blockquote>`
-  );
-  
-  // Process file paths (looks for patterns like path/to/file.js or /absolute/path/file.ext)
-  processedContent = processedContent.replace(
-    /\b(\/[\w\.\-\/]+\.\w+|\w+\/[\w\.\-\/]+\.\w+)\b/g,
-    (match) => `<span class="${styles.filePath}">${match}</span>`
-  );
-  
-  // Process highlight text (==highlighted==)
-  processedContent = processedContent.replace(
-    /==(.*?)==/g,
-    (_, text) => `<span class="${styles.highlight}">${text}</span>`
-  );
-  
-  // Process keyboard inputs
-  processedContent = processedContent.replace(
-    /<kbd>(.*?)<\/kbd>/g,
-    (_, text) => `<span class="${styles.kbd}">${text}</span>`
-  );
-  
-  // Process colored text for warnings, errors, success
-  processedContent = processedContent
-    .replace(/<error>(.*?)<\/error>/g, (_, text) => `<span class="${styles.error}">${text}</span>`)
-    .replace(/<warning>(.*?)<\/warning>/g, (_, text) => `<span class="${styles.warning}">${text}</span>`)
-    .replace(/<success>(.*?)<\/success>/g, (_, text) => `<span class="${styles.success}">${text}</span>`);
-
-  // Process section titles without # (e.g. Project Plan: or Understanding Mastra AI:)
-  processedContent = processedContent.replace(
-    /^([A-Z][A-Za-z\s]+):\s*$/gim,
-    (match) => `<div class="${styles.sectionTitle}">${match}</div>`
-  );
-  
-  return processedContent;
-}
-
-// Helper function to escape HTML special characters
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
 // Add copy functionality
 if (typeof window !== 'undefined') {
