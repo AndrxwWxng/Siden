@@ -45,8 +45,12 @@ export function useAuth() {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      router.push('/');
+      
+      // First refresh the router for server components
       router.refresh();
+      
+      // Then do a full page refresh to ensure auth state is fully updated
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {
@@ -59,14 +63,20 @@ export function useAuth() {
     
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
         throw error;
       }
       
-      router.push('/dashboard');
-      router.refresh();
+      if (data.session) {
+        // Refresh router for server components
+        router.refresh();
+        
+        // Do a full page refresh to ensure auth state is fully updated
+        window.location.href = '/dashboard';
+      }
+      
       return { error: null };
     } catch (error: any) {
       return { error: error.message || 'Failed to sign in' };

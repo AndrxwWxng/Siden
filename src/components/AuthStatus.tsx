@@ -13,8 +13,8 @@ export default function AuthStatus() {
     const checkAuth = async () => {
       try {
         const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        setIsAuthenticated(!!session);
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsAuthenticated(!!user);
       } catch (error) {
         console.error('Error checking auth status:', error);
       } finally {
@@ -23,6 +23,18 @@ export default function AuthStatus() {
     };
     
     checkAuth();
+    
+    // Set up auth state listener
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      setIsLoading(false);
+    });
+    
+    // Cleanup subscription when component unmounts
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
   
   if (isLoading) {

@@ -15,28 +15,71 @@ export default function SignIn() {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const router = useRouter();
 
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkSession = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        router.push('/dashboard');
+      }
+    };
+    
+    checkSession();
+  }, [router]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      setLoading(false);
+      return;
+    }
+    
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ 
+      const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password 
       });
       
       if (error) {
-        setError(error.message);
-      } else {
-        router.push('/dashboard');
+        console.error('Sign in error:', error.message);
+        
+        // Format error message for common errors
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please try again.');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Please verify your email before signing in.');
+        } else {
+          setError(error.message);
+        }
+        
+        setLoading(false);
+        return;
+      }
+      
+      if (data?.session) {
+        // Get redirect path from URL query params or default to dashboard
+        const params = new URLSearchParams(window.location.search);
+        const redirectTo = params.get('next') || '/dashboard';
+        
+        // Refresh router for server components
         router.refresh();
+        
+        // Force a hard refresh to ensure new session is fully applied
+        window.location.href = redirectTo;
+      } else {
+        setError('Something went wrong. Please try again.');
+        setLoading(false);
       }
     } catch (err) {
       console.error('Sign in error:', err);
-      setError('An unexpected error occurred');
-    } finally {
+      setError('An unexpected error occurred. Please try again later.');
       setLoading(false);
     }
   };

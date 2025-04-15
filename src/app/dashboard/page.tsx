@@ -7,9 +7,12 @@ import {
   PlusCircle, Settings, Users, ChevronRight, Briefcase, ArrowRight, 
   Database, Bell, Search, Grid, Heart, Filter, Home, MessageSquare,
   BarChart3, Calendar, HelpCircle, ChevronLeft, User, Bot, Paperclip, Send,
-  FileText, Code, BookOpen
+  FileText, Code, BookOpen, LogOut
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { ProjectService } from '@/services/projectService';
+import { Project } from '@/components/dashboard/types';
+import SignOutButton from '@/components/SignOutButton';
 
 // Agent role definitions with capabilities
 const agentRoles = [
@@ -79,31 +82,7 @@ const agentRoles = [
   }
 ];
 
-// Mock projects for demonstration
-const mockProjects = [
-  {
-    id: 'p1',
-    name: 'Marketing Campaign Builder',
-    description: 'AI-powered tool to create and optimize marketing campaigns',
-    agents: 4,
-    status: 'active',
-    lastActive: '2 hours ago',
-    progress: 72,
-    tags: ['marketing', 'automation']
-  },
-  {
-    id: 'p2',
-    name: 'E-commerce Analytics Dashboard',
-    description: 'Real-time analytics and insights for online stores',
-    agents: 3,
-    status: 'active',
-    lastActive: '1 day ago',
-    progress: 45,
-    tags: ['analytics', 'e-commerce']
-  }
-];
-
-// Import our new components
+// Import our components
 import {
   Sidebar,
   ProjectsHeader,
@@ -127,7 +106,7 @@ const Dashboard = () => {
   const [projectDescription, setProjectDescription] = useState('');
   const [companyInfo, setCompanyInfo] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<string[]>(['ceo', 'dev', 'marketing']);
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [agentName, setAgentName] = useState("");
   const [agentPersonality, setAgentPersonality] = useState("");
@@ -140,23 +119,70 @@ const Dashboard = () => {
     projectFiles: true
   });
   const [user, setUser] = useState<any>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
-      const { data, error } = await createClient().auth.getUser();
-      if (error || !data.user) router.push('/signin');
-      else setUser(data.user);
+      try {
+        setIsLoadingProjects(true);
+        const { data, error } = await createClient().auth.getUser();
+        
+        if (error) {
+          console.error('Auth error:', error.message);
+          router.push('/signin');
+          return;
+        }
+        
+        if (!data.user) {
+          router.push('/signin');
+          return;
+        }
+        
+        setUser(data.user);
+        
+        // Load projects after confirming authentication
+        try {
+          const userProjects = await ProjectService.getUserProjects();
+          setProjects(userProjects);
+        } catch (error) {
+          console.error('Error loading projects:', error);
+        } finally {
+          setIsLoadingProjects(false);
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        router.push('/signin');
+      }
     };
+    
     getUser();
-    // Listen for auth changes
+    
+    // Set up auth state change listener
     const { data: listener } = createClient().auth.onAuthStateChange((event, session) => {
-      if (!session) router.push('/signin');
-      else setUser(session.user);
+      if (event === 'SIGNED_OUT') {
+        router.push('/signin');
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          setUser(session.user);
+          // Reload projects when auth state changes
+          ProjectService.getUserProjects().then(setProjects);
+        }
+      }
     });
-    return () => listener?.subscription.unsubscribe();
+    
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
   }, [router]);
 
-  if (!user) return <div>Loading...</div>;
+  // Show loading state if user is not loaded yet
+  if (!user) return (
+    <div className="flex min-h-screen items-center justify-center bg-[#151515]">
+      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-indigo-600"></div>
+    </div>
+  );
 
   const toggleAgentSelection = (agentId: string) => {
     if (selectedAgents.includes(agentId)) {
@@ -182,44 +208,82 @@ const Dashboard = () => {
     setSelectedView('configure');
   };
   
-  const createProject = () => {
-    // In a real app, this would create the project and redirect
-    setSelectedView('projects');
+  const createProject = async () => {
+    try {
+      setIsCreatingProject(true);
+      
+      // Create project in Supabase
+      const newProject = await ProjectService.createProject({
+        name: projectName,
+        description: projectDescription,
+        status: 'active'
+      });
+      
+      if (newProject) {
+        // Add the new project to the state
+        setProjects(prevProjects => [newProject, ...prevProjects]);
+        setSelectedView('projects');
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+    } finally {
+      setIsCreatingProject(false);
+    }
   };
+
+  // Filter and search projects
+  const filteredProjects = projects.filter(project => {
+    // Apply status filter
+    if (selectedFilter === 'active' && project.status !== 'active') return false;
+    if (selectedFilter === 'archived' && project.status !== 'archived') return false;
+    
+    // Apply search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      return (
+        project.name.toLowerCase().includes(search) ||
+        project.description.toLowerCase().includes(search)
+      );
+    }
+    
+    return true;
+  });
   
   // Render different views based on the current step
   const renderContent = () => {
     switch (selectedView) {
       case 'projects':
-  return (
+        return (
           <div className="max-w-6xl mx-auto px-8 w-full pt-12">
             <div className="mb-16">
               <ProjectsHeader onCreateProject={startNewProject} />
               
               <ProjectSearch 
                 onSearch={setSearchTerm}
-                onFilterChange={(filter) => setSelectedFilter(filter as FilterType)}
-                selectedFilter={selectedFilter as FilterType}
+                onFilterChange={setSelectedFilter}
+                currentFilter={selectedFilter}
               />
-            </div>
-            
-            {mockProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {filteredProjects.map(project => (
-                  <ProjectCard 
-                    key={project.id}
-                    {...project}
-                    onViewProject={(id) => router.push(`/dashboard/project?id=${id}`)}
-                  />
-                ))}
-                
-                <NewProjectCard onClick={startNewProject} />
-              </div>
-            ) : (
-              <div className="flex justify-center items-center h-[calc(100vh-300px)]">
+              
+              {isLoadingProjects ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-8 h-8 border-t-2 border-indigo-500 border-solid rounded-full animate-spin"></div>
+                </div>
+              ) : filteredProjects.length > 0 ? (
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+                  <NewProjectCard onClick={startNewProject} />
+                  
+                  {filteredProjects.map(project => (
+                    <ProjectCard 
+                      key={project.id} 
+                      project={project} 
+                      onClick={() => router.push(`/dashboard/project?id=${project.id}`)}
+                    />
+                  ))}
+                </div>
+              ) : (
                 <EmptyProjectState onCreateProject={startNewProject} />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         );
         
@@ -262,9 +326,9 @@ const Dashboard = () => {
                     rows={3}
                     className="w-full px-4 py-3 bg-[#202020] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
                   />
-          </div>
-          
-          <div>
+                </div>
+                
+                <div>
                   <label className="flex items-center justify-between text-sm mb-2">
                     <span className="font-medium">Company Information</span>
                     <span className="text-[#A3A3A3]">Optional</span>
@@ -321,10 +385,10 @@ const Dashboard = () => {
               <div className="mt-4 flex justify-center">
                 <button className="text-sm text-[#6366F1] hover:text-[#4F46E5] transition-colors">
                   Browse all templates →
-            </button>
-          </div>
-        </div>
-        
+                </button>
+              </div>
+            </div>
+            
             <div className="flex justify-between items-center">
               <button
                 onClick={() => setSelectedView('projects')}
@@ -385,7 +449,7 @@ const Dashboard = () => {
                         isSelected ? 'bg-[#2E2E2E] border-[#6366F1]' : 'bg-transparent hover:bg-[#2E2E2E] border-[#444]'
                       } border rounded-xl p-6 cursor-pointer transition-all`}
                     >
-            <div className="flex items-center">
+                      <div className="flex items-center">
                         <div className="relative mr-5">
                           <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${
                             isSelected ? 'ring-2 ring-[#6366F1]' : 'ring-1 ring-[#444]'
@@ -513,9 +577,9 @@ const Dashboard = () => {
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 6L6 18M6 6L18 18"></path>
                       </svg>
-            </button>
-          </div>
-          
+                    </button>
+                  </div>
+                  
                   {(() => {
                     const agent = agentRoles.find(role => role.id === selectedProfile);
                     if (!agent) return null;
@@ -992,9 +1056,23 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={createProject}
-                className="px-5 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
+                disabled={!projectName.trim() || isCreatingProject}
+                className={`px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg flex items-center relative overflow-hidden group ${
+                  !projectName.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:from-indigo-600 hover:to-indigo-700'
+                }`}
               >
-                Launch Team <ArrowRight size={18} />
+                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/30 to-indigo-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                {isCreatingProject ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-white rounded-full"></div>
+                    <span className="relative z-10">Creating Project...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="relative z-10">Create Project</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1104,21 +1182,6 @@ const Dashboard = () => {
     }
   };
   
-  // Filter projects based on search and filter
-  const filteredProjects = mockProjects.filter(project => {
-    // Filter by status
-    if (selectedFilter !== 'all' && project.status !== selectedFilter) {
-      return false;
-    }
-    
-    // Filter by search term
-    if (searchTerm && !project.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
-    }
-    
-    return true;
-  });
-  
   // Helper function to get capability descriptions
   const getCapabilityDescription = (capability: string) => {
     const descriptions: {[key: string]: string} = {
@@ -1179,7 +1242,7 @@ const Dashboard = () => {
     <div className="flex min-h-screen bg-[#151515] text-white">
       {/* Sidebar */}
       <Sidebar 
-        projects={mockProjects} 
+        projects={projects} 
         selectedProject={null} 
         onNewProject={startNewProject}
         onCollapse={setSidebarCollapsed}
@@ -1192,10 +1255,9 @@ const Dashboard = () => {
       >
         <div className="h-16 border-b border-[#313131] flex items-center px-6 bg-[#202020]">
           <span className="mr-4">Welcome, {user.email}</span>
-          <button onClick={async () => {
-            await createClient().auth.signOut();
-            router.push('/signin');
-          }} className="ml-auto bg-gray-700 px-3 py-1 rounded">Sign Out</button>
+          <div className="ml-auto">
+            <SignOutButton />
+          </div>
         </div>
         
         <div className="flex-1 overflow-auto bg-[#202020] p-6">

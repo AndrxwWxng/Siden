@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { User } from './types';
-import { Settings, HelpCircle, LogOut, ChevronDown } from 'lucide-react';
+import { Settings, HelpCircle, LogOut, ChevronDown, User as UserIcon } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface UserProfileProps extends Partial<User> {
   username?: string;
@@ -48,9 +49,15 @@ const UserProfile: React.FC<UserProfileProps> = ({
     try {
       setIsLoggingOut(true);
       const supabase = createClient();
+      
+      // Sign out directly with Supabase
       await supabase.auth.signOut();
-      router.push('/');
+      
+      // Refresh router for server components
       router.refresh();
+      
+      // Full page reload to ensure clean state
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {
@@ -100,17 +107,17 @@ const UserProfile: React.FC<UserProfileProps> = ({
       
       {/* Dropdown menu - shown when isOpen is true */}
       {isOpen && (
-        <div className={`absolute bottom-full ${collapsed ? 'left-0 ml-0' : 'left-0'} mb-2 w-[255px] bg-[#202020] border border-[#313131] rounded-lg shadow-xl z-20`}>
-          <div className="p-3">
+        <div className={`absolute bottom-full ${collapsed ? 'left-0 ml-0' : 'left-0'} mb-2 w-[270px] bg-[#202020] border border-[#313131] rounded-lg shadow-xl z-20`}>
+          <div className="p-4">
             <p className="text-xs text-[#94A3B8] mb-2 truncate">{userData.email || 'Loading email...'}</p>
             
             <div className="flex items-center">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center font-medium mr-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center font-medium mr-3">
                 <span className="text-sm">{initials}</span>
               </div>
               
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-white leading-tight truncate max-w-[150px]">
+                <span className="text-sm font-medium text-white leading-tight truncate max-w-[170px]">
                   {userData.username || 'Loading...'}
                 </span>
                 <div className="flex items-center mt-[2px]">
@@ -121,10 +128,14 @@ const UserProfile: React.FC<UserProfileProps> = ({
           </div>
           
           <div className="border-t border-[#313131]">
-            <button className="w-full text-left px-4 py-3 text-sm hover:bg-[#252525] transition-colors flex items-center">
+            <Link href="/dashboard/account" className="w-full text-left px-4 py-3 text-sm hover:bg-[#252525] transition-colors flex items-center">
+              <UserIcon size={16} className="mr-3 text-[#A3A3A3]" />
+              <span>My Account</span>
+            </Link>
+            <Link href="/dashboard/settings" className="w-full text-left px-4 py-3 text-sm hover:bg-[#252525] transition-colors flex items-center">
               <Settings size={16} className="mr-3 text-[#A3A3A3]" />
               <span>Settings</span>
-            </button>
+            </Link>
             <div className="flex items-center justify-between px-4 py-3 text-sm hover:bg-[#252525] transition-colors">
               <div className="flex items-center">
                 <HelpCircle size={16} className="mr-3 text-[#A3A3A3]" />
@@ -134,25 +145,27 @@ const UserProfile: React.FC<UserProfileProps> = ({
             </div>
           </div>
           
-          <div className="border-t border-[#313131]">
+          <div className="border-t border-[#313131] p-3">
             <button 
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="w-full text-left px-4 py-3 text-sm hover:bg-[#252525] transition-colors flex items-center"
+              className="w-full px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-lg transition-all flex items-center justify-center relative overflow-hidden group"
             >
+              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/30 to-indigo-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
               {isLoggingOut ? (
-                <>
-                  <svg className="animate-spin mr-3 h-4 w-4 text-[#A3A3A3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <div className="flex items-center justify-center relative z-10">
+                  <svg className="animate-spin mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>Signing out...</span>
-                </>
+                  <span className="font-medium">Signing out...</span>
+                </div>
               ) : (
-                <>
-                  <LogOut size={16} className="mr-3 text-[#A3A3A3]" />
-                  <span>Sign out</span>
-                </>
+                <div className="flex items-center justify-center relative z-10">
+                  <LogOut size={16} className="mr-2" />
+                  <span className="font-medium">Sign out</span>
+                </div>
               )}
             </button>
           </div>

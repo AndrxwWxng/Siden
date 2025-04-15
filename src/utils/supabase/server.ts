@@ -3,24 +3,36 @@ import { cookies } from 'next/headers'
 import { supabaseConfig } from './config'
 
 export async function createClient() {
+  const cookieStore = cookies()
+  
   return createServerClient(
     supabaseConfig.url,
     supabaseConfig.anonKey,
     {
       cookies: {
-        async getAll() {
-          const cookieStore = await cookies()
-          return Array.from(cookieStore.getAll()).map(cookie => ({
-            name: cookie.name,
-            value: cookie.value,
-          }))
+        get(name) {
+          try {
+            return cookieStore.get(name)?.value
+          } catch (error) {
+            // Handle potential errors from accessing cookies synchronously
+            console.error('Error accessing cookie:', error)
+            return undefined
+          }
         },
-        async setAll(cookiesList) {
-          const cookieStore = await cookies()
-          cookiesList.forEach(cookie => {
-            cookieStore.set(cookie)
-          })
-        }
+        set(name, value, options) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            console.error('Error setting cookie:', error)
+          }
+        },
+        remove(name, options) {
+          try {
+            cookieStore.delete({ name, ...options })
+          } catch (error) {
+            console.error('Error removing cookie:', error)
+          }
+        },
       },
     }
   )

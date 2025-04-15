@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function SignOutButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,17 +13,16 @@ export default function SignOutButton() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/auth/signout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const supabase = createClient();
       
-      if (response.ok) {
-        router.push('/');
-        router.refresh();
-      }
+      // Use direct Supabase signOut method
+      await supabase.auth.signOut();
+      
+      // Then refresh the router to update server components
+      router.refresh();
+      
+      // Finally, redirect to home with a page reload to ensure clean state
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {

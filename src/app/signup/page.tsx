@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -14,47 +14,113 @@ export default function SignUp() {
   const [message, setMessage] = useState('');
   const router = useRouter();
 
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkSession = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        router.push('/dashboard');
+      }
+    };
+    
+    checkSession();
+  }, [router]);
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setMessage('');
     
+    // Validate inputs
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      setLoading(false);
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+    
     try {
       const supabase = createClient();
-      const { error, data } = await supabase.auth.signUp({ 
+      
+      // Create the user account
+      const { error: signUpError, data } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          // Skip email confirmation by using an empty string instead of null
-          emailRedirectTo: '',
-          // Auto-confirm the user
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            email_confirmed: true
+            username: email.split('@')[0], // Default username from email
           }
         }
       });
       
-      if (error) {
-        setError(error.message);
-      } else {
-        // Immediately sign in the user after signup
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+      if (signUpError) {
+        console.error('Sign up error:', signUpError);
+        
+        // Format error message for common errors
+        if (signUpError.message.includes('already registered')) {
+          setError('An account with this email already exists.');
+        } else if (signUpError.message.includes('weak password')) {
+          setError('Password is too weak. Please use a stronger password.');
+        } else {
+          setError(signUpError.message);
+        }
+        
+        setLoading(false);
+        return;
+      }
+      
+      if (data?.user?.identities?.length === 0) {
+        setError('An account with this email already exists.');
+        setLoading(false);
+        return;
+      }
+      
+      // Check if email confirmation is required
+      if (data?.user?.confirmation_sent_at && !data?.session) {
+        setMessage('Success! Check your email to confirm your account before signing in.');
+        setLoading(false);
+        return;
+      }
+      
+      // If no email confirmation required, sign in immediately
+      if (data?.session) {
+        // Force a hard refresh to ensure the session is properly applied
+        window.location.href = '/dashboard';
+        return;
+      }
+      
+      // Try automatic sign in (may not work if email verification is required)
+      try {
+        const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         
         if (signInError) {
-          setError(signInError.message);
+          console.info('Auto sign-in not available (likely email verification required):', signInError.message);
+          setMessage('Account created! Check your email to confirm your account.');
+        } else if (signInData.session) {
+          // Force a hard refresh to ensure the session is properly applied
+          window.location.href = '/dashboard';
         } else {
-          // Redirect to dashboard on successful signup and sign in
-          router.push('/dashboard');
-          router.refresh();
+          setMessage('Account created! Check your email to confirm your account.');
         }
+      } catch (signInErr) {
+        console.error('Auto sign-in error:', signInErr);
+        setMessage('Account created! Check your email to confirm your account.');
       }
     } catch (err) {
       console.error('Sign up error:', err);
-      setError('An unexpected error occurred');
+      setError('An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
