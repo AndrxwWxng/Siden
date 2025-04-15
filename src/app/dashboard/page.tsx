@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Logo from '@/components/Logo';
 import { 
-  PlusCircle, Settings, Users, ChevronRight, Briefcase, ArrowRight, 
-  Database, Bell, Search, Grid, Heart, Filter, Home, MessageSquare,
-  BarChart3, Calendar, HelpCircle, ChevronLeft, User, Bot, Paperclip, Send,
+ Settings, Users, ChevronRight, Briefcase, ArrowRight, 
+  Database, MessageSquare,
+  BarChart3, Calendar, ChevronLeft, User, Bot, Paperclip, Send,
   FileText, Code, BookOpen
 } from 'lucide-react';
 
@@ -75,6 +74,52 @@ const agentRoles = [
     description: 'Gathers and analyzes market data',
     capabilities: ['Competitive analysis', 'Market trends', 'User insights'],
     recommended: false
+  }
+];
+
+// Tools and integrations for agents
+const toolsAndIntegrations = [
+  {
+    id: 'google-sheets',
+    name: 'Google Sheets',
+    icon: '/icons/google-sheets.svg',
+    description: 'Access and manipulate spreadsheet data',
+    connectedAgents: ['CEO', 'Marketing', 'Product', 'Sales', 'Finance', 'Research']
+  },
+  {
+    id: 'gmail',
+    name: 'Gmail',
+    icon: '/icons/gmail.svg',
+    description: 'Send and read emails',
+    connectedAgents: ['CEO', 'Marketing', 'Sales']
+  },
+  {
+    id: 'github',
+    name: 'GitHub',
+    icon: '/icons/github.svg',
+    description: 'Access code repositories',
+    connectedAgents: ['CEO', 'Developer', 'Product', 'Design']
+  },
+  {
+    id: 'slack',
+    name: 'Slack',
+    icon: '/icons/slack.svg',
+    description: 'Team communication',
+    connectedAgents: ['CEO', 'Marketing', 'Product', 'Design']
+  },
+  {
+    id: 'hubspot',
+    name: 'HubSpot',
+    icon: '/icons/hubspot.svg',
+    description: 'CRM and marketing automation',
+    connectedAgents: ['CEO', 'Marketing', 'Sales']
+  },
+  {
+    id: 'sql-database',
+    name: 'SQL Database',
+    icon: '/icons/database.svg',
+    description: 'Query and analyze data',
+    connectedAgents: ['CEO', 'Developer', 'Finance', 'Research']
   }
 ];
 

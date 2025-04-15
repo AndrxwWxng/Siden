@@ -29,14 +29,14 @@ export default function NavBar() {
   return (
     <nav 
       className={`
-        fixed top-0 left-0 right-0 z-50 h-[72px]
+        fixed top-0 left-0 right-0 z-50 h-[72px] w-full max-w-[100vw]
         ${isScrolled 
           ? 'bg-[#121212]/80 backdrop-blur-md border-b border-[#2e2e2e]' 
           : 'bg-transparent'}
         transition-all duration-300
       `}
     >
-      <div className="container mx-auto h-full px-6">
+      <div className="container mx-auto h-full px-50 max-w-full">
         <div className="flex items-center justify-between h-full">
           {/* Logo */}
           <Link 
@@ -50,7 +50,7 @@ export default function NavBar() {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden md:flex items-center space-x-6">
             <NavLink href="/features" active={pathname === '/features'}>Features</NavLink>
             <NavLink href="/pricing" active={pathname === '/pricing'}>Pricing</NavLink>
             <NavLink href="/docs" active={pathname === '/docs'}>Documentation</NavLink>
@@ -58,7 +58,7 @@ export default function NavBar() {
           </div>
           
           {/* Authentication/CTA */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-6">
             <Link 
               href="/login" 
               className="px-4 py-2 text-[#AAAAAA] hover:text-white transition-all duration-300 relative group"
@@ -210,4 +210,4 @@ function MobileNavLink({ href, children, onClick }: MobileNavLinkProps) {
       )}
     </Link>
   );
-} 
+}

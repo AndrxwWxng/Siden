@@ -1,24 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Agent Orchestration System
 
-## Getting Started
+This project demonstrates a multi-agent system using Mastra.ai for orchestration. The system includes multiple specialized AI agents, each with its own role, that work together under the leadership of a CEO agent.
 
-First, run the development server:
+## Features
+
+- **Multi-agent architecture**: Each agent has a specific role (CEO, Marketing, Developer, Sales, etc.)
+- **Persistent memory**: Agents have memory powered by Postgres with pgvector
+- **Tool integration**: Agents can use various tools like sending emails, web research, and database access
+- **Next.js frontend**: Modern web interface for interacting with agents
+
+## Prerequisites
+
+- Node.js 18+ and npm/yarn/pnpm
+- PostgreSQL with pgvector extension (a Supabase instance works well)
+- OpenAI API key
+- (Optional) Resend API key for email functionality
+
+## Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+OPENAI_API_KEY=your_openai_api_key_here
+DATABASE_URL=your_postgres_connection_string_here
+RESEND_API_KEY=your_resend_api_key_here
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository
+2. Install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+3. Check your environment setup:
+
+```bash
+npm run check
+# or
+yarn check
+# or
+pnpm check
+```
+
+4. Initialize the database:
+
+```bash
+npm run init-db
+# or
+yarn init-db
+# or
+pnpm init-db
+```
+
+## Running the Application
+
+You can start both the Next.js frontend and Mastra server with a single command:
+
+```bash
+npm run start:all
+# or
+yarn start:all
+# or
+pnpm start:all
+```
+
+Or run them separately:
+
+```bash
+# Start Next.js frontend
+npm run dev
+
+# Start Mastra server in a separate terminal
+npm run mastra
+```
+
+Navigate to `http://localhost:3000/chat` to start interacting with the agents.
+
+## Agent Structure
+
+The system includes the following agents:
+
+- **CEO Agent (Kenard)**: Leads the overall strategy and orchestrates other agents
+- **Marketing Agent (Chloe)**: Handles marketing strategies and content
+- **Developer Agent (Alex)**: Tackles technical problems and development tasks
+- **Sales Agent (Hannah)**: Manages sales processes and customer relationships
+- **Product Manager (Mark)**: Oversees product development and roadmaps
+- **Finance Advisor (Jenna)**: Provides financial planning and analysis
+- **Designer (Maisie)**: Creates UI/UX designs and visual systems
+- **Research Analyst (Garek)**: Gathers and analyzes market data
+
+## Architecture
+
+The application uses:
+
+- **Next.js**: Frontend framework
+- **Mastra.ai**: Agent orchestration
+- **Supabase/PostgreSQL with pgvector**: Vector database for semantic search
+- **OpenAI**: LLM provider
+- **Tailwind CSS**: Styling
+
+## Adding New Tools
+
+To add new tools for agents, modify the `src/mastra/tools/index.ts` file and create new tool definitions.
+
+## Adding New Agents
+
+To add new agents, update the `src/mastra/agents/index.ts` file and create new agent definitions. Then, update `src/mastra/index.ts` to register the new agents.
 
 ## Learn More
 

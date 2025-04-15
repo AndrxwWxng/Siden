@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Import additional high-quality fonts */
 /* @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
@@ -75,17 +78,16 @@
 }
 
 /* Base Styles */
-html {
+html, body {
   scroll-behavior: smooth;
-}
-
-body {
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
   background: var(--primary-bg);
   color: var(--primary-text);
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
-  overflow-x: hidden;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

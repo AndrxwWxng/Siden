@@ -2,8 +2,8 @@ import { mastra } from "@/mastra";
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
-  const marketingAgent = mastra.getAgent("marketingAgent");
-  const stream = await marketingAgent.stream(messages);
+  const developerAgent = mastra.getAgent("developerAgent");
+  const stream = await developerAgent.stream(messages);
  
   return stream.toDataStreamResponse();
-}
+} 

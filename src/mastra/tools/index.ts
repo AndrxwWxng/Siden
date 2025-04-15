@@ -100,3 +100,127 @@ function getWeatherCondition(code: number): string {
   };
   return conditions[code] || 'Unknown';
 }
+
+// Email tool using Resend API
+export const emailTool = createTool({
+  id: 'send-email',
+  description: 'Send an email to a recipient',
+  inputSchema: z.object({
+    to: z.string().describe('Email recipient'),
+    subject: z.string().describe('Email subject'),
+    body: z.string().describe('Email body content'),
+  }),
+  outputSchema: z.object({
+    success: z.boolean(),
+    messageId: z.string().optional(),
+    error: z.string().optional(),
+  }),
+  execute: async ({ context }) => {
+    try {
+      // This assumes you have configured Resend API in your environment
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: 'onboarding@resend.dev', // Change to your verified sender
+          to: context.to,
+          subject: context.subject,
+          html: context.body,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        return {
+          success: true,
+          messageId: data.id,
+        };
+      } else {
+        return {
+          success: false,
+          error: data.message || 'Unknown error',
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+});
+
+// Web research tool
+export const webResearchTool = createTool({
+  id: 'web-research',
+  description: 'Research information from the web',
+  inputSchema: z.object({
+    query: z.string().describe('Search query'),
+    maxResults: z.number().default(5).describe('Maximum number of results to return'),
+  }),
+  outputSchema: z.object({
+    results: z.array(z.object({
+      title: z.string(),
+      snippet: z.string(),
+      url: z.string(),
+    })),
+  }),
+  execute: async ({ context }) => {
+    try {
+      // This is a simplified implementation. In a real application,
+      // you might want to use a proper search API like Google or Bing
+      const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(context.query)}&format=json`);
+      const data = await response.json();
+      
+      // Parsing DuckDuckGo response - this is simplified and may need adjustment
+      const results = data.RelatedTopics?.slice(0, context.maxResults).map((topic: { Text?: string; FirstURL?: string }) => ({
+        title: topic.Text?.split(' - ')[0] || 'No title',
+        snippet: topic.Text || 'No description',
+        url: topic.FirstURL || '#',
+      })) || [];
+      
+      return { results };
+    } catch (_error) {
+      // Return empty results on error
+      return { results: [] };
+    }
+  },
+});
+
+// Database tool for vector storage
+export const databaseTool = createTool({
+  id: 'database-query',
+  description: 'Query the database for information',
+  inputSchema: z.object({
+    query: z.string().describe('Semantic search query'),
+    collection: z.string().default('knowledge_base').describe('Vector collection to search'),
+    limit: z.number().default(5).describe('Maximum number of results'),
+  }),
+  outputSchema: z.object({
+    results: z.array(z.object({
+      content: z.string(),
+      metadata: z.record(z.string(), z.any()).optional(),
+      score: z.number().optional(),
+    })),
+  }),
+  execute: async ({ context }) => {
+    // This is a placeholder. In a real implementation,
+    // you would connect to your Supabase/PostgreSQL database with pgvector
+    // and perform a vector similarity search
+    
+    // Simulate a database response
+    return {
+      results: [
+        {
+          content: `Sample result for query: "${context.query}"`,
+          metadata: { source: 'simulated' },
+          score: 0.92,
+        }
+      ],
+    };
+  },
+});
