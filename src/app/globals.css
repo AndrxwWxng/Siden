@@ -68,6 +68,10 @@
   --syntax-string: #CE9178;
   --syntax-function: #DCDCAA;
   --syntax-variable: #9CDCFE;
+
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 248, 248, 248;
+  --background-end-rgb: 240, 240, 240;
 }
 
 @theme inline {
@@ -83,8 +87,13 @@ html, body {
   overflow-x: hidden;
   position: relative;
   width: 100%;
-  background: var(--primary-bg);
-  color: var(--primary-text);
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  color: rgb(var(--foreground-rgb));
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
@@ -656,10 +665,82 @@ p {
 }
 
 /* Dark Mode Only - Our default is dark */
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    /* Force dark mode */
-    color-scheme: dark;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 15, 15, 15;
+    --background-end-rgb: 10, 10, 10;
+  }
+}
+
+@layer base {
+  * {
+    @apply transition-colors duration-200;
+  }
+  
+  h1 {
+    @apply text-3xl font-bold text-zinc-800 dark:text-zinc-100 mb-6;
+  }
+  
+  h2 {
+    @apply text-2xl font-semibold text-zinc-800 dark:text-zinc-100 mb-4;
+  }
+  
+  h3 {
+    @apply text-xl font-semibold text-zinc-800 dark:text-zinc-100 mb-3;
+  }
+  
+  p {
+    @apply mb-4 text-zinc-700 dark:text-zinc-300;
+  }
+  
+  a {
+    @apply text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline;
+  }
+}
+
+/* Custom scrollbar for modern browsers */
+@layer utilities {
+  .scrollbar-modern {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+  
+  .scrollbar-modern::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-modern::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-modern::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
+  }
+  
+  .dark .scrollbar-modern {
+    scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+  }
+  
+  .dark .scrollbar-modern::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.5);
+  }
+  
+  .dark .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(75, 85, 99, 0.7);
+  }
+}
+
+/* Enhanced focus styles */
+@layer utilities {
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-blue-600 dark:focus:ring-offset-zinc-900;
   }
 }
 

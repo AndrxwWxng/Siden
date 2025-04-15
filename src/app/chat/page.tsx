@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import Image from "next/image";
 import { detectAndDelegate } from "./agent-delegator";
+import MessageFormatter from "@/components/MessageFormatter";
+import { XIcon, MenuIcon, RefreshCcwIcon, AlertCircleIcon, SendIcon } from "lucide-react";
+import React from "react";
 
 const agentRoles = [
   {
@@ -99,10 +102,23 @@ export default function Chat() {
   const [selectedAgent, setSelectedAgent] = useState("ceo");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const chatContainerRef = React.useRef<HTMLDivElement>(null);
   
   const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, append, setMessages } = useChat({
     api: agentEndpoints[selectedAgent],
   });
+  
+  // Helper to reset messages
+  const resetMessages = useCallback(() => {
+    setMessages([]);
+    setError(null);
+  }, [setMessages]);
+
+  // Get the selected agent data
+  const selectedAgentData = useMemo(() => {
+    return agentRoles.find(role => role.id === selectedAgent) || agentRoles[0];
+  }, [selectedAgent]);
   
   // Custom submit handler to intercept delegation requests
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
@@ -148,104 +164,174 @@ export default function Chat() {
   }, [selectedAgent, setMessages]);
   
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-zinc-50 dark:bg-zinc-900">
-      {/* Agent Selection Sidebar */}
-      <div className="w-full md:w-64 p-4 border-r dark:border-zinc-800 overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">Select an Agent</h2>
+    <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
+      {/* Sidebar */}
+      <div className={`
+        md:w-72 p-5 border-r border-zinc-200 dark:border-zinc-800 
+        ${showSidebar ? 'block' : 'hidden'} md:block 
+        bg-white dark:bg-zinc-900 overflow-y-auto scrollbar-modern
+      `}>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-zinc-800 dark:text-zinc-100">Agents</h2>
+          <button
+            onClick={() => setShowSidebar(false)}
+            className="md:hidden p-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
+        </div>
+        
         <div className="space-y-2">
-          {agentRoles.map((role) => (
+          {agentRoles.map((agent) => (
             <button
-              key={role.id}
-              onClick={() => setSelectedAgent(role.id)}
-              className={`flex items-center w-full p-2 rounded-md transition ${
-                selectedAgent === role.id
-                  ? "bg-blue-100 dark:bg-blue-900"
-                  : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              }`}
+              key={agent.id}
+              className={`
+                w-full text-left px-4 py-3 rounded-lg focus-ring
+                ${
+                  selectedAgent === agent.id
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 font-medium'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }
+              `}
+              onClick={() => setSelectedAgent(agent.id)}
             >
-              {/* Add an image if available */}
-              <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 mr-2 overflow-hidden">
-                {role.icon && <Image src={role.icon} alt={role.name} width={32} height={32} className="rounded-full" />}
+              <div className="flex items-center">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white overflow-hidden">
+                  {agent.icon ? 
+                    <Image src={agent.icon} alt={agent.name} width={32} height={32} className="w-full h-full object-cover" /> :
+                    agent.name.charAt(0)
+                  }
+                </div>
+                <div className="ml-3">
+                  <div className="font-medium">{agent.name}</div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {agent.description.slice(0, 32)}...
+                  </div>
+                </div>
               </div>
-              <span>{role.name}</span>
-              {role.recommended && (
-                <span className="ml-auto text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 px-2 py-0.5 rounded">
-                  Recommended
-                </span>
-              )}
             </button>
           ))}
         </div>
       </div>
-      
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Chat Messages */}
-        <div className="flex-1 p-4 overflow-y-auto">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`mb-4 p-3 rounded-lg max-w-3xl ${
-                message.role === "user"
-                  ? "ml-auto bg-blue-100 dark:bg-blue-900"
-                  : "bg-zinc-100 dark:bg-zinc-800"
-              }`}
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+        <div className="border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between bg-white dark:bg-zinc-900">
+          <div className="flex items-center">
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="md:hidden mr-3 p-2 rounded-md text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
             >
-              <div className="font-medium mb-1">
-                {message.role === "user" ? "You" : agentRoles.find(role => role.id === selectedAgent)?.name || "Assistant"}
+              <MenuIcon className="h-5 w-5" />
+            </button>
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white mr-2 overflow-hidden">
+                {selectedAgentData.icon ? 
+                  <Image src={selectedAgentData.icon} alt={selectedAgentData.name} width={32} height={32} className="w-full h-full object-cover" /> :
+                  selectedAgentData.name.charAt(0)
+                }
               </div>
-              <div className="whitespace-pre-wrap">
-                {message.parts.map((part, i) => {
-                  switch (part.type) {
-                    case "text":
-                      return <div key={`${message.id}-${i}`}>{part.text}</div>;
-                    default:
-                      return null;
-                  }
-                })}
+              <div>
+                <h1 className="text-lg font-semibold m-0 text-zinc-800 dark:text-zinc-100">
+                  {selectedAgentData.name}
+                </h1>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 m-0">
+                  {selectedAgentData.description}
+                </p>
               </div>
             </div>
-          ))}
-          
-          {/* Show processing indicator */}
-          {isProcessing && (
-            <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg max-w-3xl">
-              <div className="font-medium mb-1">
-                {selectedAgent === 'ceo' ? 'CEO' : agentRoles.find(role => role.id === selectedAgent)?.name}
+          </div>
+          <button 
+            onClick={resetMessages}
+            className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 p-2 rounded-md focus-ring"
+          >
+            <RefreshCcwIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 scrollbar-modern space-y-4">
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl mb-4 overflow-hidden">
+                {selectedAgentData.icon ? 
+                  <Image src={selectedAgentData.icon} alt={selectedAgentData.name} width={64} height={64} className="w-full h-full object-cover" /> :
+                  selectedAgentData.name.charAt(0)
+                }
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="animate-pulse bg-blue-500 h-2 w-2 rounded-full"></div>
-                <div className="animate-pulse bg-blue-500 h-2 w-2 rounded-full" style={{ animationDelay: '0.2s' }}></div>
-                <div className="animate-pulse bg-blue-500 h-2 w-2 rounded-full" style={{ animationDelay: '0.4s' }}></div>
-                <span className="text-sm text-gray-500">Working with team...</span>
+              <h2 className="text-xl font-semibold text-zinc-800 dark:text-zinc-100 mb-2">
+                Chat with {selectedAgentData.name}
+              </h2>
+              <p className="text-zinc-500 dark:text-zinc-400 max-w-md">
+                {selectedAgentData.description}
+              </p>
+            </div>
+          ) : (
+            messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`
+                    max-w-[85%] px-4 py-3 rounded-2xl shadow-sm
+                    ${
+                      message.role === "user"
+                        ? "bg-blue-500 text-white rounded-tr-none"
+                        : "bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-tl-none"
+                    }
+                  `}
+                >
+                  {message.content}
+                </div>
+              </div>
+            ))
+          )}
+          
+          {isProcessing && (
+            <div className="flex justify-start">
+              <div className="bg-white dark:bg-zinc-800 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center space-x-2">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">Processing...</span>
               </div>
             </div>
           )}
           
-          {/* Show error message if there is one */}
           {error && (
-            <div className="text-red-500 text-sm p-2 mb-2 bg-red-50 dark:bg-red-900/20 rounded">
-              {error}
+            <div className="flex justify-center">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg max-w-[85%]">
+                <div className="flex items-center mb-1">
+                  <AlertCircleIcon className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Error</span>
+                </div>
+                <p className="text-sm m-0">{error}</p>
+              </div>
             </div>
           )}
         </div>
-        
-        {/* Input Form */}
-        <div className="p-4 border-t dark:border-zinc-800">
-          <form onSubmit={handleSubmit} className="flex">
-            <input
-              className="flex-1 p-2 mr-2 border dark:border-zinc-700 rounded-md dark:bg-zinc-800 disabled:opacity-50"
-              value={input}
-              placeholder={`Ask ${agentRoles.find(role => role.id === selectedAgent)?.name || "the assistant"} something...`}
-              onChange={handleInputChange}
-              disabled={isProcessing}
-            />
+
+        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+          <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={input}
+                onChange={handleInputChange}
+                placeholder="Type your message..."
+                className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border-0 rounded-lg focus-ring text-zinc-800 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-400"
+              />
+            </div>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              disabled={isProcessing}
+              disabled={isProcessing || !input.trim()}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg focus-ring flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send
+              <SendIcon className="h-5 w-5" />
             </button>
           </form>
         </div>
