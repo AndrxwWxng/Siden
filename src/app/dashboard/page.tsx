@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import { 
@@ -9,6 +9,7 @@ import {
   BarChart3, Calendar, HelpCircle, ChevronLeft, User, Bot, Paperclip, Send,
   FileText, Code, BookOpen
 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 // Agent role definitions with capabilities
 const agentRoles = [
@@ -138,7 +139,25 @@ const Dashboard = () => {
     webBrowsing: true,
     projectFiles: true
   });
-  
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data, error } = await createClient().auth.getUser();
+      if (error || !data.user) router.push('/signin');
+      else setUser(data.user);
+    };
+    getUser();
+    // Listen for auth changes
+    const { data: listener } = createClient().auth.onAuthStateChange((event, session) => {
+      if (!session) router.push('/signin');
+      else setUser(session.user);
+    });
+    return () => listener?.subscription.unsubscribe();
+  }, [router]);
+
+  if (!user) return <div>Loading...</div>;
+
   const toggleAgentSelection = (agentId: string) => {
     if (selectedAgents.includes(agentId)) {
       setSelectedAgents(selectedAgents.filter(id => id !== agentId));
@@ -943,7 +962,7 @@ const Dashboard = () => {
                               className="ml-2 text-[#A3A3A3] hover:text-white"
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M18 6L6 18M6 6L18 18"></path>
                               </svg>
                             </button>
                           </div>
@@ -1172,6 +1191,11 @@ const Dashboard = () => {
         style={{ marginLeft: sidebarCollapsed ? '60px' : '280px' }}
       >
         <div className="h-16 border-b border-[#313131] flex items-center px-6 bg-[#202020]">
+          <span className="mr-4">Welcome, {user.email}</span>
+          <button onClick={async () => {
+            await createClient().auth.signOut();
+            router.push('/signin');
+          }} className="ml-auto bg-gray-700 px-3 py-1 rounded">Sign Out</button>
         </div>
         
         <div className="flex-1 overflow-auto bg-[#202020] p-6">

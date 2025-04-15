@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from './Logo';
 import { usePathname } from 'next/navigation';
+import AuthStatus from '@/components/AuthStatus'; // Import the AuthStatus component
 
 export default function NavBar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -59,19 +60,7 @@ export default function NavBar() {
           
           {/* Authentication/CTA */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/login" 
-              className="px-4 py-2 text-[#AAAAAA] hover:text-white transition-all duration-300 relative group"
-            >
-              <span>Log in</span>
-              <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#6366F1] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="px-6 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:-translate-y-[2px]"
-            >
-              Start building
-            </Link>
+            <AuthStatus />
           </div>
           
           {/* Mobile Menu Button */}
@@ -126,20 +115,7 @@ export default function NavBar() {
           </div>
           
           <div className="flex flex-col space-y-3">
-            <Link 
-              href="/login" 
-              className="w-full px-4 py-3 border border-[#2e2e2e] text-center rounded-md hover:border-[#6366F1] transition-colors duration-300"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Log in
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="w-full px-4 py-3 bg-[#6366F1] text-white text-center rounded-md hover:bg-[#4F46E5] transition-colors duration-300"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Start building
-            </Link>
+            <AuthStatus />
           </div>
         </div>
       </div>
