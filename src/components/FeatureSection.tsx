@@ -163,8 +163,8 @@ contentTeam.start({
                         <polygon points="0 0, 10 3.5, 0 7" fill="#6366F1" />
                       </marker>
                     </defs>
-                    <line x1="25%" y1="25%" x2="50%" y2="45%" stroke="#6366F1" strokeWidth="2" markerEnd="url(#arrowhead)" />
-                    <line x1="55%" y1="50%" x2="70%" y2="70%" stroke="#6366F1" strokeWidth="2" markerEnd="url(#arrowhead)" />
+                    <line x1="40%" y1="30%" x2="48%" y2="45%" stroke="#6366F1" strokeWidth="2" markerEnd="url(#arrowhead)" />
+                    <line x1="60%" y1="67%" x2="68%" y2="72%" stroke="#6366F1" strokeWidth="2" markerEnd="url(#arrowhead)" />
                   </svg>
                 </div>
               </div>

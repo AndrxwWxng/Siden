@@ -20,8 +20,6 @@ export default function Logo({ size = 'md', className = '' }: LogoProps) {
         </svg>
       </div>
       <div className="flex items-center text-white font-bold text-xl">
-        <span className="text-[#6366F1]">Si</span>
-        <span>den</span>
       </div>
     </div>
   );
