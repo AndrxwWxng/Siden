@@ -224,3 +224,9 @@ export const databaseTool = createTool({
     };
   },
 });
+
+// Export web search tools
+export { webSearchTool, fallbackWebSearchTool } from './web-search';
+
+// Export web browser tools
+export { webBrowserTool, webScraperTool } from './web-browser';

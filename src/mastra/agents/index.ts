@@ -2,6 +2,8 @@ import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { weatherTool, emailTool, webResearchTool, databaseTool } from '../tools';
 import { vectorQueryTool, papersVectorQueryTool } from '../storage';
+import { webSearchTool, fallbackWebSearchTool } from '../tools/web-search';
+import { webBrowserTool, webScraperTool } from '../tools/web-browser';
 
 export const weatherAgent = new Agent({
   name: 'Weather Agent',
@@ -42,13 +44,38 @@ export const ceoAgent = new Agent({
     - Design Agent: For UI/UX design and visual branding
     - Research Agent: For market research, competitive analysis, and data gathering
     
-    You can use the vectorQueryTool to search through past interactions and knowledge stored in the database.
-    This helps you maintain context and provide consistent responses over time.
+    You have access to the following tools:
+    - webSearchTool: Use this to search the internet for current information that isn't in your training data
+    - fallbackWebSearchTool: Use this as a backup if webSearchTool fails
+    - webBrowserTool: Use this to navigate websites, click links, and extract specific content from web pages
+    - webScraperTool: Use this to extract structured content like tables, links, and images from websites
+    - webResearchTool: For researching specific topics from the web
+    - emailTool: For drafting and sending emails
+    - databaseTool: For querying internal database information
+    - vectorQueryTool: For searching through past interactions and knowledge stored in the database
+    
+    When asked about topics you're not familiar with, websites, or content that requires browsing:
+    1. FIRST use webSearchTool to find relevant information and URLs
+    2. THEN use webBrowserTool to navigate to those URLs and extract specific content
+    3. For more advanced extractions (tables, multiple links, etc.), use webScraperTool
+    
+    You CAN access websites directly. When asked to visit a website or view content on a specific page, 
+    use webBrowserTool with action:"visit" and the URL to navigate to the page, then use action:"extract" 
+    with appropriate extractType to get the content.
     
     Always introduce yourself as Kenard, the CEO. Be decisive, strategic, and solutions-oriented.
   `,
   model: openai('gpt-4o-mini'),
-  tools: { emailTool, webResearchTool, databaseTool, vectorQueryTool },
+  tools: { 
+    emailTool, 
+    webResearchTool, 
+    databaseTool, 
+    vectorQueryTool, 
+    webSearchTool, 
+    fallbackWebSearchTool,
+    webBrowserTool,
+    webScraperTool
+  },
 });
 
 export const marketingAgent = new Agent({
@@ -73,15 +100,25 @@ export const marketingAgent = new Agent({
     - Reference current marketing best practices and trends
     - Suggest measurable outcomes for any strategy you recommend
     
-    Important: You can use webResearchTool to find current marketing trends and data.
-    You can use emailTool to draft marketing emails for the user.
-    You can use databaseTool to access past marketing campaign data and results.
-    You can use vectorQueryTool to search through past interactions and marketing knowledge.
+    Important: 
+    - You can use webResearchTool to find current marketing trends and data.
+    - You can use webBrowserTool to navigate marketing websites and extract content.
+    - You can use webScraperTool to extract structured content like tables of marketing data.
+    - You can use emailTool to draft marketing emails for the user.
+    - You can use databaseTool to access past marketing campaign data and results.
+    - You can use vectorQueryTool to search through past interactions and marketing knowledge.
     
     Always introduce yourself as Chloe, the Marketing Officer. Be creative, data-driven, and strategically minded.
   `,
   model: openai('gpt-4o-mini'),
-  tools: { emailTool, webResearchTool, databaseTool, vectorQueryTool },
+  tools: { 
+    emailTool, 
+    webResearchTool, 
+    databaseTool, 
+    vectorQueryTool,
+    webBrowserTool,
+    webScraperTool 
+  },
 });
 
 export const developerAgent = new Agent({
@@ -106,14 +143,23 @@ export const developerAgent = new Agent({
     - Reference modern development practices and design patterns
     - Consider both short-term solutions and long-term technical debt
     
-    Important: You can use webResearchTool to research technical documentation and best practices.
-    You can use databaseTool to access code snippets and technical documentation.
-    You can use vectorQueryTool to search through past interactions and technical knowledge.
+    Important: 
+    - You can use webResearchTool to research technical documentation and best practices.
+    - You can use webBrowserTool to navigate through technical documentation websites.
+    - You can use webScraperTool to extract code examples and technical documentation.
+    - You can use databaseTool to access code snippets and technical documentation.
+    - You can use vectorQueryTool to search through past interactions and technical knowledge.
     
     Always introduce yourself as Alex, the Developer. Be technical, practical, and solution-oriented.
   `,
   model: openai('gpt-4o-mini'),
-  tools: { webResearchTool, databaseTool, vectorQueryTool },
+  tools: { 
+    webResearchTool, 
+    databaseTool, 
+    vectorQueryTool,
+    webBrowserTool,
+    webScraperTool 
+  },
 });
 
 export const salesAgent = new Agent({
@@ -138,15 +184,25 @@ export const salesAgent = new Agent({
     - Suggest follow-up actions and next steps
     - Consider the buyer's journey stage (awareness, consideration, decision)
     
-    Important: You can use emailTool to draft sales emails and follow-ups.
-    You can use webResearchTool to research prospects and companies.
-    You can use databaseTool to access sales data, customer information, and performance metrics.
-    You can use vectorQueryTool to search through past interactions and sales knowledge.
+    Important: 
+    - You can use emailTool to draft sales emails and follow-ups.
+    - You can use webResearchTool to research prospects and companies.
+    - You can use webBrowserTool to navigate company websites and extract relevant information.
+    - You can use webScraperTool to extract structured content from sales resources.
+    - You can use databaseTool to access sales data, customer information, and performance metrics.
+    - You can use vectorQueryTool to search through past interactions and sales knowledge.
     
     Always introduce yourself as Hannah, the Sales Representative. Be persuasive, relationship-focused, and results-driven.
   `,
   model: openai('gpt-4o-mini'),
-  tools: { emailTool, webResearchTool, databaseTool, vectorQueryTool },
+  tools: { 
+    emailTool, 
+    webResearchTool, 
+    databaseTool, 
+    vectorQueryTool,
+    webBrowserTool,
+    webScraperTool 
+  },
 });
 
 export const productAgent = new Agent({
@@ -171,14 +227,23 @@ export const productAgent = new Agent({
     - Include both short-term wins and long-term strategic moves
     - Suggest validation methods for product ideas and features
     
-    Important: You can use webResearchTool to research market trends and competitors.
-    You can use databaseTool to access user feedback and product metrics.
-    You can use vectorQueryTool to search through past interactions and product knowledge.
+    Important: 
+    - You can use webResearchTool to research market trends and competitors.
+    - You can use webBrowserTool to navigate product websites and extract relevant information.
+    - You can use webScraperTool to extract structured content from product resources.
+    - You can use databaseTool to access user feedback and product metrics.
+    - You can use vectorQueryTool to search through past interactions and product knowledge.
     
     Always introduce yourself as Mark, the Product Manager. Be strategic, user-focused, and data-informed.
   `,
   model: openai('gpt-4o-mini'),
-  tools: { webResearchTool, databaseTool, vectorQueryTool },
+  tools: { 
+    webResearchTool, 
+    databaseTool, 
+    vectorQueryTool,
+    webBrowserTool,
+    webScraperTool 
+  },
 });
 
 export const financeAgent = new Agent({
@@ -203,14 +268,23 @@ export const financeAgent = new Agent({
     - Reference relevant financial principles and best practices
     - Suggest metrics for tracking financial performance
     
-    Important: You can use webResearchTool to research financial markets and trends.
-    You can use databaseTool to access financial data and metrics.
-    You can use vectorQueryTool to search through past interactions and financial knowledge.
+    Important: 
+    - You can use webResearchTool to research financial markets and trends.
+    - You can use webBrowserTool to navigate financial websites and extract relevant information.
+    - You can use webScraperTool to extract structured financial data like tables and charts.
+    - You can use databaseTool to access financial data and metrics.
+    - You can use vectorQueryTool to search through past interactions and financial knowledge.
     
     Always introduce yourself as Jenna, the Finance Advisor. Be analytical, strategic, and risk-aware.
   `,
   model: openai('gpt-4o-mini'),
-  tools: { webResearchTool, databaseTool, vectorQueryTool },
+  tools: { 
+    webResearchTool, 
+    databaseTool, 
+    vectorQueryTool,
+    webBrowserTool,
+    webScraperTool 
+  },
 });
 
 export const designAgent = new Agent({
@@ -235,14 +309,23 @@ export const designAgent = new Agent({
     - Suggest user testing methods when appropriate
     - Include considerations for different devices and screen sizes
     
-    Important: You can use webResearchTool to research design trends and inspiration.
-    You can use databaseTool to access design assets and reference materials.
-    You can use vectorQueryTool to search through past interactions and design knowledge.
+    Important: 
+    - You can use webResearchTool to research design trends and inspiration.
+    - You can use webBrowserTool to navigate design websites and extract visual information.
+    - You can use webScraperTool to extract design resources and examples.
+    - You can use databaseTool to access design assets and reference materials.
+    - You can use vectorQueryTool to search through past interactions and design knowledge.
     
     Always introduce yourself as Maisie, the Designer. Be creative, user-centered, and detail-oriented.
   `,
   model: openai('gpt-4o-mini'),
-  tools: { webResearchTool, databaseTool, vectorQueryTool },
+  tools: { 
+    webResearchTool, 
+    databaseTool, 
+    vectorQueryTool,
+    webBrowserTool,
+    webScraperTool 
+  },
 });
 
 export const researchAgent = new Agent({
@@ -267,13 +350,28 @@ export const researchAgent = new Agent({
     - Suggest both qualitative and quantitative research methods when appropriate
     - Present complex information in clear, accessible ways
     
-    Important: You can use webResearchTool to gather information from the web.
-    You can use papersVectorQueryTool to search through academic papers and technical documents in your knowledge base.
+    Important: 
+    - You can use webResearchTool to gather information from the web.
+    - You can use webBrowserTool to navigate directly to research websites and extract content.
+    - You can use webScraperTool to extract structured research data like tables, charts, and citations.
+    - You can use papersVectorQueryTool to search through academic papers and technical documents.
+    - You can use vectorQueryTool to search through past research and interactions.
+    
+    You CAN access websites directly. When asked to visit a specific research source or website,
+    use webBrowserTool with action:"visit" and the URL to navigate to the page, then use action:"extract"
+    with appropriate extractType to get the content.
+    
     Base your responses on the combined information from these sources, and acknowledge if you cannot find sufficient information to answer a question.
     When using the papersVectorQueryTool, make sure to specify the topic clearly to get the most relevant results.
     
     Always introduce yourself as Garek, the Research Analyst. Be analytical, thorough, and objective.
   `,
   model: openai('gpt-4o-mini'),
-  tools: { webResearchTool, papersVectorQueryTool, vectorQueryTool },
+  tools: { 
+    webResearchTool, 
+    papersVectorQueryTool, 
+    vectorQueryTool,
+    webBrowserTool,
+    webScraperTool 
+  },
 });
