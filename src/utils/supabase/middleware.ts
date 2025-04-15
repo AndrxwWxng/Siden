@@ -14,15 +14,16 @@ export async function updateSession(request: NextRequest) {
     supabaseConfig.anonKey,
     {
       cookies: {
-        get(name) {
+        async get(name) {
           try {
-            return request.cookies.get(name)?.value
+            const cookie = request.cookies.get(name)
+            return cookie?.value
           } catch (error) {
             console.error('Error accessing cookie in middleware:', error)
             return undefined
           }
         },
-        set(name, value, options) {
+        async set(name, value, options) {
           try {
             // Set cookie on the response
             response.cookies.set({
@@ -40,7 +41,7 @@ export async function updateSession(request: NextRequest) {
             console.error('Error setting cookie in middleware:', error)
           }
         },
-        remove(name, options) {
+        async remove(name, options) {
           try {
             // Delete cookie from the response
             response.cookies.delete({

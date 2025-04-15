@@ -10,25 +10,26 @@ export async function createClient() {
     supabaseConfig.anonKey,
     {
       cookies: {
-        get(name) {
+        async get(name) {
           try {
-            return cookieStore.get(name)?.value
+            const cookie = await cookieStore.get(name)
+            return cookie?.value
           } catch (error) {
             // Handle potential errors from accessing cookies synchronously
             console.error('Error accessing cookie:', error)
             return undefined
           }
         },
-        set(name, value, options) {
+        async set(name, value, options) {
           try {
-            cookieStore.set({ name, value, ...options })
+            await cookieStore.set({ name, value, ...options })
           } catch (error) {
             console.error('Error setting cookie:', error)
           }
         },
-        remove(name, options) {
+        async remove(name, options) {
           try {
-            cookieStore.delete({ name, ...options })
+            await cookieStore.delete({ name, ...options })
           } catch (error) {
             console.error('Error removing cookie:', error)
           }
