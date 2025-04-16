@@ -36,13 +36,13 @@
     "@supabase/supabase-js": "^2.49.4",
     "ai": "^4.3.5",
     "dotenv": "^16.4.7",
+    "framer-motion": "^12.7.2",
+    "list": "^2.0.19",
     "lucide-react": "^0.487.0",
     "next": "15.3.0",
     "pg": "^8.14.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "framer-motion": "^12.7.2",
-    "list": "^2.0.19",
     "resend": "^4.2.0",
     "zod": "^3.24.2"
   },
@@ -60,5 +60,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@10.8.0+sha512.0e82714d1b5b43c74610193cb20734897c1d00de89d0e18420aebc5977fa13d780a9cb05734624e81ebd81cc876cd464794850641c48b9544326b5622ca29971"
 }

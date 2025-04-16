@@ -14,7 +14,11 @@ import {
   researchAgent
 } from './agents';
 import { pgVector } from './storage';
-
+import { PostgresStore } from "@mastra/pg";
+ 
+const storage = new PostgresStore({
+  connectionString: process.env.DATABASE_URL!,
+});
 
 export const mastra = new Mastra({
   workflows: { 
@@ -37,4 +41,5 @@ export const mastra = new Mastra({
     name: 'Mastra',
     level: 'info',
   }),
+  storage
 });
