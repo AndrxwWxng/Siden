@@ -5,12 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { 
   MessageSquare, Users, Wrench, LineChart, 
   Settings, PlusCircle, Send, Paperclip,
-  MoreHorizontal, ArrowLeft, Search, ChevronLeft, ChevronRight,
-  Folder, Plus, User, Bot
+  MoreHorizontal, Search, ChevronLeft, ChevronRight,
+  Folder
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { AgentFactory } from '@/agents/agentFactory';
-import { Sidebar } from '@/components/dashboard';
 
 // Tab interfaces
 type TabType = 'communication' | 'agents' | 'tools' | 'reports' | 'settings';

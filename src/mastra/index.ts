@@ -1,9 +1,19 @@
-
 import { Mastra } from '@mastra/core/mastra';
 import { createLogger } from '@mastra/core/logger';
 import { weatherWorkflow } from './workflows';
-import { weatherAgent } from './agents';
-import { marketingAgent } from './agents';
+import { agentDelegationWorkflow } from './workflows/agent-communication';
+import { 
+  weatherAgent,
+  ceoAgent,
+  marketingAgent, 
+  developerAgent,
+  salesAgent,
+  productAgent,
+  financeAgent,
+  designAgent,
+  researchAgent
+} from './agents';
+import { pgVector } from './storage';
 import { PostgresStore } from "@mastra/pg";
  
 const storage = new PostgresStore({
@@ -11,8 +21,22 @@ const storage = new PostgresStore({
 });
 
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow },
-  agents: { weatherAgent,marketingAgent },
+  workflows: { 
+    weatherWorkflow,
+    agentDelegationWorkflow 
+  },
+  agents: { 
+    weatherAgent,
+    ceoAgent,
+    marketingAgent, 
+    developerAgent,
+    salesAgent,
+    productAgent,
+    financeAgent,
+    designAgent,
+    researchAgent
+  },
+  vectors: { pgVector },
   logger: createLogger({
     name: 'Mastra',
     level: 'info',
