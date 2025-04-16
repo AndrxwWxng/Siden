@@ -345,6 +345,7 @@ export default function Chat() {
     setError(null);
   }, [selectedAgent, setMessages]);
   
+  console.log(messages);
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
       {/* Sidebar */}

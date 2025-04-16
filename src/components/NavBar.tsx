@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from './Logo';
 import { usePathname } from 'next/navigation';
+import AuthStatus from '@/components/AuthStatus'; // Import the AuthStatus component
 
 export default function NavBar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -29,14 +30,14 @@ export default function NavBar() {
   return (
     <nav 
       className={`
-        fixed top-0 left-0 right-0 z-50 h-[72px] w-full max-w-[100vw]
+        fixed top-0 left-0 right-0 z-50 h-[72px]
         ${isScrolled 
           ? 'bg-[#121212]/80 backdrop-blur-md border-b border-[#2e2e2e]' 
           : 'bg-transparent'}
         transition-all duration-300
       `}
     >
-      <div className="container mx-auto h-full px-50 max-w-full">
+      <div className="container mx-auto h-full px-6">
         <div className="flex items-center justify-between h-full">
           {/* Logo */}
           <Link 
@@ -50,7 +51,7 @@ export default function NavBar() {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-2">
             <NavLink href="/features" active={pathname === '/features'}>Features</NavLink>
             <NavLink href="/pricing" active={pathname === '/pricing'}>Pricing</NavLink>
             <NavLink href="/docs" active={pathname === '/docs'}>Documentation</NavLink>
@@ -58,20 +59,8 @@ export default function NavBar() {
           </div>
           
           {/* Authentication/CTA */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link 
-              href="/login" 
-              className="px-4 py-2 text-[#AAAAAA] hover:text-white transition-all duration-300 relative group"
-            >
-              <span>Log in</span>
-              <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#6366F1] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="px-6 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:-translate-y-[2px]"
-            >
-              Start building
-            </Link>
+          <div className="hidden md:flex items-center space-x-4">
+            <AuthStatus />
           </div>
           
           {/* Mobile Menu Button */}
@@ -126,20 +115,7 @@ export default function NavBar() {
           </div>
           
           <div className="flex flex-col space-y-3">
-            <Link 
-              href="/login" 
-              className="w-full px-4 py-3 border border-[#2e2e2e] text-center rounded-md hover:border-[#6366F1] transition-colors duration-300"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Log in
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="w-full px-4 py-3 bg-[#6366F1] text-white text-center rounded-md hover:bg-[#4F46E5] transition-colors duration-300"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Start building
-            </Link>
+            <AuthStatus />
           </div>
         </div>
       </div>
@@ -210,4 +186,4 @@ function MobileNavLink({ href, children, onClick }: MobileNavLinkProps) {
       )}
     </Link>
   );
-}
+} 

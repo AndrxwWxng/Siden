@@ -5,46 +5,37 @@ import Link from 'next/link';
 import Image from 'next/image';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-// Add Instrument Serif font
-import '@fontsource/instrument-serif';
+import dynamic from 'next/dynamic';
 
-// Styles
-const styles = {
-  effortlesslyText: `
-    .effortlessly-text {
-      font-family: "Instrument Serif", serif;
-      font-style: italic;
-      font-weight: 400;
-      letter-spacing: 0em;
-      color: #6366F1;
-      position: relative;
-      display: inline-block;
-      text-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-      transition: all 0.3s ease;
-      font-size: 1.15em;
-      margin: 0 0.05em;
-    }
-    
-    .effortlessly-text:hover {
-      text-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
-    }
-  `
-};
+// Import CodeAnimation with no SSR to prevent hydration errors
+const CodeAnimation = dynamic(() => import('@/components/CodeAnimation'), { 
+  ssr: false 
+});
 
 export default function Home() {
+  const [isClient, setIsClient] = useState(false);
   
   // Add animation tracking refs
   const heroRef = useRef<HTMLDivElement>(null);
   const logosRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
   const productRef = useRef<HTMLDivElement>(null);
-
+  const integrationsRef = useRef<HTMLDivElement>(null);
+  const testimonialsRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  
   // Animation state
   const [heroVisible, setHeroVisible] = useState(false);
   const [logosVisible, setLogosVisible] = useState(false);
+  const [featuresVisible, setFeaturesVisible] = useState(false);
   const [productVisible, setProductVisible] = useState(false);
-
+  const [integrationsVisible, setIntegrationsVisible] = useState(false);
+  const [testimonialsVisible, setTestimonialsVisible] = useState(false);
+  const [ctaVisible, setCtaVisible] = useState(false);
   
-  useEffect(() => {    
+  useEffect(() => {
+    setIsClient(true);
+    
     // Setup intersection observer for animations
     const observerOptions = {
       threshold: 0.15,
@@ -76,8 +67,11 @@ export default function Home() {
     // Create observers for each section
     createObserver(heroRef, setHeroVisible);
     createObserver(logosRef, setLogosVisible);
+    createObserver(featuresRef, setFeaturesVisible);
     createObserver(productRef, setProductVisible);
-
+    createObserver(integrationsRef, setIntegrationsVisible);
+    createObserver(testimonialsRef, setTestimonialsVisible);
+    createObserver(ctaRef, setCtaVisible);
     
     return () => {
       // Cleanup observers
@@ -87,19 +81,18 @@ export default function Home() {
   
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col">
-      <style dangerouslySetInnerHTML={{ __html: styles.effortlesslyText }} />
       <NavBar />
       
       <main className="flex flex-col flex-grow">
-        {/* Hero Section */}
+        {/* Hero Section with animations */}
         <section 
           ref={heroRef}
-          className="flex flex-col items-center justify-center pt-32 pb-48 relative overflow-hidden"
+          className="flex flex-col items-center justify-center px-6 pt-32 pb-48 relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
           <div className="absolute inset-0 bg-gradient-to-b from-[#121212] via-transparent to-[#121212] pointer-events-none"></div>
           
-          <div className="container mx-auto px-50 relative z-10">
+          <div className="container mx-auto max-w-6xl relative z-10">
             <div 
               className={`flex flex-col items-center text-center mb-16 transition-all duration-1000 ${
                 heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
@@ -114,7 +107,7 @@ export default function Home() {
               
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
                 <Link 
-                  href="/dashboard" 
+                  href="/signup" 
                   className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[180px]"
                 >
                   Start building
@@ -127,12 +120,6 @@ export default function Home() {
                   className="px-8 py-3 bg-transparent border border-[#2e2e2e] hover:border-[#6366F1] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[180px]"
                 >
                   View pricing
-                </Link>
-                <Link
-                  href="/chat"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md mx-2"
-                >
-                  Chat with Agents
                 </Link>
               </div>
             </div>
@@ -177,7 +164,7 @@ export default function Home() {
                     <div className="w-56 bg-[#111111] border-r border-[#2a2a2a] p-3 flex flex-col">
                       <div className="flex items-center space-x-2 px-2 py-2">
                         <div className="w-6 h-6 rounded-md bg-gradient-to-br from-[#6366F1] to-[#8B5CF6]"></div>
-                        <div className="text-lg font-semibold text-white">Siden</div>
+                        <div className="text-lg font-semibold text-white">AgentTeam</div>
                       </div>
                       
                       <div className="h-px bg-[#2a2a2a] my-3"></div>
@@ -495,48 +482,148 @@ export default function Home() {
         {/* Logos Section with animations */}
         <section 
           ref={logosRef}
-          className="py-24 border-t border-[#1e1e1e] w-full max-w-full overflow-hidden"
+          className="py-24 border-t border-[#1e1e1e]"
         >
-          <div className="container mx-auto px-50">
-            <p className={`text-center text-[#AAAAAA] uppercase text-sm tracking-wider mb-10 transition-all duration-700 ${
-              logosVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
-            }`}>
-              Powered by builders
+          <div className="container mx-auto px-6">
+            <p 
+              className={`text-center text-[#AAAAAA] uppercase text-sm tracking-wider mb-10 transition-all duration-700 ${
+                logosVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+              }`}
+            >
+              Trusted by innovative teams at
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center justify-items-center">
-              {[
-                { src: '/logos/next.svg', alt: 'Next.js' },
-                { src: '/logos/resend.svg', alt: 'Resend' },
-                { src: '/logos/supabase.svg', alt: 'Supabase' },
-                { src: '/logos/openai.svg', alt: 'OpenAI' },
-                { src: '/logos/arth.svg', alt: 'Arth' },
-                { src: '/logos/clark.svg', alt: 'Clark' }
-              ].map((logo, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div 
                   key={i} 
-                  className={`relative h-8 w-28 transition-all duration-700 hover:opacity-100 ${
-                    logosVisible ? 'opacity-60 translate-y-0' : 'opacity-0 translate-y-10'
+                  className={`h-8 w-32 bg-[#1e1e1e] rounded opacity-50 transition-all duration-700 ${
+                    logosVisible ? 'opacity-50 translate-y-0' : 'opacity-0 translate-y-10'
                   }`}
                   style={{ transitionDelay: `${i * 100}ms` }}
-                >
-                  <Image
-                    src={logo.src}
-                    alt={logo.alt}
-                    fill
-                    className="object-contain filter brightness-200 contrast-0 hover:brightness-100 hover:contrast-100 transition-all duration-300"
-                  />
-                </div>
+                ></div>
               ))}
             </div>
           </div>
         </section>
         
+        {/* Features Section with animations */}
+        <section 
+          ref={featuresRef}
+          className="py-32 relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto">
+              <div 
+                className={`transition-all duration-700 ${
+                  featuresVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                }`}
+              >
+                <div className="flex items-center mb-3">
+                  <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Features</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                  <span className="text-white">Agent infrastructure </span>
+                  <span className="effortlessly-text">you'll enjoy using</span>
+                </h2>
+                
+                <p className="text-lg text-[#AAAAAA] max-w-2xl mb-16 leading-relaxed">
+                  Optimized for speed and efficiency. Create agents in seconds, orchestrate their interactions,
+                  and breeze through your AI workflows in views tailored to your team.
+                </p>
+              </div>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10 relative">
+                {[
+                  {
+                    title: "Agent Orchestration",
+                    description: "Coordinate multiple AI agents working together seamlessly on complex tasks with built-in communication protocols.",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Visual Workflow Builder",
+                    description: "Create sophisticated agent workflows using our intuitive drag-and-drop interface, no coding required.",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Real-time Analytics",
+                    description: "Track and optimize every agent's performance with comprehensive metrics and insights dashboard.",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Flexible Integrations",
+                    description: "Connect your agents to APIs, databases, and third-party services with our extensive library of connectors.",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Advanced Monitoring",
+                    description: "Real-time monitoring with end-to-end tracing and logging of every agent interaction and transaction.",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    title: "Team Collaboration",
+                    description: "Built for teams with fine-grained roles, permissions, and collaborative agent management features.",
+                    icon: (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    )
+                  }
+                ].map((feature, i) => (
+                  <div 
+                    key={i} 
+                    className="rounded-xl bg-[#121212] shadow-2xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden border border-[#222] hover:border-[#6366F1]/30"
+                    style={{ 
+                      transitionDelay: `${i * 100}ms`,
+                      transform: featuresVisible ? 'translateY(0)' : 'translateY(40px)',
+                      opacity: featuresVisible ? 1 : 0,
+                      transition: 'all 0.7s ease-out'
+                    }}
+                  >
+                    <div className="p-7 relative">
+                      <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white mb-5 shadow-lg shadow-[#6366F1]/20">
+                        {feature.icon}
+                      </div>
+                      <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
+                      <p className="text-[#AAAAAA]">{feature.description}</p>
+                      
+                      <div className="absolute bottom-0 right-0 w-24 h-24 rounded-full bg-gradient-to-br from-[#6366F1]/5 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="absolute bottom-[-120px] left-0 right-0 h-[240px] bg-gradient-radial from-[#6366F1]/3 to-transparent opacity-20 blur-3xl"></div>
+        </section>
+        
         {/* Product Showcase with animations */}
         <section 
           ref={productRef}
-          className="py-24 bg-[#121212]"
+          className="py-24 bg-[#0E0E0E]"
         >
-          <div className="container mx-auto px-50">
+          <div className="container mx-auto px-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-12">
               <div 
                 className={`md:w-1/2 transition-all duration-1000 ${
@@ -544,7 +631,7 @@ export default function Home() {
                 }`}
               >
                 <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                  <span className="text-white">Build your team in </span>
+                  <span className="text-white">Build your agent team in </span>
                   <span className="effortlessly-text">minutes</span>
                   <span className="text-white">, not weeks</span>
                 </h2>
@@ -598,7 +685,7 @@ export default function Home() {
                   }}
                 >
                   <Link 
-                    href="/dashboard" 
+                    href="/signup" 
                     className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center w-fit group"
                   >
                     Start building now
@@ -824,543 +911,305 @@ export default function Home() {
           </div>
         </section>
         
-        {/* Powerful Integrations Section */}
-        <section className="py-32 bg-[#121212] w-full max-w-full overflow-hidden">
-          <div className="container mx-auto px-50">
-            <div className="max-w-3xl mx-auto text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="effortlessly-text"> Powerful Integrations</span></h2>
-              <p className="text-lg text-[#AAAAAA]">
-                Seamlessly connect with your favorite tools and platforms
-              </p>
-            </div>
-            
-            <div className="max-w-5xl mx-auto">
-              {/* Carousel-style integration logos */}
-              <div className="flex justify-center">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-                  <div className="bg-[#1B1A19] rounded-lg p-6 flex items-center justify-center transition-all duration-300 hover:bg-[#252525] h-24 w-40">
-                    <img src="/plangrid.svg" alt="Plangrid" className="max-h-10 opacity-80 hover:opacity-100 transition-opacity" />
-                  </div>
-                  <div className="bg-[#1B1A19] rounded-lg p-6 flex items-center justify-center transition-all duration-300 hover:bg-[#252525] h-24 w-40">
-                    <img src="/replit.svg" alt="Replit" className="max-h-10 opacity-80 hover:opacity-100 transition-opacity" />
-                  </div>
-                  <div className="bg-[#1B1A19] rounded-lg p-6 flex items-center justify-center transition-all duration-300 hover:bg-[#252525] h-24 w-40">
-                    <img src="/combinator.svg" alt="Combinator" className="max-h-10 opacity-80 hover:opacity-100 transition-opacity" />
-                  </div>
-                  <div className="bg-[#1B1A19] rounded-lg p-6 flex items-center justify-center transition-all duration-300 hover:bg-[#252525] h-24 w-40">
-                    <img src="/netlify.svg" alt="Netlify" className="max-h-10 opacity-80 hover:opacity-100 transition-opacity" />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Navigation dots */}
-              <div className="flex justify-center mt-8">
-                <div className="flex space-x-2">
-                  <button className="w-3 h-3 rounded-full bg-[#6366F1]"></button>
-                  <button className="w-3 h-3 rounded-full bg-[#333333]"></button>
-                  <button className="w-3 h-3 rounded-full bg-[#333333]"></button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* RAG Architecture Section */}
-        <section className="py-32 bg-[#121212] relative overflow-hidden">
+        {/* Integrations Section with animations */}
+        <section 
+          ref={integrationsRef}
+          className="py-32 bg-[#0F0F0F] relative overflow-hidden"
+        >
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-[#6366F1]/5 to-transparent opacity-30 blur-3xl"></div>
           
-          <div className="container mx-auto px-50 relative z-10">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                <span className="effortlessly-text">Process</span>
-              </h2>
-              <p className="text-lg text-[#AAAAAA] max-w-3xl mx-auto">
-                Each agent has its own machine with tools and context. Agents connect to data sources, collaborate with teammates, and deliver results.
-              </p>
-            </div>
-            
-            <div className="max-w-5xl mx-auto bg-[#151515] border border-[#2a2a2a] rounded-xl p-8 relative">
-              <div className="flex flex-col space-y-8">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="text-lg font-semibold text-[#6366F1]">.configure()</div>
-                  <div className="text-lg font-semibold text-[#6366F1]">.execute()</div>
-                  <div className="text-lg font-semibold text-[#6366F1]">.deliver()</div>
+          <div className="container mx-auto px-6 relative z-10">
+            <div className="flex flex-col lg:flex-row gap-16 items-center">
+              <div 
+                className={`lg:w-1/2 transition-all duration-1000 ${
+                  integrationsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
+                }`}
+              >
+                <div className="flex items-center mb-3">
+                  <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Integrations</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                  <span className="text-white">Connect your agents to </span>
+                  <span className="effortlessly-text ml-2">powerful</span>
+                  <span className="text-white ml-2">tools</span>
+                </h2>
+                <p className="text-[#AAAAAA] text-lg mb-8 leading-relaxed">
+                  Extend your AI agents' capabilities by connecting them to your existing tech stack. Our platform seamlessly integrates with popular APIs, databases, and services to ensure your agents can access all the tools and data they need.
+                </p>
+                
+                <div className="space-y-6 mb-10">
+                  {[
+                    {
+                      title: "Flexible API connections",
+                      description: "Connect to any REST API or GraphQL endpoint with our no-code integration builder. Transform data and handle authentication automatically.",
+                      icon: (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      )
+                    },
+                    {
+                      title: "Database connectors",
+                      description: "Access SQL, NoSQL, and vector databases to store and retrieve information your agents need, with built-in security and performance optimizations.",
+                      icon: (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                        </svg>
+                      )
+                    },
+                    {
+                      title: "Pre-built connectors",
+                      description: "Get started quickly with our library of pre-built integrations for popular services and platforms in your workflow.",
+                      icon: (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      )
+                    }
+                  ].map((feature, i) => (
+                    <div 
+                      key={i} 
+                      className="flex items-start"
+                      style={{ 
+                        transitionDelay: `${(i+1) * 200}ms`,
+                        transform: integrationsVisible ? 'translateX(0)' : 'translateX(-20px)',
+                        opacity: integrationsVisible ? 1 : 0,
+                        transition: 'all 0.7s ease-out'
+                      }}
+                    >
+                      <div className="flex-shrink-0 mt-1 w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#6366F1]/20 to-[#4F46E5]/20 text-[#6366F1] mr-4">
+                        {feature.icon}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium mb-2 text-white">{feature.title}</h3>
+                        <p className="text-[#AAAAAA]">{feature.description}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
                 
-                <div className="grid grid-cols-5 gap-6">
-                  {/* First row */}
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#AAAAAA] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 4v16m8-8H4" />
-                      </svg>
-                      <span className="text-sm text-[#AAAAAA]">Project Setup</span>
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-1 flex items-center justify-center">
-                    <div className="w-full h-px bg-[#6366F1] opacity-30 relative">
-                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-                        <div className="w-1 h-1 rounded-full bg-[#6366F1] opacity-70 animate-pulse"></div>
+                <div 
+                  className="flex items-center"
+                  style={{ 
+                    transitionDelay: '800ms',
+                    transform: integrationsVisible ? 'translateY(0)' : 'translateY(20px)',
+                    opacity: integrationsVisible ? 1 : 0,
+                    transition: 'all 0.7s ease-out'
+                  }}
+                >
+                  <Link 
+                    href="/integrations" 
+                    className="text-[#6366F1] hover:text-[#4F46E5] font-medium flex items-center transition-colors duration-200 group"
+                  >
+                    Explore all integrations
+                    <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+              
+              <div 
+                className={`lg:w-1/2 transition-all duration-1000 delay-500 ${
+                  integrationsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+                }`}
+              >
+                {/* Floating integration cards */}
+                <div className="relative mx-auto w-full max-w-xl h-[500px] perspective-[1000px]">
+                  <div className="grid grid-cols-3 grid-rows-3 gap-3 w-full h-full absolute top-0 left-0 transform-gpu">
+                    {[
+                      { name: "Slack", color: "#4A154B", icon: "slack.svg", x: 10, y: 10, z: 70, rotate: 15 },
+                      { name: "GitHub", color: "#181717", icon: "github.svg", x: -15, y: -5, z: 40, rotate: -8 },
+                      { name: "Notion", color: "#000000", icon: "notion.svg", x: 25, y: -10, z: 20, rotate: 12 },
+                      { name: "Salesforce", color: "#00A1E0", icon: "salesforce.svg", x: -20, y: 20, z: 50, rotate: -10 },
+                      { name: "Airtable", color: "#F82B60", icon: "airtable.svg", x: 0, y: 0, z: 80, rotate: 0 },
+                      { name: "Zapier", color: "#FF4A00", icon: "zapier.svg", x: 15, y: 15, z: 30, rotate: 5 },
+                      { name: "MySQL", color: "#4479A1", icon: "mysql.svg", x: -10, y: -15, z: 10, rotate: -5 },
+                      { name: "MongoDB", color: "#47A248", icon: "mongodb.svg", x: 20, y: -20, z: 60, rotate: 10 },
+                      { name: "AWS", color: "#FF9900", icon: "aws.svg", x: -25, y: 5, z: 90, rotate: -12 }
+                    ].map((integration, i) => (
+                      <div 
+                        key={i} 
+                        className="relative rounded-lg p-5 bg-[#151515] border border-[#2a2a2a] hover:border-[#6366F1] transition-all duration-300 shadow-xl flex flex-col items-center justify-center group"
+                        style={{
+                          transform: `translateX(${integration.x}px) translateY(${integration.y}px) translateZ(${integration.z}px) rotateY(${integration.rotate}deg)`,
+                          transition: 'all 0.5s ease-out',
+                          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05)'
+                        }}
+                      >
+                        <div className="w-12 h-12 rounded-lg bg-white bg-opacity-10 flex items-center justify-center mb-3">
+                          <div className="w-6 h-6 opacity-70"></div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-medium text-white mb-1">{integration.name}</div>
+                          <div className="text-xs text-[#888]">Integrated</div>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#6366F1]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#6366F1] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h2a2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2v1.5" />
-                        <path d="M13 11.5V13a2 2 0 002 2h3.5a2.5 2.5 0 010 5H18a2 2 0 00-2 2v1.065" />
-                        <path d="M2 8V6a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2h-3" />
-                      </svg>
-                      <span className="text-sm text-[#6366F1]">Agent Selection</span>
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-1 flex items-center justify-center">
-                    <div className="w-full h-px bg-[#6366F1] opacity-30 relative">
-                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-                        <div className="w-1 h-1 rounded-full bg-[#6366F1] opacity-70 animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#AAAAAA] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                      </svg>
-                      <span className="text-sm text-[#AAAAAA]">Tool Connection</span>
-                    </div>
-                  </div>
-                  
-                  {/* Second row with vertical spacers */}
-                  <div className="flex justify-center">
-                    <div className="h-16 w-px bg-[#6366F1] opacity-30"></div>
-                  </div>
-                  <div></div>
-                  <div className="flex justify-center">
-                    <div className="h-16 w-px bg-[#6366F1] opacity-30"></div>
-                  </div>
-                  <div></div>
-                  <div className="flex justify-center">
-                    <div className="h-16 w-px bg-[#6366F1] opacity-30"></div>
-                  </div>
-                  
-                  {/* Third row - Execution layer */}
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#34D399] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-                        <path d="M12 16v-4M12 8h.01" />
-                      </svg>
-                      <span className="text-sm text-[#AAAAAA]">User Request</span>
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-1 flex items-center justify-center">
-                    <div className="w-full h-px bg-[#34D399] opacity-30 relative">
-                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-                        <div className="w-1 h-1 rounded-full bg-[#34D399] opacity-70 animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#34D399] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20 7h-3a2 2 0 01-2-2V2" />
-                        <path d="M9 18a2 2 0 01-2-2v-1a2 2 0 00-2-2H3" />
-                        <path d="M3 7h2a2 2 0 012 2v1a2 2 0 002 2h2" />
-                        <path d="M14 18h1a2 2 0 002-2v-1a2 2 0 012-2h2" />
-                        <rect x="7" y="9" width="10" height="6" rx="2" />
-                      </svg>
-                      <span className="text-sm text-[#AAAAAA]">E2B Sandbox</span>
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-1 flex items-center justify-center">
-                    <div className="w-full h-px bg-[#34D399] opacity-30 relative">
-                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-                        <div className="w-1 h-1 rounded-full bg-[#34D399] opacity-70 animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#34D399] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-                        <path d="M15.5 16a4 4 0 100-8 4 4 0 000 8z" />
-                        <path d="M8.5 16a4 4 0 100-8 4 4 0 000 8z" />
-                      </svg>
-                      <span className="text-sm text-[#AAAAAA]">Agent Output</span>
-                    </div>
-                  </div>
-                  
-                  {/* More vertical spacers */}
-                  <div className="flex justify-center">
-                    <div className="h-16 w-px bg-[#F87171] opacity-30"></div>
-                  </div>
-                  <div></div>
-                  <div className="flex justify-center">
-                    <div className="h-16 w-px bg-[#F87171] opacity-30"></div>
-                  </div>
-                  <div></div>
-                  <div className="flex justify-center">
-                    <div className="h-16 w-px bg-[#F87171] opacity-30"></div>
-                  </div>
-                  
-                  {/* Fourth row - Resource layer */}
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#F87171] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" />
-                      </svg>
-                      <span className="text-sm text-[#AAAAAA]">Shared Memory</span>
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-1 flex items-center justify-center">
-                    <div className="w-full h-px bg-[#F87171] opacity-30 relative">
-                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-                        <div className="w-1 h-1 rounded-full bg-[#F87171] opacity-70 animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#F87171] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="text-sm text-[#AAAAAA]">Tool Access</span>
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-1 flex items-center justify-center">
-                    <div className="w-full h-px bg-[#F87171] opacity-30 relative">
-                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-                        <div className="w-1 h-1 rounded-full bg-[#F87171] opacity-70 animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                      <svg className="w-6 h-6 text-[#F87171] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M9 6l6 6l-6 6" />
-                      </svg>
-                      <span className="text-sm text-[#AAAAAA]">Knowledge Base</span>
-                    </div>
+                    ))}
                   </div>
                 </div>
                 
-                {/* Technology Logos */}
-                <div className="grid grid-cols-5 gap-2 mt-4">
-                  <div className="flex justify-center">
-                    <div className="flex space-x-2">
-                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
-                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
-                      </div>
-                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
-                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div></div>
-                  <div className="flex justify-center">
-                    <div className="flex space-x-2">
-                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
-                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
-                      </div>
-                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
-                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
-                      </div>
-                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
-                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div></div>
-                  <div className="flex justify-center">
-                    <div className="flex space-x-2">
-                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
-                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
-                      </div>
-                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
-                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
-                      </div>
-                    </div>
-                  </div>
+                {/* Connection lines between integration cards */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <svg className="w-full h-full opacity-30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M100,100 C150,120 250,150 300,200" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+                    <path d="M200,50 C220,100 250,200 280,300" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+                    <path d="M50,200 C100,220 200,250 350,280" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+                    <path d="M120,300 C150,250 200,200 250,150" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+                  </svg>
                 </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
-              <div className="bg-[#171717] border border-[#2a2a2a] rounded-lg p-6 transition-all duration-300 hover:border-[#3a3a3a]">
-                <div className="flex items-center mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-[#6366F1]/10 text-[#6366F1] flex items-center justify-center mr-3">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 7h-3a2 2 0 01-2-2V2" />
-                      <path d="M9 18a2 2 0 01-2-2v-1a2 2 0 00-2-2H3" />
-                      <path d="M3 7h2a2 2 0 012 2v1a2 2 0 002 2h2" />
-                      <path d="M14 18h1a2 2 0 002-2v-1a2 2 0 012-2h2" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-white">Secure Sandboxes</h3>
-                </div>
-                <p className="text-sm text-[#AAAAAA]">
-                  Isolated execution environments for each agent with secure access to tools
-                </p>
-              </div>
-              
-              <div className="bg-[#171717] border border-[#2a2a2a] rounded-lg p-6 transition-all duration-300 hover:border-[#3a3a3a]">
-                <div className="flex items-center mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-[#6366F1]/10 text-[#6366F1] flex items-center justify-center mr-3">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-white">Customizable Tooling</h3>
-                </div>
-                <p className="text-sm text-[#AAAAAA]">
-                  Configure each agent with role-specific tools and permissions
-                </p>
-              </div>
-              
-              <div className="bg-[#171717] border border-[#2a2a2a] rounded-lg p-6 transition-all duration-300 hover:border-[#3a3a3a]">
-                <div className="flex items-center mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-[#6366F1]/10 text-[#6366F1] flex items-center justify-center mr-3">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-white">Team Collaboration</h3>
-                </div>
-                <p className="text-sm text-[#AAAAAA]">
-                  Agents coordinate autonomously to solve complex problems as a team
-                </p>
+                
+                {/* Central glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#6366F1] rounded-full blur-3xl opacity-10"></div>
               </div>
             </div>
           </div>
         </section>
         
-        {/* Agent Collaboration Framework */}
-        <section className="py-32 bg-[#0A0A0A] relative overflow-hidden">
-          {/* Background grid and gradient effects */}
-          <div className="absolute inset-0 bg-grid-pattern opacity-[0.03]"></div>
-          <div className="absolute inset-0 bg-gradient-radial from-[#6366F1]/10 to-transparent opacity-30"></div>
-          
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-3xl mx-auto text-center mb-20">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-                Agent Collaboration Framework
+        {/* Testimonials with animations */}
+        <section 
+          ref={testimonialsRef}
+          className="py-32 bg-[#0E0E0E] relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none"></div>
+          <div className="container mx-auto px-6 relative z-10">
+            <div 
+              className={`text-center mb-16 transition-all duration-700 ${
+                testimonialsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
+              <div className="flex items-center justify-center mb-3">
+                <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Testimonials</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                <span className="text-white">What teams are </span>
+                <span className="effortlessly-text">saying</span>
               </h2>
-              <p className="text-xl text-[#AAAAAA] leading-relaxed">
-                Experience seamless teamwork as our AI agents collaborate to tackle complex challenges with precision and efficiency
+              <p className="text-lg text-[#AAAAAA] max-w-2xl mx-auto mb-8 leading-relaxed">
+                AgentTeam is transforming how organizations build and deploy AI agents. Here's what our customers have to say about their experience.
               </p>
             </div>
-
-            {/* Main collaboration visualization */}
-            <div className="max-w-7xl mx-auto">
-              {/* Top row - Agent cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                {[
-                  {
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    ),
-                    title: "Research Agent",
-                    role: "Data Analysis & Research",
-                    status: "Active",
-                    tasks: 12,
-                    color: "#34D399"
-                  },
-                  {
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                      </svg>
-                    ),
-                    title: "Code Assistant",
-                    role: "Development & Testing",
-                    status: "Active",
-                    tasks: 8,
-                    color: "#6366F1"
-                  },
-                  {
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                      </svg>
-                    ),
-                    title: "Support Agent",
-                    role: "User Assistance",
-                    status: "Active",
-                    tasks: 15,
-                    color: "#F59E0B"
-                  }
-                ].map((agent, i) => (
-                  <div 
-                    key={i}
-                    className="group relative bg-[#151515] rounded-xl border border-[#2a2a2a] p-6 hover:border-[#6366F1] transition-all duration-300"
-                    style={{
-                      background: 'linear-gradient(145deg, rgba(21,21,21,0.9) 0%, rgba(15,15,15,0.9) 100%)',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                  >
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#6366F1]/0 via-[#6366F1]/5 to-[#6366F1]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl"></div>
-                    
-                    <div className="relative">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center`} style={{ backgroundColor: `${agent.color}20`, color: agent.color }}>
-                          {agent.icon}
-                        </div>
-                        <div className="flex items-center">
-                          <div className={`h-2 w-2 rounded-full mr-2`} style={{ backgroundColor: agent.color }}></div>
-                          <span className="text-sm text-[#AAAAAA]">{agent.status}</span>
-                        </div>
+            
+            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {[
+                {
+                  quote: "AgentTeam has dramatically improved our AI development workflow. What used to take weeks now takes days. The visual workflow builder makes it easy for our non-technical team members to contribute.",
+                  name: "Sarah Chen",
+                  title: "CTO, TechNova",
+                  rating: 5
+                },
+                {
+                  quote: "The ability to orchestrate multiple agents working together seamlessly has been a game-changer for our customer support operations. We've reduced resolution times by 68%.",
+                  name: "Marcus Johnson",
+                  title: "Head of AI, SupportAI",
+                  rating: 5
+                },
+                {
+                  quote: "We've reduced our AI development costs by 60% while increasing capabilities. AgentTeam is now central to our operations, helping us scale AI initiatives across our organization.",
+                  name: "Elena Rodriguez",
+                  title: "Director of Innovation, GlobalCorp",
+                  rating: 5
+                }
+              ].map((testimonial, i) => (
+                <div 
+                  key={i} 
+                  className="bg-[#151515] p-6 rounded-xl border border-[#2a2a2a] hover:border-[#3a3a3a] transition-all duration-300 group h-full flex flex-col"
+                  style={{ 
+                    transitionDelay: `${i * 200}ms`,
+                    transform: testimonialsVisible ? 'translateY(0)' : 'translateY(40px)',
+                    opacity: testimonialsVisible ? 1 : 0,
+                    transition: 'all 0.7s ease-out'
+                  }}
+                >
+                  <div className="mb-5">
+                    <svg className="w-8 h-8 text-[#6366F1]/40" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                    </svg>
+                  </div>
+                  <p className="text-white text-lg mb-6 flex-grow">{testimonial.quote}</p>
+                  
+                  <div className="mt-auto">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-white">{testimonial.name}</h4>
+                        <p className="text-[#888] text-sm">{testimonial.title}</p>
                       </div>
-                      
-                      <h3 className="text-xl font-semibold text-white mb-2">{agent.title}</h3>
-                      <p className="text-[#888888] text-sm mb-4">{agent.role}</p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <svg className="w-4 h-4 text-[#6366F1] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      <div className="flex">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <svg key={i} className="w-4 h-4 text-[#F59E0B]" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                           </svg>
-                          <span className="text-sm text-[#AAAAAA]">{agent.tasks} active tasks</span>
-                        </div>
-                        <div className="h-8 w-8 rounded-lg bg-[#252525] hover:bg-[#2a2a2a] transition-colors flex items-center justify-center cursor-pointer">
-                          <svg className="w-4 h-4 text-[#6366F1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                          </svg>
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Central collaboration hub */}
-              <div className="bg-[#151515] rounded-2xl border border-[#2a2a2a] p-8 mb-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-2xl font-semibold text-white mb-6">Real-time Collaboration</h3>
-                    <div className="space-y-6">
-                      {[
-                        {
-                          title: "Shared Knowledge Base",
-                          description: "Agents access and contribute to a centralized knowledge repository",
-                          icon: (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                          )
-                        },
-                        {
-                          title: "Task Distribution",
-                          description: "Intelligent workload balancing and task assignment",
-                          icon: (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                          )
-                        },
-                        {
-                          title: "Resource Optimization",
-                          description: "Dynamic resource allocation based on task requirements",
-                          icon: (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                          )
-                        }
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-start">
-                          <div className="w-10 h-10 rounded-lg bg-[#6366F1]/10 text-[#6366F1] flex items-center justify-center mr-4 flex-shrink-0">
-                            {item.icon}
-                          </div>
-                          <div>
-                            <h4 className="text-white font-medium mb-1">{item.title}</h4>
-                            <p className="text-[#888888] text-sm">{item.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    {/* Visualization */}
-                    <div className="aspect-square rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] p-6 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-radial from-[#6366F1]/5 to-transparent"></div>
-                      
-                      {/* Animated connection lines */}
-                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 400">
-                        <path 
-                          d="M200,100 C150,150 250,250 200,300" 
-                          className="stroke-[#6366F1] stroke-2 opacity-20"
-                          fill="none"
-                          strokeDasharray="6 6"
-                        />
-                        <path 
-                          d="M100,200 C150,150 250,250 300,200" 
-                          className="stroke-[#6366F1] stroke-2 opacity-20"
-                          fill="none"
-                          strokeDasharray="6 6"
-                        />
-                        <circle cx="200" cy="200" r="60" className="fill-[#6366F1]/10 stroke-[#6366F1] stroke-2"/>
-                        <circle cx="200" cy="100" r="20" className="fill-[#34D399]/20 stroke-[#34D399] stroke-2"/>
-                        <circle cx="100" cy="200" r="20" className="fill-[#6366F1]/20 stroke-[#6366F1] stroke-2"/>
-                        <circle cx="300" cy="200" r="20" className="fill-[#F59E0B]/20 stroke-[#F59E0B] stroke-2"/>
-                        <circle cx="200" cy="300" r="20" className="fill-[#6366F1]/20 stroke-[#6366F1] stroke-2"/>
-                      </svg>
-                      
-                      {/* Central hub label */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="text-[#6366F1] font-medium mb-1">Collaboration Hub</div>
-                          <div className="text-[#888888] text-sm">Active Agents: 4</div>
-                        </div>
+                    <div className="pt-3 border-t border-[#2a2a2a]">
+                      <div className="text-[#6366F1] text-sm font-medium group-hover:underline cursor-pointer flex items-center">
+                        Read full story
+                        <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Bottom metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {[
-                  { label: "Active Agents", value: "12", change: "+3", color: "#34D399" },
-                  { label: "Tasks Completed", value: "1,234", change: "+127", color: "#6366F1" },
-                  { label: "Success Rate", value: "98.2%", change: "+2.1%", color: "#F59E0B" },
-                  { label: "Response Time", value: "1.2s", change: "-0.3s", color: "#6366F1" }
-                ].map((metric, i) => (
-                  <div key={i} className="bg-[#151515] rounded-xl border border-[#2a2a2a] p-6">
-                    <div className="text-[#888888] text-sm mb-2">{metric.label}</div>
-                    <div className="text-2xl font-semibold text-white mb-2">{metric.value}</div>
-                    <div className="flex items-center">
-                      <span className={`text-sm ${metric.change.startsWith('+') ? 'text-[#34D399]' : 'text-[#F87171]'}`}>
-                        {metric.change} this week
-                      </span>
-                      <div className="ml-auto w-16">
-                        <div className="h-1 bg-[#2a2a2a] rounded-full overflow-hidden">
-                          <div 
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ width: '75%', backgroundColor: metric.color }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              ))}
+            </div>
+            
+            <div 
+              className={`flex justify-center mt-10 transition-all duration-700 delay-700 ${
+                testimonialsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
+              <Link 
+                href="/case-studies" 
+                className="px-6 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center group"
+              >
+                View all case studies
+                <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+          
+          {/* Bottom gradient */}
+          <div className="absolute bottom-[-120px] left-0 right-0 h-[240px] bg-gradient-radial from-[#6366F1]/2 to-transparent opacity-20 blur-3xl"></div>
+        </section>
+        
+        {/* CTA Section with animations */}
+        <section 
+          ref={ctaRef}
+          className="py-32 relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-radial from-[#6366F1]/10 to-transparent opacity-30 blur-3xl"></div>
+          
+          <div className="container mx-auto px-6 relative z-10">
+            <div 
+              className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${
+                ctaVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+              }`}
+            >
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to build your AI team?</h2>
+              <p className="text-xl text-[#AAAAAA] mb-10 max-w-2xl mx-auto">
+                Start building powerful AI agent systems today with our flexible pricing plans.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link 
+                  href="/signup" 
+                  className="px-8 py-4 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[200px]"
+                >
+                  Get started for free
+                </Link>
+                <Link 
+                  href="/contact" 
+                  className="px-8 py-4 bg-transparent border border-[#2e2e2e] hover:border-[#6366F1] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[200px]"
+                >
+                  Contact sales
+                </Link>
               </div>
             </div>
           </div>
@@ -1369,6 +1218,81 @@ export default function Home() {
       
       <Footer />
       
+      <style jsx>{`
+        .bg-grid-pattern {
+          background-size: 50px 50px;
+          background-image: 
+            linear-gradient(to right, #1e1e1e 1px, transparent 1px),
+            linear-gradient(to bottom, #1e1e1e 1px, transparent 1px);
+        }
+        
+        .bg-gradient-radial {
+          background-image: radial-gradient(circle, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
+        }
+        
+        .effortlessly-text {
+          font-family: "Instrument Serif", serif;
+          font-style: italic;
+          font-weight: 400;
+          letter-spacing: 0em;
+          color: #6366F1;
+          position: relative;
+          display: inline-block;
+          text-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+          transition: all 0.3s ease;
+          font-size: 1.15em;
+          margin: 0 0.05em;
+        }
+        
+        .effortlessly-text:hover {
+          text-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+        }
+        
+        /* Add animation classes */
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes fadeInRight {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes zoomIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }
