@@ -2,10 +2,13 @@ import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { Agent } from '@mastra/core/agent';
 import { weatherTool, emailTool, webResearchTool, databaseTool } from '../tools';
-import { vectorQueryTool, papersVectorQueryTool } from '../storage';
 import { webSearchTool, fallbackWebSearchTool } from '../tools/web-search';
 import { webBrowserTool, webScraperTool } from '../tools/web-browser';
-
+import { readGoogleSheet, appendGoogleSheet, updateGoogleSheet } from '../tools/googleSheets';
+import { createHubspotContact, getHubspotContact, createHubspotDeal } from '../tools/hubspot';
+import { createGithubIssue, createGithubPullRequest, getGithubRepoInfo, listGithubPullRequests } from '../tools/github';
+import { vectorQueryTool, papersVectorQueryTool } from '../storage';
+import { getSlackChannelHistory, sendSlackMessage, createSlackChannel } from '../tools/slack';
 export const weatherAgent = new Agent({
   name: 'Weather Agent',
   instructions: `
@@ -63,7 +66,21 @@ export const ceoAgent = new Agent({
     You CAN access websites directly. When asked to visit a website or view content on a specific page, 
     use webBrowserTool with action:"visit" and the URL to navigate to the page, then use action:"extract" 
     with appropriate extractType to get the content.
-    
+
+        You have access to the following tools:
+    - emailTool: For sending emails to team members and stakeholders
+    - webResearchTool: For researching information on the web
+    - databaseTool: For querying the database for information
+    - vectorQueryTool: For searching through past interactions and knowledge
+    - Google Sheets tools:
+      * readGoogleSheet: For reading data from Google Sheets (financial reports, KPIs, etc.)
+      * appendGoogleSheet: For adding data to Google Sheets (new metrics, updates, etc.)
+      * updateGoogleSheet: For updating existing data in Google Sheets
+    - Slack tools:
+      * sendSlackMessage: For sending messages to team channels
+      * getSlackChannelHistory: For viewing recent messages in Slack channels
+      * createSlackChannel: For creating new channels for projects or initiatives
+      * 
     Always introduce yourself as Kenard, the CEO. Be decisive, strategic, and solutions-oriented.
   `,
   model: openai('gpt-4.1-mini'),
@@ -75,7 +92,13 @@ export const ceoAgent = new Agent({
     webSearchTool, 
     fallbackWebSearchTool,
     webBrowserTool,
-    webScraperTool
+    webScraperTool,
+    readGoogleSheet,
+    appendGoogleSheet,
+    updateGoogleSheet,
+    sendSlackMessage,
+    getSlackChannelHistory,
+    createSlackChannel
   },
 });
 
@@ -92,7 +115,7 @@ export const marketingAgent = new Agent({
     - SEO recommendations and keyword research guidance
     - Performance metrics interpretation and KPI suggestions
     - Brand positioning and value proposition development
-    
+
     When responding:
     - Be specific and provide actionable, data-informed advice
     - Ask clarifying questions when user requests lack context (industry, audience, goals)
@@ -100,7 +123,8 @@ export const marketingAgent = new Agent({
     - Consider the marketing funnel stages (awareness, consideration, conversion, retention)
     - Reference current marketing best practices and trends
     - Suggest measurable outcomes for any strategy you recommend
-    
+    - Use Google Sheets and Slack tools when appropriate to manage campaign data and team communications
+
     Important: 
     - You can use webResearchTool to find current marketing trends and data.
     - You can use webBrowserTool to navigate marketing websites and extract content.
@@ -108,6 +132,21 @@ export const marketingAgent = new Agent({
     - You can use emailTool to draft marketing emails for the user.
     - You can use databaseTool to access past marketing campaign data and results.
     - You can use vectorQueryTool to search through past interactions and marketing knowledge.
+
+     You also have access to these specialized tools:
+    - HubSpot tools:
+      * createHubspotContact: For creating new contacts in HubSpot CRM
+      * getHubspotContact: For retrieving contact information from HubSpot
+      * createHubspotDeal: For creating new deals in HubSpot CRM
+    - Slack tools:
+      * sendSlackMessage: For sending messages to marketing channels
+      * getSlackChannelHistory: For viewing recent messages in marketing channels
+      * createSlackChannel: For creating new channels for marketing campaigns
+    - Google Sheets tools:
+      * readGoogleSheet: For reading data from Google Sheets (marketing reports, KPIs, etc.)
+      * appendGoogleSheet: For adding data to Google Sheets (new metrics, updates, etc.)
+      * updateGoogleSheet: For updating existing data in Google Sheets
+    
     
     Always introduce yourself as Chloe, the Marketing Officer. Be creative, data-driven, and strategically minded.
   `,
@@ -118,7 +157,16 @@ export const marketingAgent = new Agent({
     databaseTool, 
     vectorQueryTool,
     webBrowserTool,
-    webScraperTool 
+    webScraperTool,
+    createHubspotDeal,
+    getHubspotContact,
+    createHubspotContact,
+    sendSlackMessage,
+    getSlackChannelHistory,
+    createSlackChannel,
+    readGoogleSheet,
+    appendGoogleSheet,
+    updateGoogleSheet
   },
 });
 
@@ -197,6 +245,17 @@ export const developerAgent = new Agent({
     - Be honest about limitations or when more information is needed
     - Maintain a helpful, patient approach to complex technical challenges
     
+        You also have access to these specialized tools:
+       - GitHub tools:
+      * createGithubIssue: For creating issues in GitHub repositories
+      * createGithubPullRequest: For creating pull requests in GitHub repositories
+      * getGithubRepoInfo: For retrieving information about GitHub repositories
+      * listGithubPullRequests: For listing pull requests in GitHub repositories
+    - Slack tools:
+      * sendSlackMessage: For sending messages to development channels
+      * getSlackChannelHistory: For viewing recent messages in development channels
+      * createSlackChannel: For creating new channels for development projects
+    
     Always introduce yourself as Alex, the Developer. Be technical, practical, and solution-oriented.
   `,
   model: anthropic('claude-3-7-sonnet-20250219'),
@@ -205,7 +264,17 @@ export const developerAgent = new Agent({
     databaseTool, 
     vectorQueryTool,
     webBrowserTool,
-    webScraperTool 
+    webScraperTool,
+    createGithubIssue,
+    createGithubPullRequest,
+    getGithubRepoInfo,
+    listGithubPullRequests,
+    sendSlackMessage,
+    getSlackChannelHistory,
+    createSlackChannel,
+    readGoogleSheet,
+    appendGoogleSheet,
+    updateGoogleSheet 
   },
 });
 
@@ -238,6 +307,14 @@ export const salesAgent = new Agent({
     - You can use webScraperTool to extract structured content from sales resources.
     - You can use databaseTool to access sales data, customer information, and performance metrics.
     - You can use vectorQueryTool to search through past interactions and sales knowledge.
+    - HubSpot tools:
+      * createHubspotContact: For creating new contacts in HubSpot CRM
+      * getHubspotContact: For retrieving contact information from HubSpot
+      * createHubspotDeal: For creating new deals in HubSpot CRM
+    - Slack tools:
+      * sendSlackMessage: For sending messages to sales channels
+      * getSlackChannelHistory: For viewing recent messages in sales channels
+      * createSlackChannel: For creating new channels for sales initiatives
     
     Always introduce yourself as Hannah, the Sales Representative. Be persuasive, relationship-focused, and results-driven.
   `,
@@ -248,7 +325,13 @@ export const salesAgent = new Agent({
     databaseTool, 
     vectorQueryTool,
     webBrowserTool,
-    webScraperTool 
+    webScraperTool,
+    createHubspotDeal,
+    getHubspotContact,
+    createHubspotContact,
+    sendSlackMessage,
+    getSlackChannelHistory,
+    createSlackChannel
   },
 });
 
@@ -281,6 +364,20 @@ export const productAgent = new Agent({
     - You can use databaseTool to access user feedback and product metrics.
     - You can use vectorQueryTool to search through past interactions and product knowledge.
     
+     - GitHub tools:
+      * createGithubIssue: For creating issues in GitHub repositories
+      * createGithubPullRequest: For creating pull requests in GitHub repositories
+      * getGithubRepoInfo: For retrieving information about GitHub repositories
+      * listGithubPullRequests: For listing pull requests in GitHub repositories
+    - Slack tools:
+      * sendSlackMessage: For sending messages to product channels
+      * getSlackChannelHistory: For viewing recent messages in product channels
+      * createSlackChannel: For creating new channels for product initiatives
+    - Google Sheets tools:
+      * readGoogleSheet: For reading data from Google Sheets (product reports, KPIs, etc.)
+      * appendGoogleSheet: For adding data to Google Sheets (new metrics, updates, etc.)
+      * updateGoogleSheet: For updating existing data in Google Sheets
+      
     Always introduce yourself as Mark, the Product Manager. Be strategic, user-focused, and data-informed.
   `,
   model: openai('gpt-4.1-mini'),
@@ -289,7 +386,17 @@ export const productAgent = new Agent({
     databaseTool, 
     vectorQueryTool,
     webBrowserTool,
-    webScraperTool 
+    webScraperTool,
+    createGithubIssue,
+    createGithubPullRequest,
+    getGithubRepoInfo,
+    listGithubPullRequests,
+    sendSlackMessage,
+    getSlackChannelHistory,
+    createSlackChannel,
+    readGoogleSheet,
+    appendGoogleSheet,
+    updateGoogleSheet
   },
 });
 
@@ -321,7 +428,19 @@ export const financeAgent = new Agent({
     - You can use webScraperTool to extract structured financial data like tables and charts.
     - You can use databaseTool to access financial data and metrics.
     - You can use vectorQueryTool to search through past interactions and financial knowledge.
-    
+      - HubSpot tools:
+      * createHubspotContact: For creating new contacts in HubSpot CRM
+      * getHubspotContact: For retrieving contact information from HubSpot
+      * createHubspotDeal: For creating new deals in HubSpot CRM
+    - Slack tools:
+      * sendSlackMessage: For sending messages to finance channels
+      * getSlackChannelHistory: For viewing recent messages in finance channels
+      * createSlackChannel: For creating new channels for finance initiatives
+    - Google Sheets tools:
+      * readGoogleSheet: For reading data from Google Sheets (finance reports, KPIs, etc.)
+      * appendGoogleSheet: For adding data to Google Sheets (new metrics, updates, etc.)
+      * updateGoogleSheet: For updating existing data in Google Sheets
+      
     Always introduce yourself as Jenna, the Finance Advisor. Be analytical, strategic, and risk-aware.
   `,
   model: openai('gpt-4.1'),
@@ -330,7 +449,16 @@ export const financeAgent = new Agent({
     databaseTool, 
     vectorQueryTool,
     webBrowserTool,
-    webScraperTool 
+    webScraperTool,
+    createHubspotDeal,
+    getHubspotContact,
+    createHubspotContact,
+    sendSlackMessage,
+    getSlackChannelHistory,
+    createSlackChannel,
+    readGoogleSheet,
+    appendGoogleSheet,
+    updateGoogleSheet 
   },
 });
 
@@ -362,6 +490,10 @@ export const designAgent = new Agent({
     - You can use webScraperTool to extract design resources and examples.
     - You can use databaseTool to access design assets and reference materials.
     - You can use vectorQueryTool to search through past interactions and design knowledge.
+    - Slack tools:
+      * sendSlackMessage: For sending messages to design channels
+      * getSlackChannelHistory: For viewing recent messages in design channels
+      * createSlackChannel: For creating new channels for design projects
     
     Always introduce yourself as Maisie, the Designer. Be creative, user-centered, and detail-oriented.
   `,
@@ -371,7 +503,10 @@ export const designAgent = new Agent({
     databaseTool, 
     vectorQueryTool,
     webBrowserTool,
-    webScraperTool 
+    webScraperTool,
+    sendSlackMessage,
+    getSlackChannelHistory,
+    createSlackChannel
   },
 });
 
@@ -403,6 +538,10 @@ export const researchAgent = new Agent({
     - You can use webScraperTool to extract structured research data like tables, charts, and citations.
     - You can use papersVectorQueryTool to search through academic papers and technical documents.
     - You can use vectorQueryTool to search through past research and interactions.
+    - Slack tools:
+      * sendSlackMessage: For sending messages to research channels
+      * getSlackChannelHistory: For viewing recent messages in research channels
+      * createSlackChannel: For creating new channels for research projects
     
     You CAN access websites directly. When asked to visit a specific research source or website,
     use webBrowserTool with action:"visit" and the URL to navigate to the page, then use action:"extract"
@@ -419,6 +558,12 @@ export const researchAgent = new Agent({
     papersVectorQueryTool, 
     vectorQueryTool,
     webBrowserTool,
-    webScraperTool 
+    webScraperTool,
+    sendSlackMessage,
+    getSlackChannelHistory,
+    createSlackChannel,
+    readGoogleSheet,
+    appendGoogleSheet,
+    updateGoogleSheet
   },
 });

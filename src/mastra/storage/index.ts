@@ -1,6 +1,8 @@
 import { PgVector } from '@mastra/pg';
 import { openai } from '@ai-sdk/openai';
 import { createVectorQueryTool } from '@mastra/rag';
+import { mastra } from '@/mastra';
+import { z } from 'zod';
 
 // Initialize PgVector with the database connection string from environment
 export const pgVector = new PgVector(process.env.DATABASE_URL!);
@@ -15,7 +17,7 @@ export async function initializeVectorStore() {
     });
     console.log('Created knowledge_base index');
     
-    // Create the papers index for research agent if it doesn't exist
+    // Create the papers index for reaearch agent if it doesn't exist
     await pgVector.createIndex({
       indexName: 'papers',
       dimension: 1536, // Dimensions for text-embedding-3-small
@@ -76,6 +78,7 @@ async function seedPapersIndex() {
 // Call initialization on startup
 initializeVectorStore().catch(console.error);
 
+// Restore the original vector query tools with the fixed dependencies
 // Create a vector query tool for general knowledge search
 export const vectorQueryTool = createVectorQueryTool({
   vectorStoreName: 'pgVector',
