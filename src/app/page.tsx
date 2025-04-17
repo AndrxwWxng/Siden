@@ -135,7 +135,10 @@ const [productVisible, setProductVisible] = useState(false);
               {/* Flat image placeholder for dashboard screenshot - to be replaced with custom Figma design */}
               <div className="w-full h-full flex justify-center items-center">
                 <div 
-                  className="w-full max-w-5xl h-full rounded-xl overflow-hidden relative"
+                  className="w-full max-w-5xl h-full rounded-xl border border-[#3a3a3a] bg-[#171717] shadow-2xl overflow-hidden relative"
+                  style={{
+                    boxShadow: '0 30px 60px -20px rgba(99, 102, 241, 0.2), 0 30px 60px -30px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05)',
+                  }}
                 >
                   {/* Screenshot image */}
                   <Image
