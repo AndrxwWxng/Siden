@@ -2054,7 +2054,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#151515] text-white">
+    <div className="flex min-h-screen bg-app-secondary text-app-primary">
       {/* Sidebar */}
       <Sidebar 
         projects={projects} 
@@ -2068,14 +2068,14 @@ const Dashboard = () => {
         className="flex-1 flex flex-col transition-all duration-200"
         style={{ marginLeft: sidebarCollapsed ? '60px' : '280px' }}
       >
-        <div className="h-16 border-b border-[#313131] flex items-center px-6 bg-[#202020]">
-          <span className="mr-4">Welcome, {user.email}</span>
+        <div className="h-16 border-b border-app-color flex items-center px-6 bg-app-primary">
+          <span className="mr-4">Welcome, {user?.email || 'User'}</span>
           <div className="ml-auto">
             <SignOutButton />
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto bg-[#202020] p-6">
+        <div className="flex-1 overflow-auto bg-app-primary p-6">
           <div className="max-w-6xl mx-auto">
             {renderContent()}
           </div>

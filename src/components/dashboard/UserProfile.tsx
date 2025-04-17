@@ -91,15 +91,15 @@ const UserProfile: React.FC<UserProfileProps> = ({
                 <span className="text-sm font-medium">{initials}</span>
               </div>
               <div className="flex-col flex">
-                <span className="text-sm font-medium text-white leading-tight truncate max-w-[140px]">
+                <span className="text-sm font-medium text-app-primary leading-tight truncate max-w-[140px]">
                   {userData.username || 'Loading...'}
                 </span>
-                <span className="text-xs text-[#94A3B8] leading-tight mt-[2px]">{plan}</span>
+                <span className="text-xs text-app-secondary leading-tight mt-[2px]">{plan}</span>
               </div>
             </div>
             <ChevronDown 
               size={16} 
-              className={`text-[#A3A3A3] hover:text-white transition-colors transform ${isOpen ? 'rotate-180' : 'rotate-0'} transition-transform duration-200`} 
+              className={`text-app-secondary hover:text-app-primary transition-colors transform ${isOpen ? 'rotate-180' : 'rotate-0'} transition-transform duration-200`} 
             />
           </div>
         )}
@@ -107,9 +107,9 @@ const UserProfile: React.FC<UserProfileProps> = ({
       
       {/* Dropdown menu - shown when isOpen is true */}
       {isOpen && (
-        <div className={`absolute bottom-full ${collapsed ? 'left-0 ml-0' : 'left-0'} mb-2 w-[270px] bg-[#202020] border border-[#313131] rounded-lg shadow-xl z-20`}>
+        <div className={`absolute bottom-full ${collapsed ? 'left-0 ml-0' : 'left-0'} mb-2 w-[270px] bg-app-primary border border-app-color rounded-lg shadow-xl z-20`}>
           <div className="p-4">
-            <p className="text-xs text-[#94A3B8] mb-2 truncate">{userData.email || 'Loading email...'}</p>
+            <p className="text-xs text-app-secondary mb-2 truncate">{userData.email || 'Loading email...'}</p>
             
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center font-medium mr-3">
@@ -117,35 +117,35 @@ const UserProfile: React.FC<UserProfileProps> = ({
               </div>
               
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-white leading-tight truncate max-w-[170px]">
+                <span className="text-sm font-medium text-app-primary leading-tight truncate max-w-[170px]">
                   {userData.username || 'Loading...'}
                 </span>
                 <div className="flex items-center mt-[2px]">
-                  <span className="text-xs text-[#94A3B8] leading-none">{plan}</span>
+                  <span className="text-xs text-app-secondary leading-none">{plan}</span>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="border-t border-[#313131]">
+          <div className="border-t border-app-color">
             <Link href="/dashboard/account" className="w-full text-left px-4 py-3 text-sm hover:bg-[#252525] transition-colors flex items-center">
-              <UserIcon size={16} className="mr-3 text-[#A3A3A3]" />
+              <UserIcon size={16} className="mr-3 text-app-secondary" />
               <span>My Account</span>
             </Link>
             <Link href="/dashboard/settings" className="w-full text-left px-4 py-3 text-sm hover:bg-[#252525] transition-colors flex items-center">
-              <Settings size={16} className="mr-3 text-[#A3A3A3]" />
+              <Settings size={16} className="mr-3 text-app-secondary" />
               <span>Settings</span>
             </Link>
             <div className="flex items-center justify-between px-4 py-3 text-sm hover:bg-[#252525] transition-colors">
               <div className="flex items-center">
-                <HelpCircle size={16} className="mr-3 text-[#A3A3A3]" />
+                <HelpCircle size={16} className="mr-3 text-app-secondary" />
                 <span>Help & Support</span>
               </div>
               <span className="text-xs bg-indigo-500 text-white px-2 py-0.5 rounded">New</span>
             </div>
           </div>
           
-          <div className="border-t border-[#313131] p-3">
+          <div className="border-t border-app-color p-3">
             <button 
               onClick={handleLogout}
               disabled={isLoggingOut}
