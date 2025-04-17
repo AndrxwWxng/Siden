@@ -108,16 +108,13 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
                 <Link 
                   href="/signup" 
-                  className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[180px]"
+                  className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[180px] "
                 >
                   Start building
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
                 </Link>
                 <Link 
                   href="/pricing" 
-                  className="px-8 py-3 bg-transparent border border-[#2e2e2e] hover:border-[#6366F1] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[180px]"
+                  className="px-8 py-3 bg-transparent border border-[#2e2e2e] hover:border-[#6366F1] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[180px] "
                 >
                   View pricing
                 </Link>
@@ -303,8 +300,8 @@ export default function Home() {
                               <div className="text-xs font-medium text-white">{agent.progress}%</div>
                             </div>
                             <div className="flex space-x-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="text-xs text-[#6366F1] hover:underline cursor-pointer">Configure</div>
-                              <div className="text-xs text-[#6366F1] hover:underline cursor-pointer">View Details</div>
+                              <div className="text-xs text-[#6366F1] cursor-pointer">Configure</div>
+                              <div className="text-xs text-[#6366F1] cursor-pointer">View Details</div>
                             </div>
                           </div>
                         ))}
@@ -1145,7 +1142,7 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="pt-3 border-t border-[#2a2a2a]">
-                      <div className="text-[#6366F1] text-sm font-medium group-hover:underline cursor-pointer flex items-center">
+                      <div className="text-[#6366F1] text-sm font-medium cursor-pointer flex items-center">
                         Read full story
                         <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />

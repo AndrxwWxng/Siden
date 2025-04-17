@@ -134,7 +134,7 @@ function NavLink({ href, children, active }: NavLinkProps) {
     <Link 
       href={href} 
       className={`
-        px-4 py-2 relative group rounded-md overflow-hidden
+        px-4 py-2 relative group
         transition-all duration-300
         ${active 
           ? 'text-white' 
@@ -142,14 +142,12 @@ function NavLink({ href, children, active }: NavLinkProps) {
         }
       `}
     >
-      <span className="relative z-10">{children}</span>
-      {active && (
+      <span>{children}</span>
+      {active ? (
         <span className="absolute inset-0 bg-[#6366F1]/10 rounded-md"></span>
+      ) : (
+        <span className="absolute inset-x-0 bottom-0 h-[2px] bg-indigo-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
       )}
-      <span 
-        className="absolute inset-0 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left bg-[#6366F1]/10 rounded-md"
-        style={{ display: active ? 'none' : 'block' }}
-      ></span>
     </Link>
   );
 }
@@ -168,15 +166,20 @@ function MobileNavLink({ href, children, onClick }: MobileNavLinkProps) {
     <Link 
       href={href} 
       className={`
-        w-full px-4 py-3 flex items-center rounded-md transition-all duration-300
+        w-full px-4 py-3 flex items-center transition-all duration-300 relative group
         ${isActive 
-          ? 'text-white bg-[#6366F1]/10 font-medium' 
-          : 'text-[#AAAAAA] hover:text-white hover:bg-[#2a2a2a]'
+          ? 'text-white font-medium' 
+          : 'text-[#AAAAAA] hover:text-white'
         }
       `}
       onClick={onClick}
     >
       <span>{children}</span>
+      {isActive ? (
+        <span className="absolute inset-0 bg-[#6366F1]/10 rounded-md"></span>
+      ) : (
+        <span className="absolute inset-x-0 bottom-0 h-[2px] bg-indigo-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+      )}
       {isActive && (
         <span className="ml-auto">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

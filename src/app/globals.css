@@ -673,31 +673,6 @@ p {
   }
 }
 
-@layer base {
-  * {
-    @apply transition-colors duration-200;
-  }
-  
-  h1 {
-    @apply text-3xl font-bold text-zinc-800 dark:text-zinc-100 mb-6;
-  }
-  
-  h2 {
-    @apply text-2xl font-semibold text-zinc-800 dark:text-zinc-100 mb-4;
-  }
-  
-  h3 {
-    @apply text-xl font-semibold text-zinc-800 dark:text-zinc-100 mb-3;
-  }
-  
-  p {
-    @apply mb-4 text-zinc-700 dark:text-zinc-300;
-  }
-  
-  a {
-    @apply text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline;
-  }
-}
 
 /* Custom scrollbar for modern browsers */
 @layer utilities {

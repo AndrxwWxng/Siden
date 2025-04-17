@@ -504,10 +504,6 @@ const Dashboard = () => {
                   <p className="text-xs text-[#A3A3A3]">AI-powered automation for customer inquiries</p>
                 </div>
               </div>
-              
-              <div className="mt-4 flex justify-center">
-                {/* "Browse all templates" button removed */}
-              </div>
             </div>
             
             <div className="flex justify-between items-center">
@@ -593,12 +589,17 @@ const Dashboard = () => {
                             )}
                           </div>
                           <p className="text-[#A3A3A3] text-sm mb-2">{role.description}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {role.capabilities.map((capability, index) => (
-                              <span key={index} className="text-xs px-2 py-0.5 bg-[#202020] text-[#A3A3A3] rounded-full">
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {role.capabilities.slice(0, 2).map((capability, idx) => (
+                              <span key={idx} className="inline-block text-xs px-2 py-0.5 text-[#BBBBBB] border border-[#444] rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-white">
                                 {capability}
                               </span>
                             ))}
+                            {role.capabilities.length > 2 && (
+                              <span className="inline-block text-xs px-2 py-0.5 text-[#6366F1] border border-[#6366F1]/30 rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-[#8385f3]">
+                                +{role.capabilities.length - 2}
+                              </span>
+                            )}
                           </div>
                         </div>
                         
@@ -1047,12 +1048,9 @@ const Dashboard = () => {
                         )}
                         {/* Add more connected service icons as needed */}
                       </div>
-                      <div className="text-xs flex items-center bg-[#202020] px-2.5 py-1 rounded-full text-[#A3A3A3] border border-[#444]">
+                      <div className="text-xs flex items-center bg-[#202020] px-2.5 py-1 rounded-md text-[#A3A3A3] border border-[#444]">
                         <span className="text-white mr-1">{Object.values(connectedServices).filter(Boolean).length}</span>/8
                       </div>
-                      <button className="text-xs px-3 py-1.5 rounded-md bg-[#202020] text-[#A3A3A3] hover:text-white transition-colors">
-                        Skip
-                      </button>
                     </div>
                   </div>
                   
@@ -1290,7 +1288,7 @@ const Dashboard = () => {
                       <h2 className="text-lg font-medium">Advanced Settings</h2>
                     </div>
                     <div className="flex items-center">
-                      <div className="text-xs px-2.5 py-1 rounded-full bg-[#202020] text-[#A3A3A3] border border-[#444]">
+                      <div className="text-xs px-2.5 py-1 rounded-md bg-[#202020] text-[#A3A3A3] border border-[#444]">
                         Optional
                       </div>
                     </div>
@@ -1391,8 +1389,8 @@ const Dashboard = () => {
                       
                       return (
                         <div key={agent.id} className="px-6 py-4 hover:bg-[#202020] transition-colors">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-md bg-[#202020] flex items-center justify-center flex-shrink-0 mr-3 overflow-hidden">
+                          <div className="flex items-start">
+                            <div className="w-12 h-12 rounded-md bg-[#202020] mr-4 overflow-hidden mt-1">
                               <img 
                                 src={agent.icon} 
                                 alt={agent.name} 
@@ -1400,16 +1398,22 @@ const Dashboard = () => {
                               />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-white mb-0.5">{agent.name}</h3>
-                              <p className="text-xs text-[#6366F1]">AI {agent.name} Role</p>
-                              <div className="mt-1.5 flex flex-wrap gap-1">
+                              <h3 className="text-lg font-semibold text-white mb-1">
+                                {(() => {
+                                  const namePart = agent.icon.split('/').pop() || '';
+                                  const name = namePart.split('.')[0] || '';
+                                  return name.charAt(0).toUpperCase() + name.slice(1);
+                                })()}
+                              </h3>
+                              <p className="text-base font-medium text-[#6366F1]">{agent.name}</p>
+                              <div className="mt-2 flex flex-wrap gap-2">
                                 {agent.capabilities.slice(0, 2).map((capability, idx) => (
-                                  <span key={idx} className="inline-block text-[9px] px-1.5 py-0.5 bg-[#202020] text-[#A3A3A3] rounded-full whitespace-nowrap">
+                                  <span key={idx} className="inline-block text-xs px-2 py-0.5 text-[#BBBBBB] border border-[#444] rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-white">
                                     {capability}
                                   </span>
                                 ))}
                                 {agent.capabilities.length > 2 && (
-                                  <span className="inline-block text-[9px] px-1.5 py-0.5 bg-[#202020] text-[#A3A3A3] rounded-full whitespace-nowrap">
+                                  <span className="inline-block text-xs px-2 py-0.5 text-[#6366F1] border border-[#6366F1]/30 rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-[#8385f3]">
                                     +{agent.capabilities.length - 2}
                                   </span>
                                 )}
@@ -1777,202 +1781,6 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
-            
-            {/* Database Connection Modal */}
-            {showDatabaseModal && (
-              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-[#202020] border border-[#444] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
-                  <div className="sticky top-0 bg-[#202020] border-b border-[#444] px-6 py-4 flex items-center justify-between z-10">
-                    <h2 className="text-xl font-medium">Configure Database Connection</h2>
-                    <button 
-                      onClick={() => setShowDatabaseModal(false)}
-                      className="text-[#8A8F98] hover:text-white transition-colors"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 6L6 18M6 6L18 18"></path>
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  <div className="p-6">
-                    <div className="mb-6">
-                      <p className="text-[#A3A3A3] mb-6">
-                        Configure your database connection to allow AI agents to securely query and manage your data.
-                      </p>
-                      
-                      <div className="bg-[#2E2E2E] rounded-lg p-4 mb-6">
-                        <h3 className="font-medium mb-2 flex items-center">
-                          <svg className="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                          </svg>
-                          Security Information
-                        </h3>
-                        <p className="text-sm text-[#A3A3A3] mb-2">
-                          Your database credentials are securely stored and encrypted. Our system:
-                        </p>
-                        <ul className="space-y-2 text-sm text-[#A3A3A3]">
-                          <li className="flex items-start gap-2">
-                            <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="w-2 h-2 bg-white rounded-full"></span>
-                            </span>
-                            <span>Uses end-to-end encryption for all credentials</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="w-2 h-2 bg-white rounded-full"></span>
-                            </span>
-                            <span>Only executes read-only queries by default</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="w-2 h-2 bg-white rounded-full"></span>
-                            </span>
-                            <span>Allows you to set explicit permissions and access controls</span>
-                          </li>
-                        </ul>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Database Type</label>
-                          <div className="grid grid-cols-3 gap-3">
-                            <button
-                              onClick={() => setDatabaseType('postgres')}
-                              className={`p-3 rounded-lg text-center text-sm border ${
-                                databaseType === 'postgres' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                              } transition-colors`}
-                            >
-                              PostgreSQL
-                            </button>
-                            <button
-                              onClick={() => setDatabaseType('mysql')}
-                              className={`p-3 rounded-lg text-center text-sm border ${
-                                databaseType === 'mysql' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                              } transition-colors`}
-                            >
-                              MySQL
-                            </button>
-                            <button
-                              onClick={() => setDatabaseType('mongodb')}
-                              className={`p-3 rounded-lg text-center text-sm border ${
-                                databaseType === 'mongodb' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                              } transition-colors`}
-                            >
-                              MongoDB
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Host</label>
-                            <input
-                              type="text"
-                              value={databaseHost}
-                              onChange={(e) => setDatabaseHost(e.target.value)}
-                              placeholder="e.g., db.example.com"
-                              className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Port</label>
-                            <input
-                              type="text"
-                              value={databasePort}
-                              onChange={(e) => setDatabasePort(e.target.value)}
-                              placeholder={databaseType === 'postgres' ? '5432' : databaseType === 'mysql' ? '3306' : '27017'}
-                              className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Database Name</label>
-                          <input
-                            type="text"
-                            value={databaseName}
-                            onChange={(e) => setDatabaseName(e.target.value)}
-                            placeholder="e.g., my_application_db"
-                            className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Username</label>
-                          <input
-                            type="text"
-                            value={databaseUser}
-                            onChange={(e) => setDatabaseUser(e.target.value)}
-                            placeholder="Database username"
-                            className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Password</label>
-                          <input
-                            type="password"
-                            value={databasePassword}
-                            onChange={(e) => setDatabasePassword(e.target.value)}
-                            placeholder="Database password"
-                            className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                          />
-                        </div>
-                        
-                        <div className="flex items-center py-2">
-                          <input 
-                            id="read-only-access" 
-                            type="checkbox" 
-                            className="w-4 h-4 accent-[#6366F1]" 
-                            defaultChecked 
-                          />
-                          <label htmlFor="read-only-access" className="ml-2 text-sm text-[#A3A3A3]">
-                            Limit to read-only access (recommended)
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        onClick={() => setShowDatabaseModal(false)}
-                        className="px-4 py-2 border border-[#444] hover:border-[#6366F1] rounded-md transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsConnectingDatabase(true);
-                          // Simulate testing the connection
-                          setTimeout(() => {
-                            setIsConnectingDatabase(false);
-                            // Mark database as connected (or reconnected with new settings)
-                            setConnectedServices(prev => ({ ...prev, database: true }));
-                            setShowDatabaseModal(false);
-                          }, 2000);
-                        }}
-                        disabled={!databaseHost || !databaseName || !databaseUser || !databasePassword || isConnectingDatabase}
-                        className={`px-6 py-2.5 rounded-md transition-colors flex items-center ${
-                          !databaseHost || !databaseName || !databaseUser || !databasePassword || isConnectingDatabase
-                            ? 'bg-[#444] text-[#999] cursor-not-allowed'
-                            : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white'
-                        }`}
-                      >
-                        {isConnectingDatabase ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Testing Connection...
-                          </>
-                        ) : (
-                          'Connect Database'
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         );
       case 'chat':
@@ -1994,7 +1802,7 @@ const Dashboard = () => {
                       if (index > 2) return null;
                       
                       return (
-                        <div key={agent.id} className="w-8 h-8 rounded-full bg-[#2E2E2E] flex items-center justify-center ring-2 ring-[#202020]">
+                        <div key={agent.id} className="w-8 h-8 rounded-md bg-[#2E2E2E] flex items-center justify-center ring-2 ring-[#202020]">
                           <img 
                             src={agent.icon} 
                             alt={agent.name} 
@@ -2005,7 +1813,7 @@ const Dashboard = () => {
                     })}
                     
                     {selectedAgents.length > 3 && (
-                      <div className="w-8 h-8 rounded-full bg-[#2E2E2E] flex items-center justify-center text-xs ring-2 ring-[#202020]">
+                      <div className="w-8 h-8 rounded-md bg-[#2E2E2E] flex items-center justify-center text-xs ring-2 ring-[#202020]">
                         +{selectedAgents.length - 3}
                       </div>
                     )}
@@ -2028,7 +1836,7 @@ const Dashboard = () => {
               <div className="max-w-3xl mx-auto space-y-6">
                 <div className="bg-[#2E2E2E] rounded-xl p-4 shadow">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#202020] flex items-center justify-center text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-md bg-[#202020] flex items-center justify-center text-xs flex-shrink-0">
                       <User size={16} />
                     </div>
                     <div>
@@ -2039,7 +1847,7 @@ const Dashboard = () => {
                 
                 <div className="bg-[#2E2E2E] rounded-xl p-4 shadow">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center text-xs flex-shrink-0">
                       <Bot size={16} />
                     </div>
                     <div>
