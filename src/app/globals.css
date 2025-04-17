@@ -4,13 +4,13 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap'); */
 
+/* Global styles - Remove underlines from all links */
+a {
+  text-decoration: none;
+}
+
 :root {
-  /* Color Palette */
-  --primary-bg: #252525;
-  --secondary-bg: #1B1A19;
-  --tertiary-bg: #343131;
-  --editor-bg: #1e1e1e;
-  --ui-element-bg: #252525;
+  /* Base colors */
   --primary-accent: #6366F1;
   --primary-accent-hover: #4F46E5;
   --primary-accent-light: #818CF8;
@@ -18,16 +18,7 @@
   --success-accent: #22C55E;
   --error-accent: #EF4444;
   --warning-accent: #F59E0B;
-  --primary-text: #FFFFFF;
-  --secondary-text: #AAAAAA;
-  --tertiary-text: #666666;
-  --border-color: #2e2e2e;
-  --border-color-hover: #3e3e3e;
-  --glass-bg: rgba(18, 18, 18, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.05);
-  --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
-  --hero-gradient: linear-gradient(to right, #6366F1, #8B5CF6);
-
+  
   /* Typography */
   --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -67,25 +58,138 @@
   --syntax-variable: #9CDCFE;
 }
 
-@theme inline {
-  --color-background: var(--primary-bg);
-  --color-foreground: var(--primary-text);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+/* Dark theme (default) */
+.dark {
+  /* Color Palette */
+  --primary-bg: #252525;
+  --secondary-bg: #1B1A19;
+  --tertiary-bg: #343131;
+  --editor-bg: #1e1e1e;
+  --ui-element-bg: #252525;
+  --primary-text: #FFFFFF;
+  --secondary-text: #AAAAAA;
+  --tertiary-text: #666666;
+  --border-color: #2e2e2e;
+  --border-color-hover: #3e3e3e;
+  --glass-bg: rgba(18, 18, 18, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
+  --hero-gradient: linear-gradient(to right, #6366F1, #8B5CF6);
+  
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 18, 18, 18;
+  --background-end-rgb: 18, 18, 18;
+  
+  color-scheme: dark;
+}
+
+/* Light theme */
+.light {
+  /* Color Palette */
+  --primary-bg: #f8f8f8;
+  --secondary-bg: #ffffff;
+  --tertiary-bg: #f0f0f0;
+  --editor-bg: #f5f5f5;
+  --ui-element-bg: #ffffff;
+  --primary-text: #121212;
+  --secondary-text: #555555;
+  --tertiary-text: #888888;
+  --border-color: #e0e0e0;
+  --border-color-hover: #d0d0d0;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+  --hero-gradient: linear-gradient(to right, #6366F1, #8B5CF6);
+  
+  --foreground-rgb: 18, 18, 18;
+  --background-start-rgb: 248, 248, 248;
+  --background-end-rgb: 240, 240, 240;
+  
+  color-scheme: light;
+}
+
+/* Apply theme colors to body */
+body {
+  color: var(--primary-text);
+  background-color: var(--secondary-bg);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Utility classes for dynamic theme-based styling */
+.bg-app-primary {
+  background-color: var(--primary-bg);
+}
+
+.bg-app-secondary {
+  background-color: var(--secondary-bg);
+}
+
+.bg-app-tertiary {
+  background-color: var(--tertiary-bg);
+}
+
+.text-app-primary {
+  color: var(--primary-text);
+}
+
+.text-app-secondary {
+  color: var(--secondary-text);
+}
+
+.border-app-color {
+  border-color: var(--border-color);
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--primary-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tertiary-text);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-accent);
+}
+
+/* Global styles - Remove underlines from all links */
+a {
+  text-decoration: none;
 }
 
 /* Base Styles */
-html {
+html, body {
   scroll-behavior: smooth;
-}
-
-body {
-  background: var(--primary-bg);
-  color: var(--primary-text);
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  color: rgb(var(--foreground-rgb));
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
-  overflow-x: hidden;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -140,11 +244,6 @@ p {
 }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -165,10 +264,6 @@ p {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.6s ease-out forwards;
 }
 
 .animate-slide-up {
@@ -653,11 +748,48 @@ p {
   }
 }
 
-/* Dark Mode Only - Our default is dark */
-@media (prefers-color-scheme: light) {
-  :root {
-    /* Force dark mode */
-    color-scheme: dark;
+/* Custom scrollbar for modern browsers */
+@layer utilities {
+  .scrollbar-modern {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+  
+  .scrollbar-modern::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-modern::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-modern::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
+  }
+  
+  .dark .scrollbar-modern {
+    scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+  }
+  
+  .dark .scrollbar-modern::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.5);
+  }
+  
+  .dark .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(75, 85, 99, 0.7);
+  }
+}
+
+/* Enhanced focus styles */
+@layer utilities {
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-blue-600 dark:focus:ring-offset-zinc-900;
   }
 }
 

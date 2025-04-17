@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Logo from '@/components/Logo';
+import Image from 'next/image';
 import { 
   PlusCircle, Settings, Users, ChevronRight, Briefcase, ArrowRight, 
   Database, Bell, Search, Grid, Heart, Filter, Home, MessageSquare,
   BarChart3, Calendar, HelpCircle, ChevronLeft, User, Bot, Paperclip, Send,
-  FileText, Code, BookOpen
+  FileText, Code, BookOpen, LogOut, Shield
 } from 'lucide-react';
-
+import { createClient } from '@/utils/supabase/client';
+import { ProjectService } from '@/services/projectService';
+import { Project } from '@/components/dashboard/types';
+import SignOutButton from '@/components/SignOutButton';
 // Agent role definitions with capabilities
 const agentRoles = [
   {
@@ -78,31 +81,7 @@ const agentRoles = [
   }
 ];
 
-// Mock projects for demonstration
-const mockProjects = [
-  {
-    id: 'p1',
-    name: 'Marketing Campaign Builder',
-    description: 'AI-powered tool to create and optimize marketing campaigns',
-    agents: 4,
-    status: 'active',
-    lastActive: '2 hours ago',
-    progress: 72,
-    tags: ['marketing', 'automation']
-  },
-  {
-    id: 'p2',
-    name: 'E-commerce Analytics Dashboard',
-    description: 'Real-time analytics and insights for online stores',
-    agents: 3,
-    status: 'active',
-    lastActive: '1 day ago',
-    progress: 45,
-    tags: ['analytics', 'e-commerce']
-  }
-];
-
-// Import our new components
+// Import our components
 import {
   Sidebar,
   ProjectsHeader,
@@ -126,7 +105,7 @@ const Dashboard = () => {
   const [projectDescription, setProjectDescription] = useState('');
   const [companyInfo, setCompanyInfo] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<string[]>(['ceo', 'dev', 'marketing']);
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [agentName, setAgentName] = useState("");
   const [agentPersonality, setAgentPersonality] = useState("");
@@ -139,6 +118,216 @@ const Dashboard = () => {
     projectFiles: true
   });
   
+  // Advanced settings toggle states
+  const [knowledgeAccess, setKnowledgeAccess] = useState(true);
+  const [memoryPersistence, setMemoryPersistence] = useState(true);
+  const [autonomousMode, setAutonomousMode] = useState(false);
+  
+  const [user, setUser] = useState<any>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  
+  // Custom Integration Modal
+  const [showCustomIntegrationModal, setShowCustomIntegrationModal] = useState(false);
+  const [customIntegrationName, setCustomIntegrationName] = useState('');
+  const [customIntegrationEndpoint, setCustomIntegrationEndpoint] = useState('');
+  const [customIntegrationAPIKey, setCustomIntegrationAPIKey] = useState('');
+  const [customIntegrationDescription, setCustomIntegrationDescription] = useState('');
+  const [customIntegrationAuthType, setCustomIntegrationAuthType] = useState<'api_key' | 'oauth' | 'basic'>('api_key');
+  const [isAddingIntegration, setIsAddingIntegration] = useState(false);
+  const [integrationAdded, setIntegrationAdded] = useState(false);
+  
+  // Database Connection Modal
+  const [showDatabaseModal, setShowDatabaseModal] = useState(false);
+  const [databaseType, setDatabaseType] = useState<'mysql' | 'postgres' | 'mongodb'>('postgres');
+  const [databaseHost, setDatabaseHost] = useState('');
+  const [databasePort, setDatabasePort] = useState('');
+  const [databaseName, setDatabaseName] = useState('');
+  const [databaseUser, setDatabaseUser] = useState('');
+  const [databasePassword, setDatabasePassword] = useState('');
+  const [isConnectingDatabase, setIsConnectingDatabase] = useState(false);
+  
+  // Connection status for integrations
+  const [connectedServices, setConnectedServices] = useState<Record<string, boolean>>({
+    googleWorkspace: true,
+    database: true,
+    github: false,
+    slack: false,
+    hubspot: false
+  });
+  
+  // Connecting state for service buttons
+  const [isConnecting, setIsConnecting] = useState<Record<string, boolean>>({
+    github: false,
+    slack: false,
+    hubspot: false,
+    customIntegration: false
+  });
+  
+  // Inside the Dashboard component, add this state variable with the other state variables
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  
+  // Connection handlers
+  const handleToggleConnection = (service: string) => {
+    // If already connected, show configuration modal instead
+    if (connectedServices[service]) {
+      // Handle configuration modal (not implemented in this example)
+      console.log(`Configuring ${service}`);
+      return;
+    }
+    
+    // Show connecting state
+    const [isConnecting, setIsConnecting] = useState<Record<string, boolean>>({});
+    setIsConnecting(prev => ({ ...prev, [service]: true }));
+    
+    // Simulate connection process
+    setTimeout(() => {
+      setConnectedServices(prev => ({ ...prev, [service]: true }));
+      setIsConnecting(prev => ({ ...prev, [service]: false }));
+    }, 1500);
+  };
+
+  const initiateOAuthFlow = (service: string) => {
+    // Set connecting state
+    setIsConnecting(prev => ({ ...prev, [service]: true }));
+    
+    // Define OAuth endpoints for different services
+    const oauthUrls: Record<string, string> = {
+      googleWorkspace: 'https://accounts.google.com/o/oauth2/v2/auth?client_id=client_id_placeholder&redirect_uri=http://localhost:3000/auth/callback&scope=https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/gmail.send&response_type=code',
+      github: 'https://github.com/login/oauth/authorize?client_id=client_id_placeholder&scope=repo,user&redirect_uri=http://localhost:3000/auth/callback',
+      slack: 'https://slack.com/oauth/v2/authorize?client_id=client_id_placeholder&scope=chat:write,channels:read&redirect_uri=http://localhost:3000/auth/callback',
+      hubspot: 'https://app.hubspot.com/oauth/authorize?client_id=client_id_placeholder&scope=contacts%20content&redirect_uri=http://localhost:3000/auth/callback',
+    };
+    
+    // Open popup for OAuth flow
+    const width = 600;
+    const height = 700;
+    const left = window.innerWidth / 2 - width / 2;
+    const top = window.innerHeight / 2 - height / 2;
+    
+    // Create popup window with proper sizing
+    const popup = window.open(
+      oauthUrls[service],
+      `Connect ${service}`,
+      `width=${width},height=${height},left=${left},top=${top},toolbar=0,location=0,menubar=0,directories=0,scrollbars=1`
+    );
+    
+    // Mock successful connection after timeout (in a real app, we'd listen for a message from the popup)
+    setTimeout(() => {
+      if (popup) popup.close();
+      setConnectedServices(prev => ({ ...prev, [service]: true }));
+      setIsConnecting(prev => ({ ...prev, [service]: false }));
+    }, 3000);
+  };
+
+  // Add this function early in the component
+  const verifySchema = async () => {
+    try {
+      const response = await fetch('/api/verify-schema');
+      const result = await response.json();
+      console.log('Schema verification result:', result);
+      
+      if (!result.success) {
+        console.error('Schema verification failed:', result.message);
+        // Show warning to the user
+        alert(`Database schema issue detected: ${result.message}. Please make sure the database is set up correctly.`);
+      }
+      
+      return result.success;
+    } catch (error) {
+      console.error('Error verifying schema:', error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingProjects(true);
+      
+      // Verify schema first
+      const schemaValid = await verifySchema();
+      
+      if (!schemaValid) {
+        setIsLoadingProjects(false);
+        return;
+      }
+      
+      try {
+        // Fetch projects
+        const userProjects = await ProjectService.getUserProjects();
+        setProjects(userProjects || []);
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        setIsLoadingProjects(true);
+        const { data, error } = await createClient().auth.getUser();
+        
+        if (error) {
+          console.error('Auth error:', error.message);
+          router.push('/signin');
+          return;
+        }
+        
+        if (!data.user) {
+          router.push('/signin');
+          return;
+        }
+        
+        setUser(data.user);
+        
+        // Load projects after confirming authentication
+        try {
+          const userProjects = await ProjectService.getUserProjects();
+          setProjects(userProjects);
+        } catch (error) {
+          console.error('Error loading projects:', error);
+        } finally {
+          setIsLoadingProjects(false);
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        router.push('/signin');
+      }
+    };
+    
+    getUser();
+    
+    // Set up auth state change listener
+    const { data: listener } = createClient().auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        router.push('/signin');
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          setUser(session.user);
+          // Reload projects when auth state changes
+          ProjectService.getUserProjects().then(setProjects);
+        }
+      }
+    });
+    
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  // Show loading state if user is not loaded yet
+  if (!user) return (
+    <div className="flex min-h-screen items-center justify-center bg-[#151515]">
+      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-indigo-600"></div>
+    </div>
+  );
+
   const toggleAgentSelection = (agentId: string) => {
     if (selectedAgents.includes(agentId)) {
       setSelectedAgents(selectedAgents.filter(id => id !== agentId));
@@ -163,44 +352,137 @@ const Dashboard = () => {
     setSelectedView('configure');
   };
   
-  const createProject = () => {
-    // In a real app, this would create the project and redirect
-    setSelectedView('projects');
+  const createProject = async () => {
+    try {
+      setIsCreatingProject(true);
+      console.log('Starting project creation with name:', projectName);
+      
+      // Validate project input
+      if (!projectName.trim()) {
+        alert('Please enter a project name');
+        setIsCreatingProject(false);
+        return;
+      }
+      
+      // Test Supabase connection
+      try {
+        const response = await fetch('/api/test-connection');
+        const result = await response.json();
+        console.log('Connection test results:', result);
+        
+        if (!result.success) {
+          throw new Error(`Connection test failed: ${result.message}`);
+        }
+        
+        // Warn if not authenticated but proceed anyway
+        if (result.auth.status !== 'authenticated') {
+          console.warn('Not authenticated, but proceeding with project creation');
+        }
+        
+      } catch (connError) {
+        console.error('Connection test error:', connError);
+        // Continue anyway, the project service will check authentication
+      }
+      
+      // Create project in Supabase with selected agents
+      const projectData = {
+        name: projectName,
+        description: projectDescription,
+        status: 'active',
+        agents: selectedAgents
+      };
+      
+      console.log('Submitting project data:', projectData);
+      const newProject = await ProjectService.createProject(projectData);
+      
+      if (newProject) {
+        console.log('Project created successfully:', newProject);
+        
+        // Add the new project to the state
+        setProjects(prevProjects => [newProject, ...prevProjects]);
+        
+        // Reset form data
+        setProjectName('');
+        setProjectDescription('');
+        setCompanyInfo('');
+        setSelectedAgents([]);
+        
+        // Show success message
+        alert('Project created successfully!');
+        
+        // Go back to project list view
+        setSelectedView('projects');
+      } else {
+        console.error('Failed to create project - no project returned');
+        // Show error message to user
+        alert('Failed to create project. Please try again or check the console for details.');
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+      // Show error message to user with more details
+      let errorMessage = 'An error occurred while creating the project.';
+      if (error instanceof Error) {
+        errorMessage += ' Error: ' + error.message;
+      }
+      alert(errorMessage);
+    } finally {
+      setIsCreatingProject(false);
+    }
   };
+
+  // Filter and search projects
+  const filteredProjects = projects.filter(project => {
+    // Apply status filter
+    if (selectedFilter === 'active' && project.status !== 'active') return false;
+    if (selectedFilter === 'archived' && project.status !== 'archived') return false;
+    
+    // Apply search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      return (
+        project.name.toLowerCase().includes(search) ||
+        project.description.toLowerCase().includes(search)
+      );
+    }
+    
+    return true;
+  });
   
   // Render different views based on the current step
   const renderContent = () => {
     switch (selectedView) {
       case 'projects':
-  return (
+        return (
           <div className="max-w-6xl mx-auto px-8 w-full pt-12">
             <div className="mb-16">
               <ProjectsHeader onCreateProject={startNewProject} />
               
               <ProjectSearch 
                 onSearch={setSearchTerm}
-                onFilterChange={(filter) => setSelectedFilter(filter as FilterType)}
-                selectedFilter={selectedFilter as FilterType}
+                onFilterChange={setSelectedFilter}
+                currentFilter={selectedFilter}
               />
-            </div>
-            
-            {mockProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {filteredProjects.map(project => (
-                  <ProjectCard 
-                    key={project.id}
-                    {...project}
-                    onViewProject={(id) => router.push(`/dashboard/project?id=${id}`)}
-                  />
-                ))}
-                
-                <NewProjectCard onClick={startNewProject} />
-              </div>
-            ) : (
-              <div className="flex justify-center items-center h-[calc(100vh-300px)]">
+              
+              {isLoadingProjects ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-8 h-8 border-t-2 border-indigo-500 border-solid rounded-full animate-spin"></div>
+                </div>
+              ) : filteredProjects.length > 0 ? (
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+                  <NewProjectCard onClick={startNewProject} />
+                  
+                  {filteredProjects.map(project => (
+                    <ProjectCard 
+                      key={project.id} 
+                      project={project} 
+                      onClick={() => router.push(`/dashboard/project?id=${project.id}`)}
+                    />
+                  ))}
+                </div>
+              ) : (
                 <EmptyProjectState onCreateProject={startNewProject} />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         );
         
@@ -243,9 +525,9 @@ const Dashboard = () => {
                     rows={3}
                     className="w-full px-4 py-3 bg-[#202020] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
                   />
-          </div>
-          
-          <div>
+                </div>
+                
+                <div>
                   <label className="flex items-center justify-between text-sm mb-2">
                     <span className="font-medium">Company Information</span>
                     <span className="text-[#A3A3A3]">Optional</span>
@@ -274,38 +556,41 @@ const Dashboard = () => {
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('development')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
-                    <BarChart3 size={24} className="text-[#6366F1]" />
+                    <Code size={24} className="text-[#6366F1]" />
                   </div>
-                  <h3 className="font-medium mb-1">Analytics Dashboard</h3>
-                  <p className="text-xs text-[#A3A3A3]">Track and visualize your business metrics</p>
+                  <h3 className="font-medium mb-1">AI Developer Team</h3>
+                  <p className="text-xs text-[#A3A3A3]">Code generation and project development</p>
                 </div>
                 
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('content')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
-                    <MessageSquare size={24} className="text-[#6366F1]" />
+                    <FileText size={24} className="text-[#6366F1]" />
                   </div>
-                  <h3 className="font-medium mb-1">Customer Service</h3>
-                  <p className="text-xs text-[#A3A3A3]">Automate customer support and inquiries</p>
+                  <h3 className="font-medium mb-1">Content Creation</h3>
+                  <p className="text-xs text-[#A3A3A3]">Generate marketing content and social media</p>
                 </div>
                 
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('custom')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
-                    <Calendar size={24} className="text-[#6366F1]" />
+                    <Settings size={24} className="text-[#6366F1]" />
                   </div>
-                  <h3 className="font-medium mb-1">Content Calendar</h3>
-                  <p className="text-xs text-[#A3A3A3]">Plan and create content for marketing</p>
+                  <h3 className="font-medium mb-1">Custom Team</h3>
+                  <p className="text-xs text-[#A3A3A3]">Build your own team from scratch</p>
                 </div>
               </div>
-              
-              <div className="mt-4 flex justify-center">
-                <button className="text-sm text-[#6366F1] hover:text-[#4F46E5] transition-colors">
-                  Browse all templates →
-            </button>
-          </div>
-        </div>
-        
+            </div>
+            
             <div className="flex justify-between items-center">
               <button
                 onClick={() => setSelectedView('projects')}
@@ -366,9 +651,9 @@ const Dashboard = () => {
                         isSelected ? 'bg-[#2E2E2E] border-[#6366F1]' : 'bg-transparent hover:bg-[#2E2E2E] border-[#444]'
                       } border rounded-xl p-6 cursor-pointer transition-all`}
                     >
-            <div className="flex items-center">
+                      <div className="flex items-center">
                         <div className="relative mr-5">
-                          <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${
+                          <div className={`w-12 h-12 rounded-md overflow-hidden flex items-center justify-center ${
                             isSelected ? 'ring-2 ring-[#6366F1]' : 'ring-1 ring-[#444]'
                           }`}>
                             <img 
@@ -389,12 +674,17 @@ const Dashboard = () => {
                             )}
                           </div>
                           <p className="text-[#A3A3A3] text-sm mb-2">{role.description}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {role.capabilities.map((capability, index) => (
-                              <span key={index} className="text-xs px-2 py-0.5 bg-[#202020] text-[#A3A3A3] rounded-full">
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {role.capabilities.slice(0, 2).map((capability, idx) => (
+                              <span key={idx} className="inline-block text-xs px-2 py-0.5 text-[#BBBBBB] border border-[#444] rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-white">
                                 {capability}
                               </span>
                             ))}
+                            {role.capabilities.length > 2 && (
+                              <span className="inline-block text-xs px-2 py-0.5 text-[#6366F1] border border-[#6366F1]/30 rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-[#8385f3]">
+                                +{role.capabilities.length - 2}
+                              </span>
+                            )}
                           </div>
                         </div>
                         
@@ -457,24 +747,19 @@ const Dashboard = () => {
               
               <div className="flex items-center justify-between mt-8">
                 <button
-                  onClick={() => setSelectedView('new-project')}
-                  className="flex items-center gap-2 py-2 px-4 rounded-md hover:bg-[#2E2E2E] transition-colors"
+                  onClick={goBackToProjectDetails} 
+                  className="flex items-center gap-2 px-4 py-2 border border-[#444] rounded-md text-sm hover:bg-[#2A2A2A] transition-colors"
                 >
                   <ChevronLeft size={16} />
-                  <span>Back</span>
+                  Back
                 </button>
                 
                 <button
-                  onClick={() => setSelectedView('chat')}
-                  disabled={selectedAgents.length === 0}
-                  className={`flex items-center gap-2 py-2 px-4 rounded-md ${
-                    selectedAgents.length === 0
-                      ? 'bg-[#2E2E2E] text-[#999999] cursor-not-allowed'
-                      : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white cursor-pointer'
-                  } transition-colors`}
+                  onClick={proceedToConfiguration}
+                  className="flex items-center gap-2 px-6 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors"
                 >
-                  <span>Continue</span>
-                  <ArrowRight size={16} />
+                  Continue
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -494,9 +779,9 @@ const Dashboard = () => {
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 6L6 18M6 6L18 18"></path>
                       </svg>
-            </button>
-          </div>
-          
+                    </button>
+                  </div>
+                  
                   {(() => {
                     const agent = agentRoles.find(role => role.id === selectedProfile);
                     if (!agent) return null;
@@ -504,7 +789,7 @@ const Dashboard = () => {
                     return (
                       <div className="px-6 py-6">
                         <div className="flex items-start mb-8">
-                          <div className="w-16 h-16 rounded-lg bg-[#2E2E2E] flex items-center justify-center text-3xl mr-5 overflow-hidden">
+                          <div className="w-10 h-10 rounded-md bg-[#202020] flex items-center justify-center text-xl mr-3 overflow-hidden">
                             <img 
                               src={agent.icon} 
                               alt={agent.name} 
@@ -809,37 +1094,94 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
               <div className="md:col-span-2">
                 <div className="bg-[#2E2E2E] border border-[#444] rounded-xl overflow-hidden mb-8">
-                  <div className="px-6 py-4 border-b border-[#444] flex items-center justify-between">
-                    <h2 className="text-lg font-medium flex items-center">
-                      <Briefcase size={18} className="mr-2 text-[#6366F1]" />
-                      Connect Tools & Resources
-                    </h2>
-                    <button className="text-xs px-3 py-1.5 rounded-md bg-[#202020] text-[#A3A3A3] hover:text-white transition-colors">
-                      Skip All
-                    </button>
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-[#444] from-[#2E2E2E] to-[#232323]">
+                    <div className="flex items-center">
+                      <div className="bg-[#6366F1]/10 w-8 h-8 rounded-lg flex items-center justify-center mr-3">
+                        <Briefcase size={18} className="text-[#6366F1]" />
+                      </div>
+                      <h2 className="text-lg font-medium">Integrations</h2>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex -space-x-1">
+                        {connectedServices.googleWorkspace && (
+                          <div className="w-6 h-6 rounded-full bg-white p-0.5 ring-2 ring-[#2E2E2E]">
+                            <Image src="/logos/google.svg" alt="Google" width={20} height={20} />
+                          </div>
+                        )}
+                        {connectedServices.github && (
+                          <div className="w-6 h-6 rounded-full bg-[#24292e] p-0.5 ring-2 ring-[#2E2E2E]">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                            </svg>
+                          </div>
+                        )}
+                        {connectedServices.slack ? (
+                          <div className="w-6 h-6 rounded-full bg-white p-0.5 ring-2 ring-[#2E2E2E]">
+                            <Image src="/logos/slack.svg" alt="Slack" width={20} height={20} />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-[#24292e] p-0.5 ring-2 ring-[#2E2E2E]">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                            </svg>
+                          </div>
+                        )}
+                        {/* Add more connected service icons as needed */}
+                      </div>
+                      <div className="text-xs flex items-center bg-[#202020] px-2.5 py-1 rounded-md text-[#A3A3A3] border border-[#444]">
+                        <span className="text-white mr-1">{Object.values(connectedServices).filter(Boolean).length}</span>/8
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="divide-y divide-[#444]">
+                    {/* Google Workspace */}
                     <div className="px-6 py-5 hover:bg-[#202020] transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <div className="w-12 h-12 bg-[#202020] rounded-lg flex items-center justify-center mr-4">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.792 4.792 0 0 0 0 3.063h.003c.635 1.893 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.702 3.702 0 0 0 1.599-2.431H8v-3.08h7.545z" fill="#EA4335" />
-                              <path d="M0 8a8 8 0 1 0 16 0A8 8 0 0 0 0 8m8 5.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11" fill="#34A853" />
-                            </svg>
+                            <Image src="/logos/google.svg" alt="Google Workspace" width={28} height={28} />
                           </div>
                           <div>
                             <h3 className="font-medium text-white mb-1">Google Workspace</h3>
                             <p className="text-sm text-[#A3A3A3]">Allow agents to access your Docs, Sheets, and Gmail</p>
                           </div>
                         </div>
-                        <button className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors">
-                          Connect
-                        </button>
+                        {connectedServices.googleWorkspace ? (
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => initiateOAuthFlow('googleWorkspace')}
+                              className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
+                              disabled={isConnecting.googleWorkspace}
+                            >
+                              {isConnecting.googleWorkspace ? (
+                                <>
+                                  <div className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                                  Reconnecting...
+                                </>
+                              ) : 'Connected'}
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => initiateOAuthFlow('googleWorkspace')}
+                            disabled={isConnecting.googleWorkspace}
+                            className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center"
+                          >
+                            {isConnecting.googleWorkspace ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Connecting...
+                              </>
+                            ) : (
+                              'Connect'
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
                     
+                    {/* Database Access */}
                     <div className="px-6 py-5 hover:bg-[#202020] transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
@@ -851,30 +1193,208 @@ const Dashboard = () => {
                             <p className="text-sm text-[#A3A3A3]">Allow agents to query your databases securely</p>
                           </div>
                         </div>
-                        <button className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors">
-                          Connect
+                        <div className="flex items-center gap-3">
+                          <button 
+                            onClick={() => setShowDatabaseModal(true)} 
+                            className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
+                          >
+                            Connected
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* GitHub */}
+                    <div className="px-6 py-5 hover:bg-[#202020] transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-[#202020] rounded-lg flex items-center justify-center mr-4">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" fill="white"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-white mb-1">GitHub</h3>
+                            <p className="text-sm text-[#A3A3A3]">Allow agents to access repositories and create pull requests</p>
+                          </div>
+                        </div>
+                        {connectedServices.github ? (
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => console.log('Configuring GitHub')}
+                              className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
+                            >
+                              Connected
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => initiateOAuthFlow('github')}
+                            disabled={isConnecting.github}
+                            className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center"
+                          >
+                            {isConnecting.github ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Connecting...
+                              </>
+                            ) : (
+                              'Connect'
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Slack */}
+                    <div className="px-6 py-5 hover:bg-[#202020] transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-[#202020] rounded-lg flex items-center justify-center mr-4">
+                            <Image src="/logos/slack.svg" alt="Slack" width={28} height={28} />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-white mb-1">Slack</h3>
+                            <p className="text-sm text-[#A3A3A3]">Allow agents to send messages to your Slack channels</p>
+                          </div>
+                        </div>
+                        {connectedServices.slack ? (
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => console.log('Configuring Slack')}
+                              className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
+                            >
+                              Connected
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => initiateOAuthFlow('slack')}
+                            disabled={isConnecting.slack}
+                            className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center"
+                          >
+                            {isConnecting.slack ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Connecting...
+                              </>
+                            ) : (
+                              'Connect'
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* HubSpot */}
+                    <div className="px-6 py-5 hover:bg-[#202020] transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-[#202020] rounded-lg flex items-center justify-center mr-4">
+                            <Image src="/logos/hubspot.svg" alt="HubSpot" width={28} height={28} />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-white mb-1">HubSpot</h3>
+                            <p className="text-sm text-[#A3A3A3]">Allow agents to manage contacts and deals in HubSpot</p>
+                          </div>
+                        </div>
+                        {connectedServices.hubspot ? (
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => console.log('Configuring HubSpot')}
+                              className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
+                            >
+                              Connected
+                            </button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => initiateOAuthFlow('hubspot')}
+                            disabled={isConnecting.hubspot}
+                            className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center"
+                          >
+                            {isConnecting.hubspot ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Connecting...
+                              </>
+                            ) : (
+                              'Connect'
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Custom Integration */}
+                    <div className="px-6 py-5 hover:bg-[#202020] transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-[#202020] rounded-lg flex items-center justify-center mr-4">
+                            <PlusCircle size={24} className="text-[#6366F1]" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-white mb-1">Custom Integration</h3>
+                            <p className="text-sm text-[#A3A3A3]">Connect a custom API endpoint for your agents</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setShowCustomIntegrationModal(true)}
+                          className={`px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center ${
+                            isConnecting.customIntegration ? 'opacity-75 cursor-wait' : ''
+                          }`}
+                          disabled={isConnecting.customIntegration}
+                        >
+                          {isConnecting.customIntegration ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
+                              Setting Up...
+                            </>
+                          ) : (
+                            'Set Up'
+                          )}
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-[#2E2E2E] border border-[#444] rounded-xl overflow-hidden">
-                  <div className="px-6 py-4 border-b border-[#444]">
-                    <h2 className="text-lg font-medium flex items-center">
-                      <Settings size={18} className="mr-2 text-[#6366F1]" />
-                      Advanced Settings
-                    </h2>
+                <div className="bg-[#2E2E2E] border border-[#444] rounded-xl overflow-hidden mb-8">
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-[#444]  from-[#2E2E2E] to-[#232323]">
+                    <div className="flex items-center">
+                      <div className="bg-[#6366F1]/10 w-8 h-8 rounded-lg flex items-center justify-center mr-3">
+                        <Settings size={18} className="text-[#6366F1]" />
+                      </div>
+                      <h2 className="text-lg font-medium">Advanced Settings</h2>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="text-xs px-2.5 py-1 rounded-md bg-[#202020] text-[#A3A3A3] border border-[#444]">
+                        Optional
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="p-6 space-y-6">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="font-medium">Knowledge Access</label>
+                        <label className="font-medium" htmlFor="knowledge-access">Knowledge Access</label>
                         <div className="relative inline-block w-12 h-6 mr-2">
-                          <input type="checkbox" className="opacity-0 w-0 h-0" defaultChecked />
-                          <span className="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-[#6366F1] rounded-full"></span>
-                          <span className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform translate-x-6"></span>
+                          <input 
+                            id="knowledge-access"
+                            type="checkbox" 
+                            className="opacity-0 w-0 h-0 absolute" 
+                            checked={knowledgeAccess}
+                            onChange={(e) => setKnowledgeAccess(e.target.checked)}
+                          />
+                          <label htmlFor="knowledge-access" className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 ${
+                            knowledgeAccess ? 'bg-[#6366F1]' : 'bg-[#444]'
+                          } rounded-md transition-colors`}>
+                            <span 
+                              className={`absolute w-4 h-4 bg-white rounded transition-transform duration-200 ${
+                                knowledgeAccess ? 'right-1' : 'left-1'
+                              } top-1`}
+                            />
+                          </label>
                         </div>
                       </div>
                       <p className="text-sm text-[#A3A3A3]">Allow agents to access internet for research</p>
@@ -882,11 +1402,24 @@ const Dashboard = () => {
                     
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="font-medium">Memory Persistence</label>
+                        <label className="font-medium" htmlFor="memory-persistence">Memory Persistence</label>
                         <div className="relative inline-block w-12 h-6 mr-2">
-                          <input type="checkbox" className="opacity-0 w-0 h-0" defaultChecked />
-                          <span className="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-[#6366F1] rounded-full"></span>
-                          <span className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform translate-x-6"></span>
+                          <input 
+                            id="memory-persistence"
+                            type="checkbox" 
+                            className="opacity-0 w-0 h-0 absolute" 
+                            checked={memoryPersistence}
+                            onChange={(e) => setMemoryPersistence(e.target.checked)}
+                          />
+                          <label htmlFor="memory-persistence" className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 ${
+                            memoryPersistence ? 'bg-[#6366F1]' : 'bg-[#444]'
+                          } rounded-md transition-colors`}>
+                            <span 
+                              className={`absolute w-4 h-4 bg-white rounded transition-transform duration-200 ${
+                                memoryPersistence ? 'right-1' : 'left-1'
+                              } top-1`}
+                            />
+                          </label>
                         </div>
                       </div>
                       <p className="text-sm text-[#A3A3A3]">Allow agents to remember past conversations and decisions</p>
@@ -894,11 +1427,24 @@ const Dashboard = () => {
                     
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="font-medium">Autonomous Mode</label>
+                        <label className="font-medium" htmlFor="autonomous-mode">Autonomous Mode</label>
                         <div className="relative inline-block w-12 h-6 mr-2">
-                          <input type="checkbox" className="opacity-0 w-0 h-0" />
-                          <span className="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-[#444] rounded-full"></span>
-                          <span className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></span>
+                          <input 
+                            id="autonomous-mode"
+                            type="checkbox" 
+                            className="opacity-0 w-0 h-0 absolute" 
+                            checked={autonomousMode}
+                            onChange={(e) => setAutonomousMode(e.target.checked)}
+                          />
+                          <label htmlFor="autonomous-mode" className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 ${
+                            autonomousMode ? 'bg-[#6366F1]' : 'bg-[#444]'
+                          } rounded-md transition-colors`}>
+                            <span 
+                              className={`absolute w-4 h-4 bg-white rounded transition-transform duration-200 ${
+                                autonomousMode ? 'right-1' : 'left-1'
+                              } top-1`}
+                            />
+                          </label>
                         </div>
                       </div>
                       <p className="text-sm text-[#A3A3A3]">Allow agents to work without human approval (not recommended)</p>
@@ -923,8 +1469,8 @@ const Dashboard = () => {
                       
                       return (
                         <div key={agent.id} className="px-6 py-4 hover:bg-[#202020] transition-colors">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-lg bg-[#202020] flex items-center justify-center text-xl mr-3">
+                          <div className="flex items-start">
+                            <div className="w-12 h-12 rounded-md bg-[#202020] mr-4 overflow-hidden mt-1">
                               <img 
                                 src={agent.icon} 
                                 alt={agent.name} 
@@ -932,18 +1478,36 @@ const Dashboard = () => {
                               />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-white mb-0.5">{agent.name}</h3>
-                              <p className="text-xs text-[#A3A3A3] truncate">{agent.description}</p>
+                              <h3 className="text-lg font-semibold text-white mb-1">
+                                {(() => {
+                                  const namePart = agent.icon.split('/').pop() || '';
+                                  const name = namePart.split('.')[0] || '';
+                                  return name.charAt(0).toUpperCase() + name.slice(1);
+                                })()}
+                              </h3>
+                              <p className="text-base font-medium text-[#6366F1]">{agent.name}</p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {agent.capabilities.slice(0, 2).map((capability, idx) => (
+                                  <span key={idx} className="inline-block text-xs px-2 py-0.5 text-[#BBBBBB] border border-[#444] rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-white">
+                                    {capability}
+                                  </span>
+                                ))}
+                                {agent.capabilities.length > 2 && (
+                                  <span className="inline-block text-xs px-2 py-0.5 text-[#6366F1] border border-[#6366F1]/30 rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-[#8385f3]">
+                                    +{agent.capabilities.length - 2}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleAgentSelection(agent.id);
                               }}
-                              className="ml-2 text-[#A3A3A3] hover:text-white"
+                              className="ml-2 text-[#A3A3A3] hover:text-white flex-shrink-0"
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
                               </svg>
                             </button>
                           </div>
@@ -961,23 +1525,342 @@ const Dashboard = () => {
                     </button>
                   </div>
                 </div>
+                
+                <div className="bg-[#2E2E2E] border border-[#444] rounded-xl overflow-hidden mt-6">
+                  <div className="px-6 py-4">
+                    <h2 className="text-base font-medium">Team Status</h2>
+                  </div>
+                  <div className="px-6 py-4 bg-[#202020]">
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-[#A3A3A3]">Tools Connected</span>
+                          <span className="text-white">
+                            {Object.values(connectedServices).filter(Boolean).length}/6
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-[#2E2E2E] rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-[#6366F1] rounded-full" 
+                            style={{ 
+                              width: `${Math.min(100, (Object.values(connectedServices).filter(Boolean).length / 6) * 100)}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-[#A3A3A3]">Team Readiness</span>
+                          <span className="text-white">
+                            {selectedAgents.length > 0 ? 
+                              Math.floor((Object.values(connectedServices).filter(Boolean).length / 6) * 100) + 
+                              Math.floor((selectedAgents.length / agentRoles.length) * 25)
+                              : 0
+                            }%
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-[#2E2E2E] rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-[#6366F1] rounded-full" 
+                            style={{ 
+                              width: `${selectedAgents.length > 0 ? 
+                                Math.min(100, 
+                                  Math.floor((Object.values(connectedServices).filter(Boolean).length / 6) * 100) + 
+                                  Math.floor((selectedAgents.length / agentRoles.length) * 25)
+                                ) : 0}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-[#2E2E2E]">
+                      <div className="flex items-center text-xs text-[#A3A3A3]">
+                        <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 16V12M12 8H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Complete configuration to unlock full capabilities
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between mt-8">
               <button
-                onClick={() => setSelectedView('select-agents')}
-                className="px-5 py-2.5 border border-[#444] hover:border-[#6366F1] rounded-md transition-colors flex items-center gap-2"
+                onClick={goBackToSelectAgents} 
+                className="flex items-center gap-2 px-4 py-2 border border-[#444] rounded-md text-sm hover:bg-[#2A2A2A] transition-colors"
               >
-                <ChevronRight className="rotate-180" size={18} /> Back to Team Selection
+                <ChevronLeft size={16} />
+                Back
               </button>
+              
               <button
                 onClick={createProject}
-                className="px-5 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
+                disabled={!projectName.trim() || isCreatingProject}
+                className={`flex items-center gap-2 px-6 py-2 ${
+                  !projectName.trim() || isCreatingProject ? 'bg-[#4A4A4A] cursor-not-allowed' : 'bg-[#6366F1] hover:bg-[#4F46E5]'
+                } text-white rounded-md transition-colors`}
               >
-                Launch Team <ArrowRight size={18} />
+                {isCreatingProject ? (
+                  <>
+                    <div className="w-4 h-4 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <>
+                    Create Project
+                    <ChevronRight size={16} />
+                  </>
+                )}
               </button>
             </div>
+            {/* Custom Integration Modal */}
+            {showCustomIntegrationModal && (
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-[#202020] border border-[#444] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+                  <div className="sticky top-0 bg-[#202020] border-b border-[#444] px-6 py-4 flex items-center justify-between z-10">
+                    <h2 className="text-xl font-medium">
+                      {integrationAdded ? 'Integration Added' : 'Set Up Custom Integration'}
+                    </h2>
+                    <button 
+                      onClick={() => {
+                        setShowCustomIntegrationModal(false);
+                        if (integrationAdded) {
+                          setIntegrationAdded(false);
+                          setCustomIntegrationName('');
+                          setCustomIntegrationEndpoint('');
+                          setCustomIntegrationAPIKey('');
+                          setCustomIntegrationDescription('');
+                        }
+                      }}
+                      className="text-[#8A8F98] hover:text-white transition-colors"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6L6 18M6 6L18 18"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="p-6">
+                    {integrationAdded ? (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-medium mb-2">Integration Added Successfully</h3>
+                        <p className="text-[#A3A3A3] mb-8">
+                          Your custom integration "{customIntegrationName}" has been added to your project.
+                        </p>
+                        <div className="bg-[#2E2E2E] rounded-lg p-4 mb-8 text-left">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-[#A3A3A3]">Endpoint</span>
+                            <span className="text-xs px-2 py-1 bg-[#1E293B] text-[#38BDF8] rounded-full border border-[#38BDF8]/30">Connected</span>
+                          </div>
+                          <p className="font-mono text-sm truncate">{customIntegrationEndpoint}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowCustomIntegrationModal(false);
+                            setIntegrationAdded(false);
+                            setCustomIntegrationName('');
+                            setCustomIntegrationEndpoint('');
+                            setCustomIntegrationAPIKey('');
+                            setCustomIntegrationDescription('');
+                          }}
+                          className="px-6 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-6">
+                          <p className="text-[#A3A3A3] mb-6">
+                            Connect your custom API endpoints to enable your AI agents to interact with your services.
+                          </p>
+                          
+                          <div className="bg-[#2E2E2E] rounded-lg p-4 mb-6">
+                            <h3 className="font-medium mb-2 flex items-center">
+                              <svg className="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                              </svg>
+                              What You'll Need
+                            </h3>
+                            <ul className="space-y-2 text-sm text-[#A3A3A3]">
+                              <li className="flex items-start gap-2">
+                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="w-2 h-2 bg-white rounded-full"></span>
+                                </span>
+                                <span>API endpoint URL (HTTPS required)</span>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="w-2 h-2 bg-white rounded-full"></span>
+                                </span>
+                                <span>Authentication credentials (API key, OAuth tokens, etc.)</span>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="w-2 h-2 bg-white rounded-full"></span>
+                                </span>
+                                <span>API documentation for endpoints your agents will use</span>
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Integration Name</label>
+                              <input
+                                type="text"
+                                value={customIntegrationName}
+                                onChange={(e) => setCustomIntegrationName(e.target.value)}
+                                placeholder="e.g., CRM API, Payment Gateway, etc."
+                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium mb-2">API Endpoint URL</label>
+                              <input
+                                type="url"
+                                value={customIntegrationEndpoint}
+                                onChange={(e) => setCustomIntegrationEndpoint(e.target.value)}
+                                placeholder="https://api.example.com/v1"
+                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Authentication Type</label>
+                              <div className="grid grid-cols-3 gap-3">
+                                <button
+                                  onClick={() => setCustomIntegrationAuthType('api_key')}
+                                  className={`p-3 rounded-lg text-center text-sm border ${
+                                    customIntegrationAuthType === 'api_key' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
+                                  } transition-colors`}
+                                >
+                                  API Key
+                                </button>
+                                <button
+                                  onClick={() => setCustomIntegrationAuthType('oauth')}
+                                  className={`p-3 rounded-lg text-center text-sm border ${
+                                    customIntegrationAuthType === 'oauth' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
+                                  } transition-colors`}
+                                >
+                                  OAuth 2.0
+                                </button>
+                                <button
+                                  onClick={() => setCustomIntegrationAuthType('basic')}
+                                  className={`p-3 rounded-lg text-center text-sm border ${
+                                    customIntegrationAuthType === 'basic' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
+                                  } transition-colors`}
+                                >
+                                  Basic Auth
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {customIntegrationAuthType === 'api_key' && (
+                              <div>
+                                <label className="block text-sm font-medium mb-2">API Key</label>
+                                <input
+                                  type="password"
+                                  value={customIntegrationAPIKey}
+                                  onChange={(e) => setCustomIntegrationAPIKey(e.target.value)}
+                                  placeholder="Enter your API key"
+                                  className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                                />
+                              </div>
+                            )}
+                            
+                            {customIntegrationAuthType === 'oauth' && (
+                              <div className="bg-[#2E2E2E] p-4 rounded-lg">
+                                <p className="text-sm text-[#A3A3A3] mb-3">
+                                  OAuth 2.0 setup requires additional configuration through our developer console.
+                                </p>
+                                <button className="text-[#6366F1] text-sm hover:underline">
+                                  Open Developer Console
+                                </button>
+                              </div>
+                            )}
+                            
+                            {customIntegrationAuthType === 'basic' && (
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium mb-2">Username</label>
+                                  <input
+                                    type="text"
+                                    placeholder="Enter username"
+                                    className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium mb-2">Password</label>
+                                  <input
+                                    type="password"
+                                    placeholder="Enter password"
+                                    className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Description (Optional)</label>
+                              <textarea
+                                value={customIntegrationDescription}
+                                onChange={(e) => setCustomIntegrationDescription(e.target.value)}
+                                placeholder="Describe what this API will be used for"
+                                rows={3}
+                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-3">
+                          <button
+                            onClick={() => setShowCustomIntegrationModal(false)}
+                            className="px-4 py-2 border border-[#444] hover:border-[#6366F1] rounded-md transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsAddingIntegration(true);
+                              // Simulate API call to add the integration
+                              setTimeout(() => {
+                                setIsAddingIntegration(false);
+                                setIntegrationAdded(true);
+                              }, 1500);
+                            }}
+                            disabled={!customIntegrationName || !customIntegrationEndpoint || (customIntegrationAuthType === 'api_key' && !customIntegrationAPIKey) || isAddingIntegration}
+                            className={`px-6 py-2.5 rounded-md transition-colors flex items-center ${
+                              !customIntegrationName || !customIntegrationEndpoint || (customIntegrationAuthType === 'api_key' && !customIntegrationAPIKey) || isAddingIntegration
+                                ? 'bg-[#444] text-[#999] cursor-not-allowed'
+                                : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white'
+                            }`}
+                          >
+                            {isAddingIntegration ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Setting Up...
+                              </>
+                            ) : (
+                              'Add Integration'
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       case 'chat':
@@ -999,7 +1882,7 @@ const Dashboard = () => {
                       if (index > 2) return null;
                       
                       return (
-                        <div key={agent.id} className="w-8 h-8 rounded-full bg-[#2E2E2E] flex items-center justify-center ring-2 ring-[#202020]">
+                        <div key={agent.id} className="w-8 h-8 rounded-md bg-[#2E2E2E] flex items-center justify-center ring-2 ring-[#202020]">
                           <img 
                             src={agent.icon} 
                             alt={agent.name} 
@@ -1010,7 +1893,7 @@ const Dashboard = () => {
                     })}
                     
                     {selectedAgents.length > 3 && (
-                      <div className="w-8 h-8 rounded-full bg-[#2E2E2E] flex items-center justify-center text-xs ring-2 ring-[#202020]">
+                      <div className="w-8 h-8 rounded-md bg-[#2E2E2E] flex items-center justify-center text-xs ring-2 ring-[#202020]">
                         +{selectedAgents.length - 3}
                       </div>
                     )}
@@ -1033,7 +1916,7 @@ const Dashboard = () => {
               <div className="max-w-3xl mx-auto space-y-6">
                 <div className="bg-[#2E2E2E] rounded-xl p-4 shadow">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#202020] flex items-center justify-center text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-md bg-[#202020] flex items-center justify-center text-xs flex-shrink-0">
                       <User size={16} />
                     </div>
                     <div>
@@ -1044,7 +1927,7 @@ const Dashboard = () => {
                 
                 <div className="bg-[#2E2E2E] rounded-xl p-4 shadow">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center text-xs flex-shrink-0">
                       <Bot size={16} />
                     </div>
                     <div>
@@ -1084,21 +1967,6 @@ const Dashboard = () => {
         );
     }
   };
-  
-  // Filter projects based on search and filter
-  const filteredProjects = mockProjects.filter(project => {
-    // Filter by status
-    if (selectedFilter !== 'all' && project.status !== selectedFilter) {
-      return false;
-    }
-    
-    // Filter by search term
-    if (searchTerm && !project.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
-    }
-    
-    return true;
-  });
   
   // Helper function to get capability descriptions
   const getCapabilityDescription = (capability: string) => {
@@ -1156,11 +2024,40 @@ const Dashboard = () => {
     return [...commonTools, ...(agentSpecificTools[agentId] || [])];
   };
 
+  // Template selection handler
+  const selectTemplate = (templateType: string) => {
+    console.log('Selected template:', templateType);
+    // Set template selected state
+    setSelectedTemplate(templateType);
+    // Move to agent selection
+    proceedToAgentSelection();
+  };
+
+  // Back buttons handlers
+  const goBackToProjectDetails = () => {
+    setSelectedView('new-project');
+  };
+
+  const goBackToSelectAgents = () => {
+    setSelectedView('select-agents');
+  };
+
+  const goBackToProjects = () => {
+    // Reset all form state
+    setProjectName('');
+    setProjectDescription('');
+    setCompanyInfo('');
+    setSelectedAgents([]);
+    setSelectedTemplate('');
+    // Go back to projects view
+    setSelectedView('projects');
+  };
+
   return (
-    <div className="flex min-h-screen bg-[#151515] text-white">
+    <div className="flex min-h-screen bg-app-secondary text-app-primary">
       {/* Sidebar */}
       <Sidebar 
-        projects={mockProjects} 
+        projects={projects} 
         selectedProject={null} 
         onNewProject={startNewProject}
         onCollapse={setSidebarCollapsed}
@@ -1171,10 +2068,14 @@ const Dashboard = () => {
         className="flex-1 flex flex-col transition-all duration-200"
         style={{ marginLeft: sidebarCollapsed ? '60px' : '280px' }}
       >
-        <div className="h-16 border-b border-[#313131] flex items-center px-6 bg-[#202020]">
+        <div className="h-16 border-b border-app-color flex items-center px-6 bg-app-primary">
+          <span className="mr-4">Welcome, {user?.email || 'User'}</span>
+          <div className="ml-auto">
+            <SignOutButton />
+          </div>
         </div>
         
-        <div className="flex-1 overflow-auto bg-[#202020] p-6">
+        <div className="flex-1 overflow-auto bg-app-primary p-6">
           <div className="max-w-6xl mx-auto">
             {renderContent()}
           </div>

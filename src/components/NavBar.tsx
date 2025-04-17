@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from './Logo';
 import { usePathname } from 'next/navigation';
+import AuthStatus from '@/components/AuthStatus'; // Import the AuthStatus component
 
 export default function NavBar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -59,19 +60,7 @@ export default function NavBar() {
           
           {/* Authentication/CTA */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/login" 
-              className="px-4 py-2 text-[#AAAAAA] hover:text-white transition-all duration-300 relative group"
-            >
-              <span>Log in</span>
-              <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#6366F1] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="px-6 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:-translate-y-[2px]"
-            >
-              Start building
-            </Link>
+            <AuthStatus />
           </div>
           
           {/* Mobile Menu Button */}
@@ -126,20 +115,7 @@ export default function NavBar() {
           </div>
           
           <div className="flex flex-col space-y-3">
-            <Link 
-              href="/login" 
-              className="w-full px-4 py-3 border border-[#2e2e2e] text-center rounded-md hover:border-[#6366F1] transition-colors duration-300"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Log in
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="w-full px-4 py-3 bg-[#6366F1] text-white text-center rounded-md hover:bg-[#4F46E5] transition-colors duration-300"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Start building
-            </Link>
+            <AuthStatus />
           </div>
         </div>
       </div>
@@ -158,7 +134,7 @@ function NavLink({ href, children, active }: NavLinkProps) {
     <Link 
       href={href} 
       className={`
-        px-4 py-2 relative group rounded-md overflow-hidden
+        px-4 py-2 relative group
         transition-all duration-300
         ${active 
           ? 'text-white' 
@@ -166,14 +142,12 @@ function NavLink({ href, children, active }: NavLinkProps) {
         }
       `}
     >
-      <span className="relative z-10">{children}</span>
-      {active && (
+      <span>{children}</span>
+      {active ? (
         <span className="absolute inset-0 bg-[#6366F1]/10 rounded-md"></span>
+      ) : (
+        <span className="absolute inset-x-0 bottom-0 h-[2px] bg-indigo-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
       )}
-      <span 
-        className="absolute inset-0 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left bg-[#6366F1]/10 rounded-md"
-        style={{ display: active ? 'none' : 'block' }}
-      ></span>
     </Link>
   );
 }
@@ -192,15 +166,20 @@ function MobileNavLink({ href, children, onClick }: MobileNavLinkProps) {
     <Link 
       href={href} 
       className={`
-        w-full px-4 py-3 flex items-center rounded-md transition-all duration-300
+        w-full px-4 py-3 flex items-center transition-all duration-300 relative group
         ${isActive 
-          ? 'text-white bg-[#6366F1]/10 font-medium' 
-          : 'text-[#AAAAAA] hover:text-white hover:bg-[#2a2a2a]'
+          ? 'text-white font-medium' 
+          : 'text-[#AAAAAA] hover:text-white'
         }
       `}
       onClick={onClick}
     >
       <span>{children}</span>
+      {isActive ? (
+        <span className="absolute inset-0 bg-[#6366F1]/10 rounded-md"></span>
+      ) : (
+        <span className="absolute inset-x-0 bottom-0 h-[2px] bg-indigo-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+      )}
       {isActive && (
         <span className="ml-auto">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
