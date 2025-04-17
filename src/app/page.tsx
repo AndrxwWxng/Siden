@@ -5,52 +5,61 @@ import Link from 'next/link';
 import Image from 'next/image';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import dynamic from 'next/dynamic';
+// Add Instrument Serif font
+import '@fontsource/instrument-serif';
 
-// Import CodeAnimation with no SSR to prevent hydration errors
-const CodeAnimation = dynamic(() => import('@/components/CodeAnimation'), { 
-  ssr: false 
-});
+// Styles
+const styles = {
+  effortlesslyText: `
+    .effortlessly-text {
+      font-family: "Instrument Serif", serif;
+      font-style: italic;
+      font-weight: 400;
+      letter-spacing: 0em;
+      color: #6366F1;
+      position: relative;
+      display: inline-block;
+      text-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      transition: all 0.3s ease;
+      font-size: 1.15em;
+      margin: 0 0.05em;
+    }
+    
+    .effortlessly-text:hover {
+      text-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+    }
+  `
+};
 
 export default function Home() {
-  const [isClient, setIsClient] = useState(false);
-  
-  // Add animation tracking refs
-  const heroRef = useRef<HTMLDivElement>(null);
-  const logosRef = useRef<HTMLDivElement>(null);
-  const featuresRef = useRef<HTMLDivElement>(null);
-  const productRef = useRef<HTMLDivElement>(null);
-  const integrationsRef = useRef<HTMLDivElement>(null);
-  const testimonialsRef = useRef<HTMLDivElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
-  
-  // Animation state
-  const [heroVisible, setHeroVisible] = useState(false);
-  const [logosVisible, setLogosVisible] = useState(false);
-  const [featuresVisible, setFeaturesVisible] = useState(false);
-  const [productVisible, setProductVisible] = useState(false);
-  const [integrationsVisible, setIntegrationsVisible] = useState(false);
-  const [testimonialsVisible, setTestimonialsVisible] = useState(false);
-  const [ctaVisible, setCtaVisible] = useState(false);
-  
-  useEffect(() => {
-    setIsClient(true);
-    
+
+// Add animation tracking refs
+const heroRef = useRef<HTMLDivElement>(null);
+const logosRef = useRef<HTMLDivElement>(null);
+const productRef = useRef<HTMLDivElement>(null);
+
+// Animation state
+const [heroVisible, setHeroVisible] = useState(false);
+const [logosVisible, setLogosVisible] = useState(false);
+const [productVisible, setProductVisible] = useState(false);
+
+
+  useEffect(() => {    
     // Setup intersection observer for animations
     const observerOptions = {
       threshold: 0.15,
       rootMargin: '0px 0px -100px 0px'
     };
-    
+
     const observers: IntersectionObserver[] = [];
-    
+
     // Helper function to create an observer
     const createObserver = (
       ref: React.RefObject<HTMLDivElement | null>, 
       setVisible: React.Dispatch<React.SetStateAction<boolean>>
     ) => {
       if (!ref.current) return;
-      
+
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
@@ -59,40 +68,37 @@ export default function Home() {
           }
         });
       }, observerOptions);
-      
+
       observer.observe(ref.current);
       observers.push(observer);
     };
-    
+
     // Create observers for each section
     createObserver(heroRef, setHeroVisible);
     createObserver(logosRef, setLogosVisible);
-    createObserver(featuresRef, setFeaturesVisible);
     createObserver(productRef, setProductVisible);
-    createObserver(integrationsRef, setIntegrationsVisible);
-    createObserver(testimonialsRef, setTestimonialsVisible);
-    createObserver(ctaRef, setCtaVisible);
-    
+
     return () => {
       // Cleanup observers
       observers.forEach(observer => observer.disconnect());
     };
   }, []);
-  
+
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col">
+      <style dangerouslySetInnerHTML={{ __html: styles.effortlesslyText }} />
       <NavBar />
-      
+
       <main className="flex flex-col flex-grow">
-        {/* Hero Section with animations */}
+        {/* Hero Section */}
         <section 
           ref={heroRef}
-          className="flex flex-col items-center justify-center px-6 pt-32 pb-48 relative overflow-hidden"
+          className="flex flex-col items-center justify-center pt-32 pb-48 relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
           <div className="absolute inset-0 bg-gradient-to-b from-[#121212] via-transparent to-[#121212] pointer-events-none"></div>
-          
-          <div className="container mx-auto max-w-6xl relative z-10">
+
+          <div className="container mx-auto px-50 relative z-10">
             <div 
               className={`flex flex-col items-center text-center mb-16 transition-all duration-1000 ${
                 heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
@@ -104,16 +110,13 @@ export default function Home() {
               <p className="text-xl md:text-2xl text-[#AAAAAA] max-w-2xl mx-auto mb-10">
                 The purpose-built platform for creating, deploying, and managing AI agents at scale.
               </p>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
                 <Link 
-                  href="/signup" 
+                  href="/dashboard" 
                   className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[180px]"
                 >
                   Start building
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
                 </Link>
                 <Link 
                   href="/pricing" 
@@ -123,507 +126,78 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-            
+
             <div 
-              className={`relative w-full max-w-5xl mx-auto h-[700px] mt-16 transition-all duration-1000 delay-300 ${
+              className={`relative w-full max-w-5xl mx-auto h-[620px] mt-16 transition-all duration-1000 delay-300 ${
                 heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
               }`}
             >
-              {/* 3D perspective UI mockup with layered effect */}
-              <div className="absolute inset-0 w-full h-[620px] perspective-[2000px] flex justify-center items-center">
-                {/* Main Dashboard UI */}
+              {/* Flat image placeholder for dashboard screenshot - to be replaced with custom Figma design */}
+              <div className="w-full h-full flex justify-center items-center">
                 <div 
-                  className="w-full max-w-5xl h-full rounded-xl border border-[#3a3a3a] bg-[#171717] shadow-2xl overflow-hidden backdrop-blur-sm transform-gpu relative"
+                  className="w-full max-w-5xl h-full rounded-xl border border-[#3a3a3a] bg-[#171717] shadow-2xl overflow-hidden relative"
                   style={{
-                    boxShadow: '0 50px 100px -20px rgba(99, 102, 241, 0.2), 0 30px 60px -30px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05)',
-                    transformOrigin: 'center center',
-                    transform: 'rotateX(15deg) rotateY(7deg) rotateZ(-1deg) translateZ(0px)',
-                    perspective: '2000px',
-                    background: 'linear-gradient(135deg, rgba(28, 28, 28, 0.95) 0%, rgba(18, 18, 18, 0.95) 50%, rgba(12, 12, 12, 0.95) 100%)',
-                    backdropFilter: 'blur(12px)'
+                    boxShadow: '0 30px 60px -20px rgba(99, 102, 241, 0.2), 0 20px 40px -30px rgba(0, 0, 0, 0.5)',
                   }}
                 >
-                  {/* Top window controls */}
-                  <div className="h-9 bg-[#0D0D0D] flex items-center px-4 border-b border-[#2a2a2a]">
-                    <div className="flex space-x-2 mr-4">
-                      <div className="w-3 h-3 rounded-full bg-[#FF5F57]"></div>
-                      <div className="w-3 h-3 rounded-full bg-[#FDBC2C]"></div>
-                      <div className="w-3 h-3 rounded-full bg-[#28C840]"></div>
-                    </div>
-                    <div className="flex-1 flex justify-center">
-                      <div className="h-5 bg-[#1e1e1e] rounded-md w-64 flex items-center justify-center">
-                        <div className="h-3 w-3 bg-[#3e3e3e] rounded-full mr-2"></div>
-                        <div className="h-2 w-32 bg-[#3e3e3e] rounded-sm"></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* App interface content */}
-                  <div className="flex h-[calc(100%-36px)]">
-                    {/* Left sidebar */}
-                    <div className="w-56 bg-[#111111] border-r border-[#2a2a2a] p-3 flex flex-col">
-                      <div className="flex items-center space-x-2 px-2 py-2">
-                        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-[#6366F1] to-[#8B5CF6]"></div>
-                        <div className="text-lg font-semibold text-white">AgentTeam</div>
-                      </div>
-                      
-                      <div className="h-px bg-[#2a2a2a] my-3"></div>
-                      
-                      <div className="space-y-1 mb-4">
-                        <div className="px-2 py-2 rounded bg-[#1e1e1e] text-white text-sm flex items-center">
-                          <div className="w-4 h-4 mr-2 bg-[#3e3e3e] rounded"></div>
-                          Dashboard
-                        </div>
-                        <div className="px-2 py-2 text-[#888] text-sm flex items-center hover:bg-[#1a1a1a] transition-colors rounded">
-                          <div className="w-4 h-4 mr-2 bg-[#3e3e3e] rounded"></div>
-                          Agents
-                        </div>
-                        <div className="px-2 py-2 text-[#888] text-sm flex items-center hover:bg-[#1a1a1a] transition-colors rounded">
-                          <div className="w-4 h-4 mr-2 bg-[#3e3e3e] rounded"></div>
-                          Workflows
-                        </div>
-                        <div className="px-2 py-2 text-[#888] text-sm flex items-center hover:bg-[#1a1a1a] transition-colors rounded">
-                          <div className="w-4 h-4 mr-2 bg-[#3e3e3e] rounded"></div>
-                          Analytics
-                        </div>
-                      </div>
-                      
-                      <div className="text-xs uppercase text-[#666] px-2 mb-2">Teams</div>
-                      <div className="space-y-1">
-                        <div className="px-2 py-2 text-[#888] text-sm flex items-center hover:bg-[#1a1a1a] transition-colors rounded">
-                          <div className="w-4 h-4 mr-2 rounded-full bg-[#E879F9]"></div>
-                          Research
-                        </div>
-                        <div className="px-2 py-2 text-[#888] text-sm flex items-center hover:bg-[#1a1a1a] transition-colors rounded">
-                          <div className="w-4 h-4 mr-2 rounded-full bg-[#34D399]"></div>
-                          Production
-                        </div>
-                      </div>
-                      
-                      <div className="mt-auto pt-3 border-t border-[#2a2a2a] flex items-center px-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] mr-2"></div>
-                        <div className="text-sm text-white">Kendall B.</div>
-                      </div>
-                    </div>
-                    
-                    {/* Main content */}
-                    <div className="flex-1 bg-[#0D0D0D] p-4 overflow-hidden">
-                      <div className="flex justify-between items-center mb-6">
-                        <div className="text-lg font-semibold text-white">Agent Dashboard</div>
-                        <div className="flex space-x-2">
-                          <div className="h-8 w-8 rounded-md flex items-center justify-center bg-[#1a1a1a] hover:bg-[#222] transition-colors">
-                            <div className="w-4 h-4 bg-[#3e3e3e] rounded"></div>
-                          </div>
-                          <div className="h-8 w-8 rounded-md flex items-center justify-center bg-[#1a1a1a] hover:bg-[#222] transition-colors">
-                            <div className="w-4 h-4 bg-[#3e3e3e] rounded"></div>
-                          </div>
-                          <div className="h-8 px-3 rounded-md flex items-center justify-center bg-[#6366F1] text-white text-sm hover:bg-[#5254cc] transition-colors">
-                            New Agent
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="bg-[#151515] rounded-lg border border-[#2a2a2a] p-3 hover:border-[#3a3a3a] transition-all duration-200">
-                          <div className="text-[#888] text-sm mb-1">Active Agents</div>
-                          <div className="text-2xl font-semibold text-white">24</div>
-                          <div className="flex items-center mt-2">
-                            <div className="text-xs text-[#34D399]">+3 this week</div>
-                            <div className="w-12 h-4 ml-auto">
-                              <div className="w-full h-1 bg-[#1e1e1e] rounded-full overflow-hidden mt-1">
-                                <div className="h-full w-3/4 bg-[#34D399] rounded-full"></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="bg-[#151515] rounded-lg border border-[#2a2a2a] p-3 hover:border-[#3a3a3a] transition-all duration-200">
-                          <div className="text-[#888] text-sm mb-1">Total Tasks</div>
-                          <div className="text-2xl font-semibold text-white">189</div>
-                          <div className="flex items-center mt-2">
-                            <div className="text-xs text-[#6366F1]">+42 today</div>
-                            <div className="w-12 h-4 ml-auto">
-                              <div className="w-full h-1 bg-[#1e1e1e] rounded-full overflow-hidden mt-1">
-                                <div className="h-full w-4/5 bg-[#6366F1] rounded-full"></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="bg-[#151515] rounded-lg border border-[#2a2a2a] p-3 hover:border-[#3a3a3a] transition-all duration-200">
-                          <div className="text-[#888] text-sm mb-1">Completion Rate</div>
-                          <div className="text-2xl font-semibold text-white">94.2%</div>
-                          <div className="flex items-center mt-2">
-                            <div className="text-xs text-[#34D399]">+1.8% from last month</div>
-                            <div className="w-12 h-4 ml-auto">
-                              <div className="w-full h-1 bg-[#1e1e1e] rounded-full overflow-hidden mt-1">
-                                <div className="h-full w-[94%] bg-[#34D399] rounded-full"></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Agent cards */}
-                      <div className="grid grid-cols-2 gap-4">
-                        {[
-                          { name: "Data Analyzer", status: "Online", tasks: 12, color: "#34D399", progress: 76 },
-                          { name: "Code Assistant", status: "Online", tasks: 28, color: "#6366F1", progress: 89 },
-                          { name: "Research Agent", status: "Offline", tasks: 7, color: "#F87171", progress: 23 },
-                          { name: "Customer Support", status: "Idle", tasks: 0, color: "#FDBC2C", progress: 45 }
-                        ].map((agent, i) => (
-                          <div key={i} className="bg-[#151515] rounded-lg border border-[#2a2a2a] p-4 hover:border-[#3e3e3e] transition-all duration-200 cursor-pointer group">
-                            <div className="flex justify-between items-start mb-3">
-                              <div className="flex items-center">
-                                <div className="w-10 h-10 rounded-lg mr-3 flex items-center justify-center" style={{ 
-                                  background: `linear-gradient(135deg, ${agent.color}, ${agent.color}aa)`
-                                }}>
-                                  <div className="w-5 h-5 bg-white/20 rounded-sm"></div>
-                                </div>
-                                <div>
-                                  <div className="text-white font-medium">{agent.name}</div>
-                                  <div className="text-xs text-[#888] mt-0.5">{agent.tasks} active tasks</div>
-                                </div>
-                              </div>
-                              <div className="flex items-center">
-                                <div className="h-2 w-2 rounded-full mr-1.5" style={{ 
-                                  backgroundColor: agent.status === "Online" ? "#34D399" : agent.status === "Idle" ? "#FDBC2C" : "#F87171",
-                                  boxShadow: agent.status === "Online" ? '0 0 8px rgba(52, 211, 153, 0.6)' : agent.status === "Idle" ? '0 0 8px rgba(253, 188, 44, 0.6)' : '0 0 8px rgba(248, 113, 113, 0.6)'
-                                }}></div>
-                                <div className="text-xs text-[#888]">{agent.status}</div>
-                              </div>
-                            </div>
-                            <div className="mt-3 h-1.5 bg-[#1e1e1e] rounded-full overflow-hidden">
-                              <div className="h-full rounded-full" style={{ 
-                                width: `${agent.progress}%`, 
-                                backgroundColor: agent.color,
-                                boxShadow: `0 0 8px ${agent.color}99`
-                              }}></div>
-                            </div>
-                            <div className="flex justify-between items-center mt-3">
-                              <div className="text-xs text-[#888]">Efficiency</div>
-                              <div className="text-xs font-medium text-white">{agent.progress}%</div>
-                            </div>
-                            <div className="flex space-x-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="text-xs text-[#6366F1] hover:underline cursor-pointer">Configure</div>
-                              <div className="text-xs text-[#6366F1] hover:underline cursor-pointer">View Details</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* Right panel */}
-                    <div className="w-64 bg-[#111111] border-l border-[#2a2a2a] p-3 flex flex-col">
-                      <div className="text-sm font-medium text-white mb-3">Agent Details</div>
-                      
-                      <div className="bg-[#151515] rounded-lg border border-[#2a2a2a] p-3 mb-3">
-                        <div className="flex items-center mb-3">
-                          <div className="w-10 h-10 rounded-lg mr-3 flex items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#4F46E5]">
-                            <div className="w-5 h-5 bg-white/20 rounded-sm"></div>
-                          </div>
-                          <div>
-                            <div className="text-white font-medium">Code Assistant</div>
-                            <div className="text-xs text-[#888]">v2.4.1</div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2 text-xs">
-                          <div className="flex justify-between">
-                            <div className="text-[#888]">Status</div>
-                            <div className="text-white flex items-center">
-                              <div className="h-1.5 w-1.5 rounded-full mr-1 bg-[#34D399]"></div>
-                              Active
-                            </div>
-                          </div>
-                          <div className="flex justify-between">
-                            <div className="text-[#888]">Uptime</div>
-                            <div className="text-white">3d 14h 22m</div>
-                          </div>
-                          <div className="flex justify-between">
-                            <div className="text-[#888]">Memory Usage</div>
-                            <div className="text-white">2.4 GB</div>
-                          </div>
-                          <div className="flex justify-between">
-                            <div className="text-[#888]">Tasks Completed</div>
-                            <div className="text-white">437</div>
-                          </div>
-                        </div>
-                        
-                        <div className="h-1.5 bg-[#1e1e1e] rounded-full overflow-hidden mt-3 mb-1">
-                          <div className="h-full w-[89%] rounded-full bg-[#6366F1]"></div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <div className="text-xs text-[#888]">CPU Load</div>
-                          <div className="text-xs font-medium text-white">89%</div>
-                        </div>
-                      </div>
-                      
-                      <div className="text-sm font-medium text-white mb-2">Recent Activity</div>
-                      <div className="space-y-2 flex-1 overflow-hidden">
-                        {[
-                          { action: "Code review completed", time: "2m ago" },
-                          { action: "New task assigned", time: "7m ago" },
-                          { action: "PR #342 merged", time: "12m ago" },
-                          { action: "Bug fix suggested", time: "25m ago" }
-                        ].map((activity, i) => (
-                          <div key={i} className="bg-[#151515] rounded p-2 text-xs">
-                            <div className="text-white">{activity.action}</div>
-                            <div className="text-[#888]">{activity.time}</div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <div className="space-y-2 mt-3">
-                        <button className="w-full py-2 bg-[#222] text-white text-sm rounded hover:bg-[#2a2a2a] transition-colors">
-                          View Details
-                        </button>
-                        <button className="w-full py-2 bg-[#6366F1] text-white text-sm rounded hover:bg-[#5254cc] transition-colors">
-                          Configure Agent
-                        </button>
-                      </div>
+                  {/* This div will be replaced with your custom Figma image */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-[#444] text-center">
+                      <p className="text-lg mb-2">Dashboard Preview</p>
+                      <p className="text-sm max-w-md mx-auto">Replace this placeholder with your custom dashboard screenshot from Figma</p>
                     </div>
                   </div>
                 </div>
-                
-                {/* Floating cards */}
-                <div 
-                  className="absolute -left-16 -top-14 w-72 bg-[#151515] rounded-lg border border-[#3a3a3a] p-3 shadow-xl transform-gpu"
-                  style={{
-                    transform: 'rotateX(15deg) rotateY(8deg) rotateZ(-1deg) translateZ(100px)',
-                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), 0 10px 20px rgba(0, 0, 0, 0.2)',
-                    background: 'linear-gradient(135deg, rgba(28, 28, 28, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%)',
-                    backdropFilter: 'blur(12px)'
-                  }}
-                >
-                  <div className="text-sm font-medium text-white mb-2">Task Queue</div>
-                  <div className="space-y-2">
-                    {[
-                      { name: "Analyze user data", priority: "High", agent: "Data Analyzer" },
-                      { name: "Optimize search algorithm", priority: "Medium", agent: "Code Assistant" },
-                    ].map((task, i) => (
-                      <div key={i} className="bg-[#1a1a1a] rounded p-2 text-xs">
-                        <div className="text-white font-medium">{task.name}</div>
-                        <div className="flex justify-between mt-1">
-                          <div className="text-[#888]">{task.agent}</div>
-                          <div className={`text-xs ${
-                            task.priority === "High" ? "text-[#F87171]" : 
-                            task.priority === "Medium" ? "text-[#FDBC2C]" : "text-[#34D399]"
-                          }`}>{task.priority}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div 
-                  className="absolute -right-20 top-24 w-60 bg-[#151515] rounded-lg border border-[#3a3a3a] p-3 shadow-xl transform-gpu"
-                  style={{
-                    transform: 'rotateX(14deg) rotateY(8deg) rotateZ(-1deg) translateZ(160px)',
-                    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.45), 0 10px 30px rgba(0, 0, 0, 0.2)',
-                    background: 'linear-gradient(135deg, rgba(28, 28, 28, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%)',
-                    backdropFilter: 'blur(12px)'
-                  }}
-                >
-                  <div className="text-sm font-medium text-white mb-2">Performance</div>
-                  <div className="flex items-center justify-center h-20">
-                    <div className="w-16 h-16 rounded-full border-4 border-[#6366F1] flex items-center justify-center">
-                      <div className="text-lg font-bold text-white">92%</div>
-                    </div>
-                    <div className="ml-3">
-                      <div className="text-xs text-[#888]">Overall Score</div>
-                      <div className="text-xs text-[#34D399] mt-1">+5.4% this week</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Glass reflections - linear light streak effect */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl" 
-                style={{ 
-                  transform: 'rotateX(15deg) rotateY(7deg) rotateZ(-1deg)',
-                }}>
-                <div className="absolute -top-[30%] -right-[100%] w-[200%] h-[40%] bg-gradient-to-l from-transparent via-white to-transparent opacity-[0.02] blur-[1px]"
-                  style={{ transform: 'rotate(45deg)' }}></div>
-                <div className="absolute -top-[35%] -right-[100%] w-[200%] h-[10%] bg-gradient-to-l from-transparent via-white to-transparent opacity-[0.015] blur-[0.5px]"
-                  style={{ transform: 'rotate(45deg)' }}></div>
-              </div>
-              
-              {/* Reflections and shadows */}
-              <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[85%] h-[100px]" 
-                style={{
-                  background: 'linear-gradient(to bottom, rgba(99, 102, 241, 0.05), transparent)',
-                  filter: 'blur(40px)',
-                  transform: 'rotateX(75deg) skewX(12deg) scale(0.9, 0.5)',
-                  opacity: 0.2,
-                  borderRadius: '50%'
-                }}>
-              </div>
-              
-              {/* Glow effects */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px]" 
-                style={{
-                  background: 'radial-gradient(circle, rgba(99, 102, 241, 0.02) 0%, transparent 70%)',
-                  filter: 'blur(50px)',
-                }}>
-              </div>
-
-              {/* Left edge enhancement */}
-              <div className="absolute top-0 left-0 bottom-0 w-[20px]" 
-                style={{
-                  background: 'linear-gradient(to right, rgba(99, 102, 241, 0.02), transparent)',
-                  filter: 'blur(8px)',
-                }}>
               </div>
             </div>
           </div>
-          
-          <div className="absolute bottom-[-120px] left-0 right-0 h-[240px] bg-gradient-radial from-[#6366F1]/2 to-transparent opacity-20 blur-3xl"></div>
         </section>
-        
+
         {/* Logos Section with animations */}
         <section 
           ref={logosRef}
-          className="py-24 border-t border-[#1e1e1e]"
+          className="py-24 border-t border-[#1e1e1e] w-full max-w-full overflow-hidden"
         >
-          <div className="container mx-auto px-6">
-            <p 
-              className={`text-center text-[#AAAAAA] uppercase text-sm tracking-wider mb-10 transition-all duration-700 ${
-                logosVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
-              }`}
-            >
-              Trusted by innovative teams at
+          <div className="container mx-auto px-50">
+            <p className={`text-center text-[#AAAAAA] uppercase text-sm tracking-wider mb-10 transition-all duration-700 ${
+              logosVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+            }`}>
+              Powered by builders
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center justify-items-center">
+              {[
+                { src: '/logos/next.svg', alt: 'Next.js' },
+                { src: '/logos/resend.svg', alt: 'Resend' },
+                { src: '/logos/supabase.svg', alt: 'Supabase' },
+                { src: '/logos/openai.svg', alt: 'OpenAI' },
+                { src: '/logos/arth.svg', alt: 'Arth' },
+                { src: '/logos/clark.svg', alt: 'Clark' }
+              ].map((logo, i) => (
                 <div 
                   key={i} 
-                  className={`h-8 w-32 bg-[#1e1e1e] rounded opacity-50 transition-all duration-700 ${
-                    logosVisible ? 'opacity-50 translate-y-0' : 'opacity-0 translate-y-10'
+                  className={`relative h-8 w-28 transition-all duration-700 hover:opacity-100 ${
+                    logosVisible ? 'opacity-60 translate-y-0' : 'opacity-0 translate-y-10'
                   }`}
                   style={{ transitionDelay: `${i * 100}ms` }}
-                ></div>
+                >
+                  <Image
+                    src={logo.src}
+                    alt={logo.alt}
+                    fill
+                    className="object-contain filter brightness-200 contrast-0 hover:brightness-100 hover:contrast-100 transition-all duration-300"
+                  />
+                </div>
               ))}
             </div>
           </div>
         </section>
-        
-        {/* Features Section with animations */}
-        <section 
-          ref={featuresRef}
-          className="py-32 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
-          <div className="container mx-auto px-6">
-            <div className="max-w-6xl mx-auto">
-              <div 
-                className={`transition-all duration-700 ${
-                  featuresVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                }`}
-              >
-                <div className="flex items-center mb-3">
-                  <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Features</span>
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                  <span className="text-white">Agent infrastructure </span>
-                  <span className="effortlessly-text">you'll enjoy using</span>
-                </h2>
-                
-                <p className="text-lg text-[#AAAAAA] max-w-2xl mb-16 leading-relaxed">
-                  Optimized for speed and efficiency. Create agents in seconds, orchestrate their interactions,
-                  and breeze through your AI workflows in views tailored to your team.
-                </p>
-              </div>
-              
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10 relative">
-                {[
-                  {
-                    title: "Agent Orchestration",
-                    description: "Coordinate multiple AI agents working together seamlessly on complex tasks with built-in communication protocols.",
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    )
-                  },
-                  {
-                    title: "Visual Workflow Builder",
-                    description: "Create sophisticated agent workflows using our intuitive drag-and-drop interface, no coding required.",
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-                      </svg>
-                    )
-                  },
-                  {
-                    title: "Real-time Analytics",
-                    description: "Track and optimize every agent's performance with comprehensive metrics and insights dashboard.",
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    )
-                  },
-                  {
-                    title: "Flexible Integrations",
-                    description: "Connect your agents to APIs, databases, and third-party services with our extensive library of connectors.",
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
-                      </svg>
-                    )
-                  },
-                  {
-                    title: "Advanced Monitoring",
-                    description: "Real-time monitoring with end-to-end tracing and logging of every agent interaction and transaction.",
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                    )
-                  },
-                  {
-                    title: "Team Collaboration",
-                    description: "Built for teams with fine-grained roles, permissions, and collaborative agent management features.",
-                    icon: (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                    )
-                  }
-                ].map((feature, i) => (
-                  <div 
-                    key={i} 
-                    className="rounded-xl bg-[#121212] shadow-2xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden border border-[#222] hover:border-[#6366F1]/30"
-                    style={{ 
-                      transitionDelay: `${i * 100}ms`,
-                      transform: featuresVisible ? 'translateY(0)' : 'translateY(40px)',
-                      opacity: featuresVisible ? 1 : 0,
-                      transition: 'all 0.7s ease-out'
-                    }}
-                  >
-                    <div className="p-7 relative">
-                      <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white mb-5 shadow-lg shadow-[#6366F1]/20">
-                        {feature.icon}
-                      </div>
-                      <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
-                      <p className="text-[#AAAAAA]">{feature.description}</p>
-                      
-                      <div className="absolute bottom-0 right-0 w-24 h-24 rounded-full bg-gradient-to-br from-[#6366F1]/5 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          <div className="absolute bottom-[-120px] left-0 right-0 h-[240px] bg-gradient-radial from-[#6366F1]/3 to-transparent opacity-20 blur-3xl"></div>
-        </section>
-        
+
         {/* Product Showcase with animations */}
         <section 
           ref={productRef}
-          className="py-24 bg-[#0E0E0E]"
+          className="py-24 bg-[#121212]"
         >
-          <div className="container mx-auto px-6">
+          <div className="container mx-auto px-50">
             <div className="flex flex-col md:flex-row items-center justify-between gap-12">
               <div 
                 className={`md:w-1/2 transition-all duration-1000 ${
@@ -631,14 +205,14 @@ export default function Home() {
                 }`}
               >
                 <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                  <span className="text-white">Build your agent team in </span>
+                  <span className="text-white">Build your team in </span>
                   <span className="effortlessly-text">minutes</span>
                   <span className="text-white">, not weeks</span>
                 </h2>
                 <p className="text-[#AAAAAA] text-lg mb-8 leading-relaxed">
                   Our powerful platform empowers you to create, configure, and orchestrate sophisticated AI agents that collaborate seamlessly, eliminating complex setup and management headaches.
                 </p>
-                
+
                 <div className="space-y-8">
                   {[
                     {
@@ -674,7 +248,7 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                
+
                 <div 
                   className="mt-10"
                   style={{ 
@@ -685,7 +259,7 @@ export default function Home() {
                   }}
                 >
                   <Link 
-                    href="/signup" 
+                    href="/dashboard" 
                     className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center w-fit group"
                   >
                     Start building now
@@ -695,7 +269,7 @@ export default function Home() {
                   </Link>
                 </div>
               </div>
-              
+
               <div 
                 className={`md:w-1/2 h-[500px] bg-[#0f0f0f] rounded-xl border border-[#2e2e2e] overflow-hidden relative shadow-2xl transition-all duration-1000 delay-500 ${
                   productVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
@@ -715,7 +289,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-4 h-[420px]">
                     <div className="w-1/4 bg-[#151515] rounded-lg border border-[#2a2a2a] p-4 flex flex-col">
                       <div className="h-5 w-24 bg-[#252525] rounded mb-4"></div>
@@ -733,9 +307,9 @@ export default function Home() {
                           <div className="h-3 w-12 bg-[#3e3e3e] rounded-sm"></div>
                         </div>
                       </div>
-                      
+
                       <div className="h-px bg-[#2a2a2a] my-3"></div>
-                      
+
                       <div className="h-5 w-16 bg-[#252525] rounded mb-3"></div>
                       <div className="space-y-2 flex-1">
                         <div className="bg-[#1a1a1a] rounded-md border border-[#2a2a2a] p-3 flex justify-between items-center">
@@ -767,532 +341,448 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="w-2/4 flex flex-col gap-4">
-                      <div className="h-1/2 bg-[#151515] rounded-lg border border-[#2a2a2a] p-4">
-                        <div className="flex justify-between items-center mb-4">
-                          <div className="h-5 w-32 bg-[#252525] rounded"></div>
+
+                    <div className="h-1/2 bg-[#151515] rounded-lg border border-[#2a2a2a] p-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="h-5 w-28 bg-[#252525] rounded"></div>
+                        <div className="flex space-x-2">
                           <div className="h-8 px-3 rounded-md bg-[#1a1a1a] flex items-center justify-center">
-                            <div className="h-2 w-12 bg-[#3e3e3e] rounded-sm"></div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-3 h-[calc(100%-40px)]">
-                          <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-3 flex flex-col">
-                            <div className="flex justify-between items-center mb-2">
-                              <div className="h-3 w-20 bg-[#3e3e3e] rounded-sm"></div>
-                              <div className="h-3 w-3 rounded-full bg-[#34D399]"></div>
-                            </div>
-                            <div className="h-4 w-12 bg-[#252525] rounded mb-2"></div>
-                            <div className="mt-auto h-1 bg-[#252525] rounded-full w-full overflow-hidden">
-                              <div className="h-full w-4/5 bg-[#34D399] rounded-full"></div>
-                            </div>
-                          </div>
-                          <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-3 flex flex-col">
-                            <div className="flex justify-between items-center mb-2">
-                              <div className="h-3 w-16 bg-[#3e3e3e] rounded-sm"></div>
-                              <div className="h-3 w-3 rounded-full bg-[#6366F1]"></div>
-                            </div>
-                            <div className="h-4 w-14 bg-[#252525] rounded mb-2"></div>
-                            <div className="mt-auto h-1 bg-[#252525] rounded-full w-full overflow-hidden">
-                              <div className="h-full w-2/3 bg-[#6366F1] rounded-full"></div>
-                            </div>
-                          </div>
-                          <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-3 flex flex-col">
-                            <div className="flex justify-between items-center mb-2">
-                              <div className="h-3 w-18 bg-[#3e3e3e] rounded-sm"></div>
-                              <div className="h-3 w-3 rounded-full bg-[#F87171]"></div>
-                            </div>
-                            <div className="h-4 w-10 bg-[#252525] rounded mb-2"></div>
-                            <div className="mt-auto h-1 bg-[#252525] rounded-full w-full overflow-hidden">
-                              <div className="h-full w-1/2 bg-[#F87171] rounded-full"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="h-1/2 bg-[#151515] rounded-lg border border-[#2a2a2a] p-4">
-                        <div className="flex justify-between items-center mb-4">
-                          <div className="h-5 w-28 bg-[#252525] rounded"></div>
-                          <div className="flex space-x-2">
-                            <div className="h-8 px-3 rounded-md bg-[#1a1a1a] flex items-center justify-center">
-                              <div className="h-2 w-16 bg-[#3e3e3e] rounded-sm"></div>
-                            </div>
-                            <div className="h-8 px-3 rounded-md bg-[#6366F1] flex items-center justify-center">
-                              <div className="h-2 w-12 bg-white/30 rounded-sm"></div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3 h-[calc(100%-40px)]">
-                          <div className="bg-[#1a1a1a] rounded-md border border-[#2a2a2a] p-3 flex justify-between items-center">
-                            <div className="flex items-center">
-                              <div className="h-6 w-6 rounded-md bg-[#34D399]/20 flex items-center justify-center mr-3">
-                                <div className="h-3 w-3 bg-[#34D399] rounded-sm"></div>
-                              </div>
-                              <div className="h-4 w-32 bg-[#252525] rounded"></div>
-                            </div>
-                            <div className="h-6 w-16 bg-[#252525] rounded-md"></div>
-                          </div>
-                          <div className="bg-[#1a1a1a] rounded-md border border-[#2a2a2a] p-3 flex justify-between items-center">
-                            <div className="flex items-center">
-                              <div className="h-6 w-6 rounded-md bg-[#6366F1]/20 flex items-center justify-center mr-3">
-                                <div className="h-3 w-3 bg-[#6366F1] rounded-sm"></div>
-                              </div>
-                              <div className="h-4 w-36 bg-[#252525] rounded"></div>
-                            </div>
-                            <div className="h-6 w-16 bg-[#252525] rounded-md"></div>
-                          </div>
-                          <div className="bg-[#1a1a1a] rounded-md border border-[#2a2a2a] p-3 flex justify-between items-center">
-                            <div className="flex items-center">
-                              <div className="h-6 w-6 rounded-md bg-[#F87171]/20 flex items-center justify-center mr-3">
-                                <div className="h-3 w-3 bg-[#F87171] rounded-sm"></div>
-                              </div>
-                              <div className="h-4 w-24 bg-[#252525] rounded"></div>
-                            </div>
-                            <div className="h-6 w-16 bg-[#252525] rounded-md"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="w-1/4 bg-[#151515] rounded-lg border border-[#2a2a2a] p-4 flex flex-col">
-                      <div className="h-5 w-20 bg-[#252525] rounded mb-4"></div>
-                      
-                      <div className="mb-5 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-3">
-                        <div className="flex items-center mb-3">
-                          <div className="h-8 w-8 rounded-md bg-gradient-to-br from-[#6366F1] to-[#4F46E5] mr-2"></div>
-                          <div>
-                            <div className="h-3 w-24 bg-white/20 rounded-sm"></div>
-                            <div className="h-2 w-12 bg-[#3e3e3e] rounded-sm mt-1"></div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2 mb-3">
-                          <div className="flex justify-between">
-                            <div className="h-2 w-12 bg-[#3e3e3e] rounded-sm"></div>
                             <div className="h-2 w-16 bg-[#3e3e3e] rounded-sm"></div>
                           </div>
-                          <div className="flex justify-between">
-                            <div className="h-2 w-14 bg-[#3e3e3e] rounded-sm"></div>
-                            <div className="h-2 w-10 bg-[#3e3e3e] rounded-sm"></div>
+                          <div className="h-8 px-3 rounded-md bg-[#6366F1] flex items-center justify-center">
+                            <div className="h-2 w-12 bg-white/30 rounded-sm"></div>
                           </div>
                         </div>
-                        
-                        <div className="h-1.5 bg-[#252525] rounded-full w-full overflow-hidden">
-                          <div className="h-full w-4/5 bg-[#6366F1] rounded-full"></div>
-                        </div>
                       </div>
-                      
-                      <div className="h-5 w-24 bg-[#252525] rounded mb-3"></div>
-                      <div className="space-y-2 flex-1">
-                        <div className="bg-[#1a1a1a] rounded p-2">
-                          <div className="h-3 w-32 bg-white/20 rounded-sm mb-1"></div>
-                          <div className="h-2 w-14 bg-[#3e3e3e] rounded-sm"></div>
+
+                      <div className="space-y-3 h-[calc(100%-40px)]">
+                        <div className="bg-[#1a1a1a] rounded-md border border-[#2a2a2a] p-3 flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="h-6 w-6 rounded-md bg-[#34D399]/20 flex items-center justify-center mr-3">
+                              <div className="h-3 w-3 bg-[#34D399] rounded-sm"></div>
+                            </div>
+                            <div className="h-4 w-32 bg-[#252525] rounded"></div>
+                          </div>
+                          <div className="h-6 w-16 bg-[#252525] rounded-md"></div>
                         </div>
-                        <div className="bg-[#1a1a1a] rounded p-2">
-                          <div className="h-3 w-28 bg-white/20 rounded-sm mb-1"></div>
-                          <div className="h-2 w-10 bg-[#3e3e3e] rounded-sm"></div>
+                        <div className="bg-[#1a1a1a] rounded-md border border-[#2a2a2a] p-3 flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="h-6 w-6 rounded-md bg-[#6366F1]/20 flex items-center justify-center mr-3">
+                              <div className="h-3 w-3 bg-[#6366F1] rounded-sm"></div>
+                            </div>
+                            <div className="h-4 w-36 bg-[#252525] rounded"></div>
+                          </div>
+                          <div className="h-6 w-16 bg-[#252525] rounded-md"></div>
                         </div>
-                      </div>
-                      
-                      <div className="space-y-2 mt-auto pt-3 border-t border-[#2a2a2a]">
-                        <div className="h-8 bg-[#252525] rounded"></div>
-                        <div className="h-8 bg-[#6366F1] rounded"></div>
+                        <div className="bg-[#1a1a1a] rounded-md border border-[#2a2a2a] p-3 flex justify-between items-center">
+                          <div className="flex items-center">
+                            <div className="h-6 w-6 rounded-md bg-[#F87171]/20 flex items-center justify-center mr-3">
+                              <div className="h-3 w-3 bg-[#F87171] rounded-sm"></div>
+                            </div>
+                            <div className="h-4 w-24 bg-[#252525] rounded"></div>
+                          </div>
+                          <div className="h-6 w-16 bg-[#252525] rounded-md"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                <div className="w-1/4 bg-[#151515] rounded-lg border border-[#2a2a2a] p-4 flex flex-col">
+                  <div className="h-5 w-20 bg-[#252525] rounded mb-4"></div>
+
+                  <div className="mb-5 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-3">
+                    <div className="flex items-center mb-3">
+                      <div className="h-8 w-8 rounded-md bg-gradient-to-br from-[#6366F1] to-[#4F46E5] mr-2"></div>
+                      <div>
+                        <div className="h-3 w-24 bg-white/20 rounded-sm"></div>
+                        <div className="h-2 w-12 bg-[#3e3e3e] rounded-sm mt-1"></div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between">
+                        <div className="h-2 w-12 bg-[#3e3e3e] rounded-sm"></div>
+                        <div className="h-2 w-16 bg-[#3e3e3e] rounded-sm"></div>
+                      </div>
+                      <div className="flex justify-between">
+                        <div className="h-2 w-14 bg-[#3e3e3e] rounded-sm"></div>
+                        <div className="h-2 w-10 bg-[#3e3e3e] rounded-sm"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-1.5 bg-[#252525] rounded-full w-full overflow-hidden">
+                    <div className="h-full w-4/5 bg-[#6366F1] rounded-full"></div>
+                  </div>
+                </div>
+
+                <div className="h-5 w-24 bg-[#252525] rounded mb-3"></div>
+                <div className="space-y-2 flex-1">
+                  <div className="bg-[#1a1a1a] rounded p-2">
+                    <div className="h-3 w-32 bg-white/20 rounded-sm mb-1"></div>
+                    <div className="h-2 w-14 bg-[#3e3e3e] rounded-sm"></div>
+                  </div>
+                  <div className="bg-[#1a1a1a] rounded p-2">
+                    <div className="h-3 w-28 bg-white/20 rounded-sm mb-1"></div>
+                    <div className="h-2 w-10 bg-[#3e3e3e] rounded-sm"></div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mt-auto pt-3 border-t border-[#2a2a2a]">
+                  <div className="h-8 bg-[#252525] rounded"></div>
+                  <div className="h-8 bg-[#6366F1] rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Powerful Integrations Section */}
+        <section className="py-32 bg-[#121212] w-full max-w-full overflow-hidden">
+          <div className="container mx-auto px-50">
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4"><span className="effortlessly-text"> Powerful Integrations</span></h2>
+              <p className="text-lg text-[#AAAAAA]">
+                Connect your agent team to your favorite tools and platforms for seamless workflows
+              </p>
+            </div>
+            
+            <div className="max-w-6xl mx-auto">
+              {/* Integration cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {/* GitHub Integration */}
+                <div className="bg-[#1B1A19] rounded-lg p-6 border border-[#2a2a2a] hover:border-[#6366F1] transition-all duration-300 group h-full flex flex-col">
+                  <div className="flex items-start mb-4">
+                    <div className="h-16 w-16 mr-4 flex items-center justify-center">
+                      <svg className="w-14 h-14 text-white" viewBox="0 0 1024 1024" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" clipRule="evenodd" d="M512 0C229.12 0 0 229.12 0 512C0 738.56 146.56 929.92 350.08 997.76C375.68 1002.24 385.28 986.88 385.28 973.44C385.28 961.28 384.64 920.96 384.64 878.08C256 901.76 222.72 846.72 212.48 817.92C206.72 803.2 181.76 757.76 160 745.6C142.08 736 116.48 712.32 159.36 711.68C199.68 711.04 228.48 748.8 238.08 764.16C284.16 841.6 357.76 819.84 387.2 806.4C391.68 773.12 405.12 751.36 419.84 738.56C305.92 725.76 186.88 681.6 186.88 485.76C186.88 429.44 206.72 383.36 239.36 347.52C234.24 334.72 216.32 282.24 244.48 211.84C244.48 211.84 287.36 198.4 385.28 264.32C426.24 252.8 469.76 247.04 513.28 247.04C556.8 247.04 600.32 252.8 641.28 264.32C739.2 197.76 782.08 211.84 782.08 211.84C810.24 282.24 792.32 334.72 787.2 347.52C819.84 383.36 839.68 428.8 839.68 485.76C839.68 682.24 720 725.76 606.08 738.56C624.64 754.56 640.64 785.28 640.64 833.28C640.64 901.76 640 956.16 640 973.44C640 986.88 649.6 1002.88 675.2 997.76C877.44 929.92 1024 737.92 1024 512C1024 229.12 794.88 0 512 0Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-medium text-[#6366F1]">GitHub</h3>
+                      <p className="text-sm text-[#AAAAAA]">Code & Version Control</p>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-sm text-[#AAAAAA]">Enable your agents to manage repositories, create pull requests, and review code changes autonomously.</p>
+                  </div>
+                </div>
+
+                {/* Slack Integration */}
+                <div className="bg-[#1B1A19] rounded-lg p-6 border border-[#2a2a2a] hover:border-[#6366F1] transition-all duration-300 group h-full flex flex-col">
+                  <div className="flex items-start mb-4">
+                    <div className="h-16 w-16 mr-4 flex items-center justify-center">
+                      <svg className="w-14 h-14" viewBox="0 0 2447.6 2452.5" xmlns="http://www.w3.org/2000/svg">
+                        <g clipRule="evenodd" fillRule="evenodd">
+                          <path d="m897.4 0c-135.3.1-244.8 109.9-244.7 245.2-.1 135.3 109.5 245.1 244.8 245.2h244.8v-245.1c.1-135.3-109.5-245.1-244.9-245.3.1 0 .1 0 0 0m0 654h-652.6c-135.3.1-244.9 109.9-244.8 245.2-.2 135.3 109.4 245.1 244.7 245.3h652.7c135.3-.1 244.9-109.9 244.8-245.2.1-135.4-109.5-245.2-244.8-245.3z" fill="#36c5f0"/>
+                          <path d="m2447.6 899.2c.1-135.3-109.5-245.1-244.8-245.2-135.3.1-244.9 109.9-244.8 245.2v245.3h244.8c135.3-.1 244.9-109.9 244.8-245.3zm-652.7 0v-654c.1-135.2-109.4-245-244.7-245.2-135.3.1-244.9 109.9-244.8 245.2v654c-.2 135.3 109.4 245.1 244.7 245.3 135.3-.1 244.9-109.9 244.8-245.3z" fill="#2eb67d"/>
+                          <path d="m1550.1 2452.5c135.3-.1 244.9-109.9 244.8-245.2.1-135.3-109.5-245.1-244.8-245.2h-244.8v245.2c-.1 135.2 109.5 245 244.8 245.2zm0-654.1h652.7c135.3-.1 244.9-109.9 244.8-245.2.2-135.3-109.4-245.1-244.7-245.3h-652.7c-135.3.1-244.9 109.9-244.8 245.2-.1 135.4 109.4 245.2 244.7 245.3z" fill="#ecb22e"/>
+                          <path d="m0 1553.2c-.1 135.3 109.5 245.1 244.8 245.2 135.3-.1 244.9-109.9 244.8-245.2v-245.2h-244.8c-135.3.1-244.9 109.9-244.8 245.2zm652.7 0v654c-.2 135.3 109.4 245.1 244.7 245.3 135.3-.1 244.9-109.9 244.8-245.2v-653.9c.2-135.3-109.4-245.1-244.7-245.3-135.4 0-244.9 109.8-244.8 245.1 0 0 0 .1 0 0" fill="#e01e5a"/>
+                        </g>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-medium text-[#6366F1]">Slack</h3>
+                      <p className="text-sm text-[#AAAAAA]">Team Communication</p>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-sm text-[#AAAAAA]">Let your agents communicate directly with your team in Slack channels, providing updates and responding to requests.</p>
+                  </div>
+                </div>
+
+                {/* Google Integration */}
+                <div className="bg-[#1B1A19] rounded-lg p-6 border border-[#2a2a2a] hover:border-[#6366F1] transition-all duration-300 group h-full flex flex-col">
+                  <div className="flex items-start mb-4">
+                    <div className="h-16 w-16 mr-4 flex items-center justify-center">
+                      <svg className="w-14 h-14" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                        <g id="_x31__stroke">
+                          <g id="Google">
+                            <path clipRule="evenodd" d="M27.585,64c0-4.157,0.69-8.143,1.923-11.881L7.938,35.648    C3.734,44.183,1.366,53.801,1.366,64c0,10.191,2.366,19.802,6.563,28.332l21.558-16.503C28.266,72.108,27.585,68.137,27.585,64" fill="#FBBC05" fillRule="evenodd"/>
+                            <path clipRule="evenodd" d="M65.457,26.182c9.031,0,17.188,3.2,23.597,8.436L107.698,16    C96.337,6.109,81.771,0,65.457,0C40.129,0,18.361,14.484,7.938,35.648l21.569,16.471C34.477,37.033,48.644,26.182,65.457,26.182" fill="#EA4335" fillRule="evenodd"/>
+                            <path clipRule="evenodd" d="M65.457,101.818c-16.812,0-30.979-10.851-35.949-25.937    L7.938,92.349C18.361,113.516,40.129,128,65.457,128c15.632,0,30.557-5.551,41.758-15.951L86.741,96.221    C80.964,99.86,73.689,101.818,65.457,101.818" fill="#34A853" fillRule="evenodd"/>
+                            <path clipRule="evenodd" d="M126.634,64c0-3.782-0.583-7.855-1.457-11.636H65.457v24.727    h34.376c-1.719,8.431-6.397,14.912-13.092,19.13l20.474,15.828C118.981,101.129,126.634,84.861,126.634,64" fill="#4285F4" fillRule="evenodd"/>
+                          </g>
+                        </g>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-medium text-[#6366F1]">Google</h3>
+                      <p className="text-sm text-[#AAAAAA]">Docs, Sheets & Calendar</p>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-sm text-[#AAAAAA]">Integrate with Google to let agents draft documents, analyze spreadsheets, and manage schedules.</p>
+                  </div>
+                </div>
+
+                {/* HubSpot Integration */}
+                <div className="bg-[#1B1A19] rounded-lg p-6 border border-[#2a2a2a] hover:border-[#6366F1] transition-all duration-300 group h-full flex flex-col">
+                  <div className="flex items-start mb-4">
+                    <div className="h-16 w-16 mr-4 flex items-center justify-center">
+                      <svg className="w-14 h-14" viewBox="6.20856283 .64498824 244.26943717 251.24701176" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m191.385 85.694v-29.506a22.722 22.722 0 0 0 13.101-20.48v-.677c0-12.549-10.173-22.722-22.721-22.722h-.678c-12.549 0-22.722 10.173-22.722 22.722v.677a22.722 22.722 0 0 0 13.101 20.48v29.506a64.342 64.342 0 0 0 -30.594 13.47l-80.922-63.03c.577-2.083.878-4.225.912-6.375a25.6 25.6 0 1 0 -25.633 25.55 25.323 25.323 0 0 0 12.607-3.43l79.685 62.007c-14.65 22.131-14.258 50.974.987 72.7l-24.236 24.243c-1.96-.626-4-.959-6.057-.987-11.607.01-21.01 9.423-21.007 21.03.003 11.606 9.412 21.014 21.018 21.017 11.607.003 21.02-9.4 21.03-21.007a20.747 20.747 0 0 0 -.988-6.056l23.976-23.985c21.423 16.492 50.846 17.913 73.759 3.562 22.912-14.352 34.475-41.446 28.985-67.918-5.49-26.473-26.873-46.734-53.603-50.792m-9.938 97.044a33.17 33.17 0 1 1 0-66.316c17.85.625 32 15.272 32.01 33.134.008 17.86-14.127 32.522-31.977 33.165" fill="#ff7a59"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-medium text-[#6366F1]">HubSpot</h3>
+                      <p className="text-sm text-[#AAAAAA]">CRM & Marketing</p>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-sm text-[#AAAAAA]">Connect your agents to HubSpot for lead management, customer communication, and marketing campaign analytics.</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Call to action */}
+              <div className="mt-16 text-center">
                 
-                {/* Add a subtle glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#6366F1]/5 via-transparent to-[#6366F1]/5 opacity-50 pointer-events-none"></div>
               </div>
             </div>
           </div>
         </section>
         
-        {/* Integrations Section with animations */}
-        <section 
-          ref={integrationsRef}
-          className="py-32 bg-[#0F0F0F] relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-[#6366F1]/5 to-transparent opacity-30 blur-3xl"></div>
-          
-          <div className="container mx-auto px-6 relative z-10">
-            <div className="flex flex-col lg:flex-row gap-16 items-center">
-              <div 
-                className={`lg:w-1/2 transition-all duration-1000 ${
-                  integrationsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
-                }`}
-              >
-                <div className="flex items-center mb-3">
-                  <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Integrations</span>
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                  <span className="text-white">Connect your agents to </span>
-                  <span className="effortlessly-text ml-2">powerful</span>
-                  <span className="text-white ml-2">tools</span>
+        {/* RAG Architecture Section */}
+        <section className="py-32 bg-[#121212] relative overflow-hidden">
+<div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none"></div>
+
+          <div className="container mx-auto px-50 relative z-10">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="effortlessly-text">Process</span>
                 </h2>
-                <p className="text-[#AAAAAA] text-lg mb-8 leading-relaxed">
-                  Extend your AI agents' capabilities by connecting them to your existing tech stack. Our platform seamlessly integrates with popular APIs, databases, and services to ensure your agents can access all the tools and data they need.
-                </p>
-                
-                <div className="space-y-6 mb-10">
-                  {[
-                    {
-                      title: "Flexible API connections",
-                      description: "Connect to any REST API or GraphQL endpoint with our no-code integration builder. Transform data and handle authentication automatically.",
-                      icon: (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      )
-                    },
-                    {
-                      title: "Database connectors",
-                      description: "Access SQL, NoSQL, and vector databases to store and retrieve information your agents need, with built-in security and performance optimizations.",
-                      icon: (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                        </svg>
-                      )
-                    },
-                    {
-                      title: "Pre-built connectors",
-                      description: "Get started quickly with our library of pre-built integrations for popular services and platforms in your workflow.",
-                      icon: (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      )
-                    }
-                  ].map((feature, i) => (
-                    <div 
-                      key={i} 
-                      className="flex items-start"
-                      style={{ 
-                        transitionDelay: `${(i+1) * 200}ms`,
-                        transform: integrationsVisible ? 'translateX(0)' : 'translateX(-20px)',
-                        opacity: integrationsVisible ? 1 : 0,
-                        transition: 'all 0.7s ease-out'
-                      }}
-                    >
-                      <div className="flex-shrink-0 mt-1 w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#6366F1]/20 to-[#4F46E5]/20 text-[#6366F1] mr-4">
-                        {feature.icon}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-medium mb-2 text-white">{feature.title}</h3>
-                        <p className="text-[#AAAAAA]">{feature.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div 
-                  className="flex items-center"
-                  style={{ 
-                    transitionDelay: '800ms',
-                    transform: integrationsVisible ? 'translateY(0)' : 'translateY(20px)',
-                    opacity: integrationsVisible ? 1 : 0,
-                    transition: 'all 0.7s ease-out'
-                  }}
-                >
-                  <Link 
-                    href="/integrations" 
-                    className="text-[#6366F1] hover:text-[#4F46E5] font-medium flex items-center transition-colors duration-200 group"
-                  >
-                    Explore all integrations
-                    <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-              
-              <div 
-                className={`lg:w-1/2 transition-all duration-1000 delay-500 ${
-                  integrationsVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
-                }`}
-              >
-                {/* Floating integration cards */}
-                <div className="relative mx-auto w-full max-w-xl h-[500px] perspective-[1000px]">
-                  <div className="grid grid-cols-3 grid-rows-3 gap-3 w-full h-full absolute top-0 left-0 transform-gpu">
-                    {[
-                      { name: "Slack", color: "#4A154B", icon: "slack.svg", x: 10, y: 10, z: 70, rotate: 15 },
-                      { name: "GitHub", color: "#181717", icon: "github.svg", x: -15, y: -5, z: 40, rotate: -8 },
-                      { name: "Notion", color: "#000000", icon: "notion.svg", x: 25, y: -10, z: 20, rotate: 12 },
-                      { name: "Salesforce", color: "#00A1E0", icon: "salesforce.svg", x: -20, y: 20, z: 50, rotate: -10 },
-                      { name: "Airtable", color: "#F82B60", icon: "airtable.svg", x: 0, y: 0, z: 80, rotate: 0 },
-                      { name: "Zapier", color: "#FF4A00", icon: "zapier.svg", x: 15, y: 15, z: 30, rotate: 5 },
-                      { name: "MySQL", color: "#4479A1", icon: "mysql.svg", x: -10, y: -15, z: 10, rotate: -5 },
-                      { name: "MongoDB", color: "#47A248", icon: "mongodb.svg", x: 20, y: -20, z: 60, rotate: 10 },
-                      { name: "AWS", color: "#FF9900", icon: "aws.svg", x: -25, y: 5, z: 90, rotate: -12 }
-                    ].map((integration, i) => (
-                      <div 
-                        key={i} 
-                        className="relative rounded-lg p-5 bg-[#151515] border border-[#2a2a2a] hover:border-[#6366F1] transition-all duration-300 shadow-xl flex flex-col items-center justify-center group"
-                        style={{
-                          transform: `translateX(${integration.x}px) translateY(${integration.y}px) translateZ(${integration.z}px) rotateY(${integration.rotate}deg)`,
-                          transition: 'all 0.5s ease-out',
-                          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05)'
-                        }}
-                      >
-                        <div className="w-12 h-12 rounded-lg bg-white bg-opacity-10 flex items-center justify-center mb-3">
-                          <div className="w-6 h-6 opacity-70"></div>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-medium text-white mb-1">{integration.name}</div>
-                          <div className="text-xs text-[#888]">Integrated</div>
-                        </div>
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#6366F1]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Connection lines between integration cards */}
-                <div className="absolute inset-0 pointer-events-none">
-                  <svg className="w-full h-full opacity-30" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M100,100 C150,120 250,150 300,200" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-                    <path d="M200,50 C220,100 250,200 280,300" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-                    <path d="M50,200 C100,220 200,250 350,280" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-                    <path d="M120,300 C150,250 200,200 250,150" stroke="#6366F1" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-                  </svg>
-                </div>
-                
-                {/* Central glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-[#6366F1] rounded-full blur-3xl opacity-10"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* Testimonials with animations */}
-        <section 
-          ref={testimonialsRef}
-          className="py-32 bg-[#0E0E0E] relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none"></div>
-          <div className="container mx-auto px-6 relative z-10">
-            <div 
-              className={`text-center mb-16 transition-all duration-700 ${
-                testimonialsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
-              <div className="flex items-center justify-center mb-3">
-                <span className="text-sm font-medium text-[#AAAAAA] uppercase tracking-wider">Testimonials</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                <span className="text-white">What teams are </span>
-                <span className="effortlessly-text">saying</span>
-              </h2>
-              <p className="text-lg text-[#AAAAAA] max-w-2xl mx-auto mb-8 leading-relaxed">
-                AgentTeam is transforming how organizations build and deploy AI agents. Here's what our customers have to say about their experience.
+              <p className="text-lg text-[#AAAAAA] max-w-3xl mx-auto">
+                Each agent has its own machine with tools and context. Agents connect to data sources, collaborate with teammates, and deliver results.
               </p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {[
-                {
-                  quote: "AgentTeam has dramatically improved our AI development workflow. What used to take weeks now takes days. The visual workflow builder makes it easy for our non-technical team members to contribute.",
-                  name: "Sarah Chen",
-                  title: "CTO, TechNova",
-                  rating: 5
-                },
-                {
-                  quote: "The ability to orchestrate multiple agents working together seamlessly has been a game-changer for our customer support operations. We've reduced resolution times by 68%.",
-                  name: "Marcus Johnson",
-                  title: "Head of AI, SupportAI",
-                  rating: 5
-                },
-                {
-                  quote: "We've reduced our AI development costs by 60% while increasing capabilities. AgentTeam is now central to our operations, helping us scale AI initiatives across our organization.",
-                  name: "Elena Rodriguez",
-                  title: "Director of Innovation, GlobalCorp",
-                  rating: 5
-                }
-              ].map((testimonial, i) => (
-                <div 
-                  key={i} 
-                  className="bg-[#151515] p-6 rounded-xl border border-[#2a2a2a] hover:border-[#3a3a3a] transition-all duration-300 group h-full flex flex-col"
-                  style={{ 
-                    transitionDelay: `${i * 200}ms`,
-                    transform: testimonialsVisible ? 'translateY(0)' : 'translateY(40px)',
-                    opacity: testimonialsVisible ? 1 : 0,
-                    transition: 'all 0.7s ease-out'
-                  }}
-                >
-                  <div className="mb-5">
-                    <svg className="w-8 h-8 text-[#6366F1]/40" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                    </svg>
+            <div className="max-w-5xl mx-auto bg-[#151515] border border-[#2a2a2a] rounded-xl p-8 relative">
+              <div className="flex flex-col space-y-8">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-lg font-semibold text-[#6366F1]">.configure()</div>
+                  <div className="text-lg font-semibold text-[#6366F1]">.execute()</div>
+                  <div className="text-lg font-semibold text-[#6366F1]">.deliver()</div>
+</div>
+
+                <div className="grid grid-cols-5 gap-6">
+                  {/* First row */}
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#AAAAAA] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span className="text-sm text-[#AAAAAA]">Project Setup</span>
+                    </div>
                   </div>
-                  <p className="text-white text-lg mb-6 flex-grow">{testimonial.quote}</p>
                   
-                  <div className="mt-auto">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-white">{testimonial.name}</h4>
-                        <p className="text-[#888] text-sm">{testimonial.title}</p>
-                      </div>
-                      <div className="flex">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <svg key={i} className="w-4 h-4 text-[#F59E0B]" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                          </svg>
-                        ))}
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div className="w-full h-px bg-[#6366F1] opacity-30 relative">
+                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+                        <div className="w-1 h-1 rounded-full bg-[#6366F1] opacity-70 animate-pulse"></div>
                       </div>
                     </div>
-                    <div className="pt-3 border-t border-[#2a2a2a]">
-                      <div className="text-[#6366F1] text-sm font-medium group-hover:underline cursor-pointer flex items-center">
-                        Read full story
-                        <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                  </div>
+                  
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#6366F1] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h2a2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2v1.5" />
+                        <path d="M13 11.5V13a2 2 0 002 2h3.5a2.5 2.5 0 010 5H18a2 2 0 00-2 2v1.065" />
+                        <path d="M2 8V6a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2h-3" />
+                      </svg>
+                      <span className="text-sm text-[#6366F1]">Agent Selection</span>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div className="w-full h-px bg-[#6366F1] opacity-30 relative">
+                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+                        <div className="w-1 h-1 rounded-full bg-[#6366F1] opacity-70 animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#AAAAAA] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                      </svg>
+                      <span className="text-sm text-[#AAAAAA]">Tool Connection</span>
+                    </div>
+                  </div>
+                  
+                  {/* Second row with vertical spacers */}
+                  <div className="flex justify-center">
+                    <div className="h-16 w-px bg-[#6366F1] opacity-30"></div>
+                  </div>
+                  <div></div>
+                  <div className="flex justify-center">
+                    <div className="h-16 w-px bg-[#6366F1] opacity-30"></div>
+                  </div>
+                  <div></div>
+                  <div className="flex justify-center">
+                    <div className="h-16 w-px bg-[#6366F1] opacity-30"></div>
+                  </div>
+                  
+                  {/* Third row - Execution layer */}
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#34D399] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                        <path d="M12 16v-4M12 8h.01" />
+                      </svg>
+                      <span className="text-sm text-[#AAAAAA]">User Request</span>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div className="w-full h-px bg-[#34D399] opacity-30 relative">
+                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+                        <div className="w-1 h-1 rounded-full bg-[#34D399] opacity-70 animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#34D399] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 7h-3a2 2 0 01-2-2V2" />
+                        <path d="M9 18a2 2 0 01-2-2v-1a2 2 0 00-2-2H3" />
+                        <path d="M3 7h2a2 2 0 012 2v1a2 2 0 002 2h2" />
+                        <path d="M14 18h1a2 2 0 002-2v-1a2 2 0 012-2h2" />
+                        <rect x="7" y="9" width="10" height="6" rx="2" />
+                      </svg>
+                      <span className="text-sm text-[#AAAAAA]">E2B Sandbox</span>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div className="w-full h-px bg-[#34D399] opacity-30 relative">
+                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+                        <div className="w-1 h-1 rounded-full bg-[#34D399] opacity-70 animate-pulse"></div>
+</div>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#34D399] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                        <path d="M15.5 16a4 4 0 100-8 4 4 0 000 8z" />
+                        <path d="M8.5 16a4 4 0 100-8 4 4 0 000 8z" />
+                      </svg>
+                      <span className="text-sm text-[#AAAAAA]">Agent Output</span>
+                    </div>
+                  </div>
+                  
+                  {/* More vertical spacers */}
+                  <div className="flex justify-center">
+                    <div className="h-16 w-px bg-[#F87171] opacity-30"></div>
+                  </div>
+                  <div></div>
+                  <div className="flex justify-center">
+                    <div className="h-16 w-px bg-[#F87171] opacity-30"></div>
+                  </div>
+                  <div></div>
+                  <div className="flex justify-center">
+                    <div className="h-16 w-px bg-[#F87171] opacity-30"></div>
+                  </div>
+                  
+                  {/* Fourth row - Resource layer */}
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#F87171] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572" />
+                      </svg>
+                      <span className="text-sm text-[#AAAAAA]">Shared Memory</span>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div className="w-full h-px bg-[#F87171] opacity-30 relative">
+                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+                        <div className="w-1 h-1 rounded-full bg-[#F87171] opacity-70 animate-pulse"></div>
+</div>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#F87171] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm text-[#AAAAAA]">Tool Access</span>
+                    </div>
+                  </div>
+                  
+                  <div className="col-span-1 flex items-center justify-center">
+                    <div className="w-full h-px bg-[#F87171] opacity-30 relative">
+                      <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+                        <div className="w-1 h-1 rounded-full bg-[#F87171] opacity-70 animate-pulse"></div>
+</div>
+</div>
+                  </div>
+                  
+                  <div className="rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] p-4 flex items-center justify-center">
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 text-[#F87171] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 6l6 6l-6 6" />
+                      </svg>
+                      <span className="text-sm text-[#AAAAAA]">Knowledge Base</span>
+                    </div>
+                  </div>
+</div>
+
+                {/* Technology Logos */}
+                <div className="grid grid-cols-5 gap-2 mt-4">
+                  <div className="flex justify-center">
+                    <div className="flex space-x-2">
+                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
+                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
+                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div></div>
+                  <div className="flex justify-center">
+                    <div className="flex space-x-2">
+                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
+                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
+                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
+                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div></div>
+                  <div className="flex justify-center">
+                    <div className="flex space-x-2">
+                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
+                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-[#333] flex items-center justify-center">
+                        <div className="w-3 h-3 bg-[#555] rounded-sm"></div>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-            
-            <div 
-              className={`flex justify-center mt-10 transition-all duration-700 delay-700 ${
-                testimonialsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
-              <Link 
-                href="/case-studies" 
-                className="px-6 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center group"
-              >
-                View all case studies
-                <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </Link>
-            </div>
-          </div>
-          
-          {/* Bottom gradient */}
-          <div className="absolute bottom-[-120px] left-0 right-0 h-[240px] bg-gradient-radial from-[#6366F1]/2 to-transparent opacity-20 blur-3xl"></div>
-        </section>
-        
-        {/* CTA Section with animations */}
-        <section 
-          ref={ctaRef}
-          className="py-32 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-radial from-[#6366F1]/10 to-transparent opacity-30 blur-3xl"></div>
-          
-          <div className="container mx-auto px-6 relative z-10">
-            <div 
-              className={`max-w-4xl mx-auto text-center transition-all duration-1000 ${
-                ctaVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-              }`}
-            >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to build your AI team?</h2>
-              <p className="text-xl text-[#AAAAAA] mb-10 max-w-2xl mx-auto">
-                Start building powerful AI agent systems today with our flexible pricing plans.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link 
-                  href="/signup" 
-                  className="px-8 py-4 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[200px]"
-                >
-                  Get started for free
-                </Link>
-                <Link 
-                  href="/contact" 
-                  className="px-8 py-4 bg-transparent border border-[#2e2e2e] hover:border-[#6366F1] text-white font-medium rounded transition-all duration-200 flex items-center justify-center min-w-[200px]"
-                >
-                  Contact sales
-                </Link>
               </div>
             </div>
+            
+            {/* Removed the three cards that were here */}
           </div>
         </section>
       </main>
-      
+
       <Footer />
-      
-      <style jsx>{`
-        .bg-grid-pattern {
-          background-size: 50px 50px;
-          background-image: 
-            linear-gradient(to right, #1e1e1e 1px, transparent 1px),
-            linear-gradient(to bottom, #1e1e1e 1px, transparent 1px);
-        }
-        
-        .bg-gradient-radial {
-          background-image: radial-gradient(circle, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
-        }
-        
-        .effortlessly-text {
-          font-family: "Instrument Serif", serif;
-          font-style: italic;
-          font-weight: 400;
-          letter-spacing: 0em;
-          color: #6366F1;
-          position: relative;
-          display: inline-block;
-          text-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
-          transition: all 0.3s ease;
-          font-size: 1.15em;
-          margin: 0 0.05em;
-        }
-        
-        .effortlessly-text:hover {
-          text-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
-        }
-        
-        /* Add animation classes */
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes fadeInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes fadeInRight {
-          from {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes zoomIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Logo from '@/components/Logo';
 import Image from 'next/image';
 import { 
   PlusCircle, Settings, Users, ChevronRight, Briefcase, ArrowRight, 
@@ -590,10 +589,6 @@ const Dashboard = () => {
                   <p className="text-xs text-[#A3A3A3]">Build your own team from scratch</p>
                 </div>
               </div>
-              
-              <div className="mt-4 flex justify-center">
-                {/* "Browse all templates" button removed */}
-              </div>
             </div>
             
             <div className="flex justify-between items-center">
@@ -679,12 +674,17 @@ const Dashboard = () => {
                             )}
                           </div>
                           <p className="text-[#A3A3A3] text-sm mb-2">{role.description}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {role.capabilities.map((capability, index) => (
-                              <span key={index} className="text-xs px-2 py-0.5 bg-[#202020] text-[#A3A3A3] rounded-full">
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {role.capabilities.slice(0, 2).map((capability, idx) => (
+                              <span key={idx} className="inline-block text-xs px-2 py-0.5 text-[#BBBBBB] border border-[#444] rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-white">
                                 {capability}
                               </span>
                             ))}
+                            {role.capabilities.length > 2 && (
+                              <span className="inline-block text-xs px-2 py-0.5 text-[#6366F1] border border-[#6366F1]/30 rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-[#8385f3]">
+                                +{role.capabilities.length - 2}
+                              </span>
+                            )}
                           </div>
                         </div>
                         
@@ -1128,12 +1128,9 @@ const Dashboard = () => {
                         )}
                         {/* Add more connected service icons as needed */}
                       </div>
-                      <div className="text-xs flex items-center bg-[#202020] px-2.5 py-1 rounded-full text-[#A3A3A3] border border-[#444]">
+                      <div className="text-xs flex items-center bg-[#202020] px-2.5 py-1 rounded-md text-[#A3A3A3] border border-[#444]">
                         <span className="text-white mr-1">{Object.values(connectedServices).filter(Boolean).length}</span>/8
                       </div>
-                      <button className="text-xs px-3 py-1.5 rounded-md bg-[#202020] text-[#A3A3A3] hover:text-white transition-colors">
-                        Skip
-                      </button>
                     </div>
                   </div>
                   
@@ -1371,7 +1368,7 @@ const Dashboard = () => {
                       <h2 className="text-lg font-medium">Advanced Settings</h2>
                     </div>
                     <div className="flex items-center">
-                      <div className="text-xs px-2.5 py-1 rounded-full bg-[#202020] text-[#A3A3A3] border border-[#444]">
+                      <div className="text-xs px-2.5 py-1 rounded-md bg-[#202020] text-[#A3A3A3] border border-[#444]">
                         Optional
                       </div>
                     </div>
@@ -1472,8 +1469,8 @@ const Dashboard = () => {
                       
                       return (
                         <div key={agent.id} className="px-6 py-4 hover:bg-[#202020] transition-colors">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-md bg-[#202020] flex items-center justify-center flex-shrink-0 mr-3 overflow-hidden">
+                          <div className="flex items-start">
+                            <div className="w-12 h-12 rounded-md bg-[#202020] mr-4 overflow-hidden mt-1">
                               <img 
                                 src={agent.icon} 
                                 alt={agent.name} 
@@ -1481,16 +1478,22 @@ const Dashboard = () => {
                               />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-white mb-0.5">{agent.name}</h3>
-                              <p className="text-xs text-[#6366F1]">AI {agent.name} Role</p>
-                              <div className="mt-1.5 flex flex-wrap gap-1">
+                              <h3 className="text-lg font-semibold text-white mb-1">
+                                {(() => {
+                                  const namePart = agent.icon.split('/').pop() || '';
+                                  const name = namePart.split('.')[0] || '';
+                                  return name.charAt(0).toUpperCase() + name.slice(1);
+                                })()}
+                              </h3>
+                              <p className="text-base font-medium text-[#6366F1]">{agent.name}</p>
+                              <div className="mt-2 flex flex-wrap gap-2">
                                 {agent.capabilities.slice(0, 2).map((capability, idx) => (
-                                  <span key={idx} className="inline-block text-[9px] px-1.5 py-0.5 bg-[#202020] text-[#A3A3A3] rounded-full whitespace-nowrap">
+                                  <span key={idx} className="inline-block text-xs px-2 py-0.5 text-[#BBBBBB] border border-[#444] rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-white">
                                     {capability}
                                   </span>
                                 ))}
                                 {agent.capabilities.length > 2 && (
-                                  <span className="inline-block text-[9px] px-1.5 py-0.5 bg-[#202020] text-[#A3A3A3] rounded-full whitespace-nowrap">
+                                  <span className="inline-block text-xs px-2 py-0.5 text-[#6366F1] border border-[#6366F1]/30 rounded-md whitespace-nowrap transition-colors hover:border-[#6366F1] hover:text-[#8385f3]">
                                     +{agent.capabilities.length - 2}
                                   </span>
                                 )}
@@ -1612,6 +1615,252 @@ const Dashboard = () => {
                 )}
               </button>
             </div>
+            {/* Custom Integration Modal */}
+            {showCustomIntegrationModal && (
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-[#202020] border border-[#444] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+                  <div className="sticky top-0 bg-[#202020] border-b border-[#444] px-6 py-4 flex items-center justify-between z-10">
+                    <h2 className="text-xl font-medium">
+                      {integrationAdded ? 'Integration Added' : 'Set Up Custom Integration'}
+                    </h2>
+                    <button 
+                      onClick={() => {
+                        setShowCustomIntegrationModal(false);
+                        if (integrationAdded) {
+                          setIntegrationAdded(false);
+                          setCustomIntegrationName('');
+                          setCustomIntegrationEndpoint('');
+                          setCustomIntegrationAPIKey('');
+                          setCustomIntegrationDescription('');
+                        }
+                      }}
+                      className="text-[#8A8F98] hover:text-white transition-colors"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6L6 18M6 6L18 18"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="p-6">
+                    {integrationAdded ? (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-medium mb-2">Integration Added Successfully</h3>
+                        <p className="text-[#A3A3A3] mb-8">
+                          Your custom integration "{customIntegrationName}" has been added to your project.
+                        </p>
+                        <div className="bg-[#2E2E2E] rounded-lg p-4 mb-8 text-left">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-[#A3A3A3]">Endpoint</span>
+                            <span className="text-xs px-2 py-1 bg-[#1E293B] text-[#38BDF8] rounded-full border border-[#38BDF8]/30">Connected</span>
+                          </div>
+                          <p className="font-mono text-sm truncate">{customIntegrationEndpoint}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowCustomIntegrationModal(false);
+                            setIntegrationAdded(false);
+                            setCustomIntegrationName('');
+                            setCustomIntegrationEndpoint('');
+                            setCustomIntegrationAPIKey('');
+                            setCustomIntegrationDescription('');
+                          }}
+                          className="px-6 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-6">
+                          <p className="text-[#A3A3A3] mb-6">
+                            Connect your custom API endpoints to enable your AI agents to interact with your services.
+                          </p>
+                          
+                          <div className="bg-[#2E2E2E] rounded-lg p-4 mb-6">
+                            <h3 className="font-medium mb-2 flex items-center">
+                              <svg className="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                              </svg>
+                              What You'll Need
+                            </h3>
+                            <ul className="space-y-2 text-sm text-[#A3A3A3]">
+                              <li className="flex items-start gap-2">
+                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="w-2 h-2 bg-white rounded-full"></span>
+                                </span>
+                                <span>API endpoint URL (HTTPS required)</span>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="w-2 h-2 bg-white rounded-full"></span>
+                                </span>
+                                <span>Authentication credentials (API key, OAuth tokens, etc.)</span>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="w-2 h-2 bg-white rounded-full"></span>
+                                </span>
+                                <span>API documentation for endpoints your agents will use</span>
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Integration Name</label>
+                              <input
+                                type="text"
+                                value={customIntegrationName}
+                                onChange={(e) => setCustomIntegrationName(e.target.value)}
+                                placeholder="e.g., CRM API, Payment Gateway, etc."
+                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium mb-2">API Endpoint URL</label>
+                              <input
+                                type="url"
+                                value={customIntegrationEndpoint}
+                                onChange={(e) => setCustomIntegrationEndpoint(e.target.value)}
+                                placeholder="https://api.example.com/v1"
+                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Authentication Type</label>
+                              <div className="grid grid-cols-3 gap-3">
+                                <button
+                                  onClick={() => setCustomIntegrationAuthType('api_key')}
+                                  className={`p-3 rounded-lg text-center text-sm border ${
+                                    customIntegrationAuthType === 'api_key' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
+                                  } transition-colors`}
+                                >
+                                  API Key
+                                </button>
+                                <button
+                                  onClick={() => setCustomIntegrationAuthType('oauth')}
+                                  className={`p-3 rounded-lg text-center text-sm border ${
+                                    customIntegrationAuthType === 'oauth' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
+                                  } transition-colors`}
+                                >
+                                  OAuth 2.0
+                                </button>
+                                <button
+                                  onClick={() => setCustomIntegrationAuthType('basic')}
+                                  className={`p-3 rounded-lg text-center text-sm border ${
+                                    customIntegrationAuthType === 'basic' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
+                                  } transition-colors`}
+                                >
+                                  Basic Auth
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {customIntegrationAuthType === 'api_key' && (
+                              <div>
+                                <label className="block text-sm font-medium mb-2">API Key</label>
+                                <input
+                                  type="password"
+                                  value={customIntegrationAPIKey}
+                                  onChange={(e) => setCustomIntegrationAPIKey(e.target.value)}
+                                  placeholder="Enter your API key"
+                                  className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                                />
+                              </div>
+                            )}
+                            
+                            {customIntegrationAuthType === 'oauth' && (
+                              <div className="bg-[#2E2E2E] p-4 rounded-lg">
+                                <p className="text-sm text-[#A3A3A3] mb-3">
+                                  OAuth 2.0 setup requires additional configuration through our developer console.
+                                </p>
+                                <button className="text-[#6366F1] text-sm hover:underline">
+                                  Open Developer Console
+                                </button>
+                              </div>
+                            )}
+                            
+                            {customIntegrationAuthType === 'basic' && (
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium mb-2">Username</label>
+                                  <input
+                                    type="text"
+                                    placeholder="Enter username"
+                                    className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium mb-2">Password</label>
+                                  <input
+                                    type="password"
+                                    placeholder="Enter password"
+                                    className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Description (Optional)</label>
+                              <textarea
+                                value={customIntegrationDescription}
+                                onChange={(e) => setCustomIntegrationDescription(e.target.value)}
+                                placeholder="Describe what this API will be used for"
+                                rows={3}
+                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-3">
+                          <button
+                            onClick={() => setShowCustomIntegrationModal(false)}
+                            className="px-4 py-2 border border-[#444] hover:border-[#6366F1] rounded-md transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsAddingIntegration(true);
+                              // Simulate API call to add the integration
+                              setTimeout(() => {
+                                setIsAddingIntegration(false);
+                                setIntegrationAdded(true);
+                              }, 1500);
+                            }}
+                            disabled={!customIntegrationName || !customIntegrationEndpoint || (customIntegrationAuthType === 'api_key' && !customIntegrationAPIKey) || isAddingIntegration}
+                            className={`px-6 py-2.5 rounded-md transition-colors flex items-center ${
+                              !customIntegrationName || !customIntegrationEndpoint || (customIntegrationAuthType === 'api_key' && !customIntegrationAPIKey) || isAddingIntegration
+                                ? 'bg-[#444] text-[#999] cursor-not-allowed'
+                                : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white'
+                            }`}
+                          >
+                            {isAddingIntegration ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Setting Up...
+                              </>
+                            ) : (
+                              'Add Integration'
+                            )}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       case 'chat':
@@ -1633,7 +1882,7 @@ const Dashboard = () => {
                       if (index > 2) return null;
                       
                       return (
-                        <div key={agent.id} className="w-8 h-8 rounded-full bg-[#2E2E2E] flex items-center justify-center ring-2 ring-[#202020]">
+                        <div key={agent.id} className="w-8 h-8 rounded-md bg-[#2E2E2E] flex items-center justify-center ring-2 ring-[#202020]">
                           <img 
                             src={agent.icon} 
                             alt={agent.name} 
@@ -1644,7 +1893,7 @@ const Dashboard = () => {
                     })}
                     
                     {selectedAgents.length > 3 && (
-                      <div className="w-8 h-8 rounded-full bg-[#2E2E2E] flex items-center justify-center text-xs ring-2 ring-[#202020]">
+                      <div className="w-8 h-8 rounded-md bg-[#2E2E2E] flex items-center justify-center text-xs ring-2 ring-[#202020]">
                         +{selectedAgents.length - 3}
                       </div>
                     )}
@@ -1667,7 +1916,7 @@ const Dashboard = () => {
               <div className="max-w-3xl mx-auto space-y-6">
                 <div className="bg-[#2E2E2E] rounded-xl p-4 shadow">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#202020] flex items-center justify-center text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-md bg-[#202020] flex items-center justify-center text-xs flex-shrink-0">
                       <User size={16} />
                     </div>
                     <div>
@@ -1678,7 +1927,7 @@ const Dashboard = () => {
                 
                 <div className="bg-[#2E2E2E] rounded-xl p-4 shadow">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center text-xs flex-shrink-0">
                       <Bot size={16} />
                     </div>
                     <div>
