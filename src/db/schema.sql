@@ -1,5 +1,9 @@
+-- Create extensions
+create extension if not exists "uuid-ossp";
+create extension if not exists vector;
+
 -- Create profiles table
-create table profiles (
+create table if not exists profiles (
   id uuid primary key references auth.users,
   username text,
   full_name text,
@@ -12,6 +16,10 @@ create table profiles (
 -- Enable RLS on profiles
 alter table profiles enable row level security;
 
+-- Drop existing policies before creating new ones
+drop policy if exists "Profiles are viewable by everyone" on profiles;
+drop policy if exists "Users can update their own profile" on profiles;
+
 -- Create policy for profiles - users can read all profiles
 create policy "Profiles are viewable by everyone" 
 on profiles for select 
@@ -20,15 +28,16 @@ using (true);
 -- Create policy for profiles - users can update only their own profile
 create policy "Users can update their own profile" 
 on profiles for update 
-using ((auth.uid() = id));
+using (auth.uid() = id);
 
 -- Create projects table
-create table projects (
+create table if not exists projects (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid references auth.users not null,
   name text not null,
   description text,
   status text default 'active',
+  agents text[] default '{}',
   last_active timestamptz default now(),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -36,6 +45,12 @@ create table projects (
 
 -- Enable RLS on projects
 alter table projects enable row level security;
+
+-- Drop existing project policies
+drop policy if exists "Users can view their own projects" on projects;
+drop policy if exists "Users can create their own projects" on projects;
+drop policy if exists "Users can update their own projects" on projects;
+drop policy if exists "Users can delete their own projects" on projects;
 
 -- Create policy for projects - users can CRUD only their own projects
 create policy "Users can view their own projects" 
@@ -55,18 +70,22 @@ on projects for delete
 using (auth.uid() = user_id);
 
 -- Create user_settings table
-create table user_settings (
+create table if not exists user_settings (
   id uuid primary key default uuid_generate_v4(),
-  user_id uuid references auth.users not null,
+  user_id uuid references auth.users not null unique,
   theme text default 'dark',
   email_notifications boolean default true,
   created_at timestamptz default now(),
-  updated_at timestamptz default now(),
-  unique(user_id)
+  updated_at timestamptz default now()
 );
 
 -- Enable RLS on user_settings
 alter table user_settings enable row level security;
+
+-- Drop existing user_settings policies
+drop policy if exists "Users can view their own settings" on user_settings;
+drop policy if exists "Users can create their own settings" on user_settings;
+drop policy if exists "Users can update their own settings" on user_settings;
 
 -- Create policy for user_settings - users can CRUD only their own settings
 create policy "Users can view their own settings" 
@@ -103,10 +122,7 @@ end;
 $$;
 
 -- Create trigger for new users
-create or replace trigger on_auth_user_created
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user(); 
-
--- Add agents column to projects table
-ALTER TABLE projects 
-ADD COLUMN IF NOT EXISTS agents TEXT[] DEFAULT '{}'; 

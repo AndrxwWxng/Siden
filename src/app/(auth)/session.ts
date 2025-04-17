@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 export async function getSession() {
   // Create a supabase client with proper async cookie handling
   const supabase = await createClient()
-  
+
   // Get the session with the client
   const { data: { session } } = await supabase.auth.getSession()
   return session

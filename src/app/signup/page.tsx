@@ -5,13 +5,15 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import OAuthProviders from '@/components/OAuthProviders';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [oauthError, setOauthError] = useState('');
   const router = useRouter();
 
   // Check if user is already authenticated
@@ -91,65 +93,64 @@ export default function SignUp() {
         return;
       }
       
-      // If no email confirmation required, sign in immediately
+      // If email confirmation is not required, or auto-confirmed
       if (data?.session) {
-        // Force a hard refresh to ensure the session is properly applied
-        window.location.href = '/dashboard';
-        return;
-      }
-      
-      // Try automatic sign in (may not work if email verification is required)
-      try {
-        const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (signInError) {
-          console.info('Auto sign-in not available (likely email verification required):', signInError.message);
-          setMessage('Account created! Check your email to confirm your account.');
-        } else if (signInData.session) {
-          // Force a hard refresh to ensure the session is properly applied
-          window.location.href = '/dashboard';
-        } else {
-          setMessage('Account created! Check your email to confirm your account.');
-        }
-      } catch (signInErr) {
-        console.error('Auto sign-in error:', signInErr);
-        setMessage('Account created! Check your email to confirm your account.');
+        router.push('/dashboard');
+      } else {
+        setMessage('Account created successfully. You can now sign in.');
+        setLoading(false);
       }
     } catch (err) {
       console.error('Sign up error:', err);
       setError('An unexpected error occurred. Please try again later.');
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0F0F0F]">
-      {/* Header with back button */}
-      <div className="p-6">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-[#A0A0A0] hover:text-white transition-colors">
-          <ArrowLeft size={16} className="mr-2" />
-          Back to home
-        </Link>
-      </div>
-      
-      <div className="flex flex-1 items-center justify-center px-6 py-12">
+    <div className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
+      <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <div className="inline-block mb-4 p-2 bg-gradient-to-br from-indigo-500 to-indigo-500 rounded-xl bg-opacity-10 backdrop-blur-sm">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 9L12 15M9 12L15 12" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-white">Create account</h1>
-            <p className="mt-2 text-[#A0A0A0] text-sm">Get started with your new account</p>
+          <div>
+            <Link href="/" className="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-8">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to home
+            </Link>
+            
+            <h2 className="text-3xl font-bold text-white">Create your account</h2>
+            <p className="mt-2 text-sm text-gray-400">
+              
+            </p>
           </div>
           
-          <form onSubmit={handleSignUp} className="mt-8 space-y-5">
+          {message && (
+            <div className="rounded-lg bg-green-900/30 border border-green-800/50 px-4 py-3">
+              <div className="text-sm text-green-400">{message}</div>
+            </div>
+          )}
+          
+          {oauthError && (
+            <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3 mt-4">
+              <div className="text-sm text-red-400">{oauthError}</div>
+            </div>
+          )}
+
+          <div className="mt-8">
+            <OAuthProviders 
+              onError={setOauthError}
+            />
+          </div>
+          
+          <div className="mt-6 relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-gray-700" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-[#0F0F0F] px-4 text-sm text-gray-500">Or continue with</span>
+            </div>
+          </div>
+          
+          <form onSubmit={handleSignUp} className="mt-6 space-y-5">
             <div>
               <label htmlFor="email" className="block text-xs font-medium text-[#A0A0A0] mb-2">
                 Email
@@ -193,12 +194,6 @@ export default function SignUp() {
               </div>
             )}
 
-            {message && (
-              <div className="rounded-lg bg-green-900/30 border border-green-800/50 px-4 py-3">
-                <div className="text-sm text-green-400">{message}</div>
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={loading}
@@ -215,17 +210,17 @@ export default function SignUp() {
                 </span>
               ) : <span className="relative z-10">Create account</span>}
             </button>
-
+            
             <div className="flex items-center justify-center mt-6">
-                  <div className="text-center text-sm">
-                    <p className="text-[#A0A0A0]">
-                    Already have an account?{' '}
-                    <Link href="/signin" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
-                      Sign in
-                    </Link>
-                    </p>
-                  </div>
-                </div>
+              <div className="text-center text-sm">
+                <p className="text-[#A0A0A0]">
+                  Already have an account?{' '}
+                  <Link href="/signin" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </div>
           </form>
         </div>
       </div>
