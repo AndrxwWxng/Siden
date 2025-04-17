@@ -28,6 +28,14 @@ export interface NotificationSettings {
   agent_activity_alerts: boolean;
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role: 'owner' | 'editor' | 'viewer';
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -41,6 +49,7 @@ export interface Project {
   chatConfig?: ChatConfig;
   integrations?: ProjectIntegration;
   notificationSettings?: NotificationSettings;
+  teamMembers?: TeamMember[]; // Team members who have access to this project
 }
 
 // Agent related types

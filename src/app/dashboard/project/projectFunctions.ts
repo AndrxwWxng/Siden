@@ -105,4 +105,48 @@ export const updateProjectNotificationSettings = async (
     console.error('Error updating project notification settings:', error);
     return false;
   }
+};
+
+// Add team member to project
+export const addTeamMember = async (
+  projectId: string,
+  email: string
+): Promise<{ success: boolean; updatedProject?: Project }> => {
+  try {
+    const result = await ProjectService.addTeamMemberToProject(projectId, email);
+    
+    if (result.success) {
+      return {
+        success: true,
+        updatedProject: result.project
+      };
+    }
+    
+    return { success: false };
+  } catch (error) {
+    console.error('Error adding team member:', error);
+    return { success: false };
+  }
+};
+
+// Remove team member from project
+export const removeTeamMember = async (
+  projectId: string,
+  memberId: string
+): Promise<{ success: boolean; updatedProject?: Project }> => {
+  try {
+    const result = await ProjectService.removeTeamMemberFromProject(projectId, memberId);
+    
+    if (result.success) {
+      return {
+        success: true,
+        updatedProject: result.project
+      };
+    }
+    
+    return { success: false };
+  } catch (error) {
+    console.error('Error removing team member:', error);
+    return { success: false };
+  }
 }; 

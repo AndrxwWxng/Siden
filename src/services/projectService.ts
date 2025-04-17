@@ -10,6 +10,15 @@ export interface ProjectData {
   agents?: string[];
   chatConfig?: ChatConfig;
   notificationSettings?: NotificationSettings;
+  teamMembers?: TeamMember[];
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role: 'owner' | 'editor' | 'viewer';
 }
 
 /**
@@ -42,6 +51,13 @@ export class ProjectService {
       
       console.log('Creating project with user ID:', user.id);
       
+      // Fetch user profile to get username
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username, full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+      
       // Create the project object
       const projectObject = {
         user_id: user.id,
@@ -67,10 +83,18 @@ export class ProjectService {
           services: []
         },
         notification_settings: projectData.notificationSettings || {
-          email: true,
-          push: true,
-          slack: true
-        }
+          email_notifications: true,
+          daily_summary: true,
+          agent_activity_alerts: false
+        },
+        // Add team members array with owner as first member
+        team_members: [{
+          id: user.id,
+          name: profileData?.full_name || profileData?.username || user.email?.split('@')[0] || 'User',
+          email: user.email || '',
+          avatar: profileData?.avatar_url || '',
+          role: 'owner'
+        }]
       };
       
       console.log('Project data to insert:', JSON.stringify(projectObject));
@@ -104,10 +128,11 @@ export class ProjectService {
           progress: 0,
           tags: [],
           notificationSettings: data.notification_settings || {
-            email: true,
-            push: true,
-            slack: true
-          }
+            email_notifications: true,
+            daily_summary: true,
+            agent_activity_alerts: false
+          },
+          teamMembers: data.team_members || []
         };
       } catch (e) {
         console.error('Failed with single operation, trying two-step approach');
@@ -158,10 +183,11 @@ export class ProjectService {
             progress: 0,
             tags: [],
             notificationSettings: data.notification_settings || {
-              email: true,
-              push: true,
-              slack: true
-            }
+              email_notifications: true,
+              daily_summary: true,
+              agent_activity_alerts: false
+            },
+            teamMembers: data.team_members || []
           };
         } catch (error) {
           console.error('Error in two-step project creation:', error);
@@ -218,10 +244,11 @@ export class ProjectService {
         progress: 0, // Default for now until we implement progress tracking
         tags: [], // Default for now until we implement tags
         notificationSettings: project.notification_settings || {
-          email: true,
-          push: true,
-          slack: true
-        }
+          email_notifications: true,
+          daily_summary: true,
+          agent_activity_alerts: false
+        },
+        teamMembers: project.team_members || []
       }));
     } catch (error) {
       console.error('Error in getUserProjects:', error);
@@ -248,7 +275,7 @@ export class ProjectService {
         .from('projects')
         .select('*')
         .eq('id', id)
-        .eq('user_id', user.id)
+        .or(`user_id.eq.${user.id},team_members->>[].id.eq.${user.id}`) // Check if user is owner or team member
         .single();
       
       if (error) {
@@ -275,10 +302,11 @@ export class ProjectService {
         progress: 0, // Default for now until we implement progress tracking
         tags: [], // Default for now until we implement tags
         notificationSettings: data.notification_settings || {
-          email: true,
-          push: true,
-          slack: true
-        }
+          email_notifications: true,
+          daily_summary: true,
+          agent_activity_alerts: false
+        },
+        teamMembers: data.team_members || []
       };
     } catch (error) {
       console.error('Error in getProjectById:', error);
@@ -301,6 +329,20 @@ export class ProjectService {
         return false;
       }
       
+      // Get project to check permissions
+      const project = await this.getProjectById(id);
+      if (!project) {
+        console.error('Project not found or access denied');
+        return false;
+      }
+      
+      // Check if user is owner or editor
+      const userRole = project.teamMembers?.find(member => member.id === user.id)?.role;
+      if (userRole !== 'owner' && userRole !== 'editor') {
+        console.error('User does not have permission to update project');
+        return false;
+      }
+      
       // Create update object with all possible fields
       const updateObject = {
         name: projectData.name,
@@ -320,12 +362,16 @@ export class ProjectService {
         updateObject['chat_config'] = projectData.chatConfig;
       }
       
+      // Add team members if provided
+      if (projectData.teamMembers) {
+        updateObject['team_members'] = projectData.teamMembers;
+      }
+      
       // Update the project
       const { error } = await supabase
         .from('projects')
         .update(updateObject)
-        .eq('id', id)
-        .eq('user_id', user.id); // Make sure user owns the project
+        .eq('id', id);
       
       if (error) {
         console.error('Error updating project:', error);
@@ -346,11 +392,25 @@ export class ProjectService {
     try {
       const supabase = createClient();
       
+      // Get project to check permissions
+      const project = await this.getProjectById(id);
+      if (!project) {
+        console.error('Project not found or access denied');
+        return false;
+      }
+      
       // Get current user to verify ownership
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
         console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Check if user is owner
+      const userRole = project.teamMembers?.find(member => member.id === user.id)?.role;
+      if (userRole !== 'owner') {
+        console.error('Only project owner can delete a project');
         return false;
       }
       
@@ -380,11 +440,25 @@ export class ProjectService {
     try {
       const supabase = createClient();
       
+      // Get project to check permissions
+      const project = await this.getProjectById(projectId);
+      if (!project) {
+        console.error('Project not found or access denied');
+        return false;
+      }
+      
       // Get current user to verify ownership
       const { data: userData, error: authError } = await supabase.auth.getUser();
       
       if (authError || !userData?.user) {
         console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Check if user is owner or editor
+      const userRole = project.teamMembers?.find(member => member.id === userData.user.id)?.role;
+      if (userRole !== 'owner' && userRole !== 'editor') {
+        console.error('User does not have permission to update chat config');
         return false;
       }
       
@@ -395,8 +469,7 @@ export class ProjectService {
           chat_config: chatConfig,
           updated_at: new Date().toISOString()
         })
-        .eq('id', projectId)
-        .eq('user_id', userData.user.id); // Ensure user owns this project
+        .eq('id', projectId);
       
       if (error) {
         console.error('Error updating project chat config:', JSON.stringify(error));
@@ -418,11 +491,25 @@ export class ProjectService {
       console.log('Updating integrations for project:', projectId);
       const supabase = createClient();
       
-      // Get current user to verify ownership
+      // Get project to check permissions
+      const project = await this.getProjectById(projectId);
+      if (!project) {
+        console.error('Project not found or access denied');
+        return false;
+      }
+      
+      // Get current user to verify permissions
       const { data: userData, error: authError } = await supabase.auth.getUser();
       
       if (authError || !userData?.user) {
         console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Check if user is owner or editor
+      const userRole = project.teamMembers?.find(member => member.id === userData.user.id)?.role;
+      if (userRole !== 'owner' && userRole !== 'editor') {
+        console.error('User does not have permission to update integrations');
         return false;
       }
       
@@ -433,8 +520,7 @@ export class ProjectService {
           integrations: integrations,
           updated_at: new Date().toISOString()
         })
-        .eq('id', projectId)
-        .eq('user_id', userData.user.id); // Ensure user owns this project
+        .eq('id', projectId);
       
       if (error) {
         console.error('Error updating project integrations:', JSON.stringify(error));
@@ -458,6 +544,17 @@ export class ProjectService {
       
       if (!project) {
         console.error('Project not found');
+        return false;
+      }
+      
+      // Get current user to verify permissions
+      const supabase = createClient();
+      const { data: userData } = await supabase.auth.getUser();
+      
+      // Check if user is owner or editor
+      const userRole = project.teamMembers?.find(member => member.id === userData.user?.id)?.role;
+      if (userRole !== 'owner' && userRole !== 'editor') {
+        console.error('User does not have permission to add agents');
         return false;
       }
       
@@ -491,6 +588,17 @@ export class ProjectService {
         return false;
       }
       
+      // Get current user to verify permissions
+      const supabase = createClient();
+      const { data: userData } = await supabase.auth.getUser();
+      
+      // Check if user is owner or editor
+      const userRole = project.teamMembers?.find(member => member.id === userData.user?.id)?.role;
+      if (userRole !== 'owner' && userRole !== 'editor') {
+        console.error('User does not have permission to remove agents');
+        return false;
+      }
+      
       // Remove agent from the list
       const agents = (project.agentIds || []).filter(id => id !== agentId);
       
@@ -509,11 +617,25 @@ export class ProjectService {
     try {
       const supabase = createClient();
       
-      // Get current user to verify ownership
+      // Get project to check permissions
+      const project = await this.getProjectById(projectId);
+      if (!project) {
+        console.error('Project not found or access denied');
+        return false;
+      }
+      
+      // Get current user to verify permissions
       const { data: userData, error: authError } = await supabase.auth.getUser();
       
       if (authError || !userData?.user) {
         console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Check if user is owner or editor
+      const userRole = project.teamMembers?.find(member => member.id === userData.user.id)?.role;
+      if (userRole !== 'owner' && userRole !== 'editor') {
+        console.error('User does not have permission to update notification settings');
         return false;
       }
       
@@ -524,8 +646,7 @@ export class ProjectService {
           notification_settings: settings,
           updated_at: new Date().toISOString()
         })
-        .eq('id', projectId)
-        .eq('user_id', userData.user.id); // Ensure user owns this project
+        .eq('id', projectId);
       
       if (error) {
         console.error('Error updating project notification settings:', JSON.stringify(error));
@@ -536,6 +657,150 @@ export class ProjectService {
     } catch (error) {
       console.error('Error in updateProjectNotificationSettings:', error);
       return false;
+    }
+  }
+  
+  /**
+   * Add a team member to a project
+   */
+  static async addTeamMemberToProject(
+    projectId: string, 
+    email: string
+  ): Promise<{ success: boolean; project?: Project }> {
+    try {
+      const supabase = createClient();
+      
+      // Get the current project
+      const project = await this.getProjectById(projectId);
+      if (!project) {
+        console.error('Project not found or access denied');
+        return { success: false };
+      }
+      
+      // Get current user to verify permissions
+      const { data: userData } = await supabase.auth.getUser();
+      
+      // Check if user is owner (only owners can add team members)
+      const userRole = project.teamMembers?.find(member => member.id === userData.user?.id)?.role;
+      if (userRole !== 'owner') {
+        console.error('Only project owner can add team members');
+        return { success: false };
+      }
+      
+      // Find user by email
+      const { data: usersByEmail, error: userError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .eq('email', email)
+        .single();
+      
+      if (userError || !usersByEmail) {
+        console.error('User not found with that email');
+        return { success: false };
+      }
+      
+      // Check if user is already a team member
+      const existingTeamMembers = project.teamMembers || [];
+      if (existingTeamMembers.some(member => member.id === usersByEmail.id)) {
+        console.log('User is already a team member');
+        return { success: true, project: project };
+      }
+      
+      // Add the new team member
+      const newTeamMember: TeamMember = {
+        id: usersByEmail.id,
+        name: usersByEmail.full_name || usersByEmail.username || email.split('@')[0],
+        email: email,
+        avatar: usersByEmail.avatar_url || undefined,
+        role: 'editor' // Default role for new members
+      };
+      
+      const updatedTeamMembers = [...existingTeamMembers, newTeamMember];
+      
+      // Update the project with the new team members
+      const updateSuccess = await this.updateProject(projectId, { 
+        teamMembers: updatedTeamMembers 
+      });
+      
+      if (!updateSuccess) {
+        return { success: false };
+      }
+      
+      // Get the updated project
+      const updatedProject = await this.getProjectById(projectId);
+      
+      return { 
+        success: true,
+        project: updatedProject || undefined
+      };
+    } catch (error) {
+      console.error('Error in addTeamMemberToProject:', error);
+      return { success: false };
+    }
+  }
+  
+  /**
+   * Remove a team member from a project
+   */
+  static async removeTeamMemberFromProject(
+    projectId: string, 
+    memberId: string
+  ): Promise<{ success: boolean; project?: Project }> {
+    try {
+      const supabase = createClient();
+      
+      // Get the current project
+      const project = await this.getProjectById(projectId);
+      if (!project) {
+        console.error('Project not found or access denied');
+        return { success: false };
+      }
+      
+      // Get current user to verify permissions
+      const { data: userData } = await supabase.auth.getUser();
+      
+      // Check if user is owner (only owners can remove team members)
+      const userRole = project.teamMembers?.find(member => member.id === userData.user?.id)?.role;
+      if (userRole !== 'owner') {
+        console.error('Only project owner can remove team members');
+        return { success: false };
+      }
+      
+      // Ensure user isn't trying to remove themselves as owner
+      if (memberId === userData.user?.id) {
+        console.error('Owner cannot remove themselves from the project');
+        return { success: false };
+      }
+      
+      // Filter out the member to remove
+      const existingTeamMembers = project.teamMembers || [];
+      const updatedTeamMembers = existingTeamMembers.filter(member => member.id !== memberId);
+      
+      // If no change, member wasn't in the team
+      if (updatedTeamMembers.length === existingTeamMembers.length) {
+        console.log('Member not found in team');
+        return { success: false };
+      }
+      
+      // Update the project with the new team members
+      const updateSuccess = await this.updateProject(projectId, { 
+        teamMembers: updatedTeamMembers 
+      });
+      
+      if (!updateSuccess) {
+        return { success: false };
+      }
+      
+      // Get the updated project
+      const updatedProject = await this.getProjectById(projectId);
+      
+      return { 
+        success: true,
+        project: updatedProject || undefined
+      };
+    } catch (error) {
+      console.error('Error in removeTeamMemberFromProject:', error);
+      return { success: false };
     }
   }
 } 
