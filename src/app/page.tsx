@@ -135,43 +135,17 @@ const [productVisible, setProductVisible] = useState(false);
               {/* Flat image placeholder for dashboard screenshot - to be replaced with custom Figma design */}
               <div className="w-full h-full flex justify-center items-center">
                 <div 
-                  className="w-full max-w-5xl h-full rounded-xl border border-[#3a3a3a] bg-[#171717] shadow-2xl overflow-hidden relative"
-                  style={{
-                    boxShadow: '0 30px 60px -20px rgba(99, 102, 241, 0.2), 0 20px 40px -30px rgba(0, 0, 0, 0.5)',
-                  }}
+                  className="w-full max-w-5xl h-full rounded-xl overflow-hidden relative"
                 >
-                  {/* Browser-like frame with the screenshot */}
-                  <div className="absolute inset-0 flex flex-col">
-                    {/* Browser chrome */}
-                    <div className="h-8 bg-[#1C1C1C] flex items-center px-3 border-b border-[#2a2a2a]">
-                      <div className="flex space-x-2 mr-4">
-                        <div className="w-3 h-3 rounded-full bg-[#FF5F57]"></div>
-                        <div className="w-3 h-3 rounded-full bg-[#FDBC2C]"></div>
-                        <div className="w-3 h-3 rounded-full bg-[#28C840]"></div>
-                      </div>
-                      <div className="flex-1 flex justify-center">
-                        <div className="h-5 bg-[#252525] rounded-full w-64 flex items-center justify-center">
-                          <div className="text-xs text-[#999] flex items-center">
-                            <svg className="w-3 h-3 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM11 7H13V13H11V7ZM11 15H13V17H11V15Z" fill="currentColor"/>
-                            </svg>
-                            siden.ai
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Screenshot content */}
-                    <div className="flex-1 overflow-hidden">
-                      <Image
-                        src="/screen.png"
-                        alt="Siden AI dashboard interface"
-                        fill
-                        className="object-cover object-top"
-                        quality={100}
-                        priority
-                      />
-                    </div>
-                  </div>
+                  {/* Screenshot image */}
+                  <Image
+                    src="/screen.png"
+                    alt="Siden AI dashboard interface"
+                    fill
+                    className="object-contain"
+                    quality={100}
+                    priority
+                  />
                 </div>
               </div>
             </div>
