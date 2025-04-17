@@ -4,8 +4,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useChat, Message } from "@ai-sdk/react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from 'next/navigation';
-import { MessageSquare, Users, RefreshCcwIcon, AlertCircleIcon, SendIcon, ChevronRight, PaperclipIcon, XIcon, MenuIcon } from "lucide-react";
-import MultimodalUpload from "@/components/MultimodalUpload";
+import { MessageSquare, Users, RefreshCcwIcon, AlertCircleIcon, SendIcon, ChevronRight, MenuIcon } from "lucide-react";
 import Logo from '@/components/Logo';
 import MessageFormatter from '@/components/MessageFormatter';
 
@@ -32,6 +31,11 @@ interface FileContent {
 }
 
 type ContentPart = TextContent | ImageContent | FileContent;
+
+// Extend the Message type to support content arrays
+interface ExtendedMessage extends Omit<Message, 'content'> {
+  content: string | ContentPart[];
+}
 
 const agentRoles = [
   {
@@ -133,7 +137,6 @@ export default function ProjectChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const [attachedFiles, setAttachedFiles] = useState<{ data: File, type: string, preview?: string }[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [project, setProject] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -196,7 +199,6 @@ export default function ProjectChatPage() {
   const resetMessages = useCallback(() => {
     setMessages([]);
     setError(null);
-    setAttachedFiles([]);
   }, [setMessages]);
 
   // Get the selected agent data
@@ -204,123 +206,44 @@ export default function ProjectChatPage() {
     return agentRoles.find(role => role.id === selectedAgent) || agentRoles[0];
   }, [selectedAgent]);
   
-  // Handle file selection
-  const handleFileSelect = (files: { data: File, type: string, preview?: string }[]) => {
-    setAttachedFiles(files);
-  };
-  
-  // Process files to the format expected by the API
-  const processFilesForMessage = async () => {
-    const contentParts = [];
+  // Create a synthetic event for handleInputChange
+  const setInputValue = (value: string) => {
+    // Create a synthetic event object that mimics what handleInputChange expects
+    const syntheticEvent = {
+      target: { value } as HTMLInputElement
+    } as React.ChangeEvent<HTMLInputElement>;
     
-    // Process each file
-    for (const file of attachedFiles) {
-      try {
-        const fileData = await readFileAsDataURL(file.data);
-        const base64Data = fileData.split(',')[1]; // Remove the data URL prefix
-        
-        if (file.type === 'image') {
-          contentParts.push({
-            type: 'image',
-            data: base64Data,
-            mimeType: file.data.type
-          });
-        } else if (file.data.type === 'application/pdf') {
-          contentParts.push({
-            type: 'file',
-            data: base64Data,
-            mimeType: 'application/pdf'
-          });
-        } else {
-          // Other file types as text if possible
-          try {
-            const textContent = await readFileAsText(file.data);
-            contentParts.push({
-              type: 'text',
-              text: `File contents of ${file.data.name}:\n${textContent}`
-            });
-          } catch (error) {
-            console.error('Error reading file as text:', error);
-            contentParts.push({
-              type: 'text',
-              text: `[File attached: ${file.data.name}, but content could not be read]`
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error processing file:', error);
-      }
-    }
-    
-    return contentParts;
-  };
-  
-  // Helper function to read file as data URL
-  const readFileAsDataURL = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-  
-  // Helper function to read file as text
-  const readFileAsText = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
+    handleInputChange(syntheticEvent);
   };
   
   // Override handle submit to use our custom delegation logic
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!input.trim() && attachedFiles.length === 0) return;
+    if (!input.trim()) return;
     
     setIsProcessing(true);
     setError(null);
     
     try {
       // Prepare user message
-      let userMessage: Message;
-      
-      // Check if we have files to attach
-      if (attachedFiles.length > 0) {
-        const contentParts = await processFilesForMessage();
-        userMessage = {
-          id: Date.now().toString(),
-          role: 'user',
-          content: contentParts,
-        };
-      } else {
-        userMessage = {
-          id: Date.now().toString(),
-          role: 'user',
-          content: input,
-        };
-      }
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: input,
+      };
       
       // Add user message to chat
       append(userMessage);
       
-      // Clear input and attachments
-      handleInputChange('');
-      setAttachedFiles([]);
+      // Clear input
+      setInputValue('');
       
-      // Delegate to appropriate agent
-      const response = await detectAndDelegateMessage(
-        typeof userMessage.content === 'string' 
-          ? userMessage.content 
-          : userMessage.content
-              .filter(part => part.type === 'text')
-              .map(part => (part as TextContent).text)
-              .join('\n'),
-        selectedAgent
-      );
+      // Get available agent IDs for context in responses
+      const availableAgentIds = availableAgents.map(agent => agent.id);
+      
+      // Delegate to appropriate agent with context about available agents
+      const response = await detectAndDelegateMessage(input, selectedAgent, availableAgentIds);
       
       // Add AI response to chat
       append({
@@ -555,35 +478,19 @@ export default function ProjectChatPage() {
         {/* Chat input */}
         <div className="p-4 border-t border-[#313131] bg-[#343131]">
           <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-            {/* Display attached files preview */}
-            {attachedFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2 pb-2">
-                {attachedFiles.map((file, index) => (
-                  <div key={index} className="text-xs text-[#94A3B8]">
-                    {file.data.name}
-                  </div>
-                ))}
-              </div>
-            )}
-            
             <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={handleInputChange}
-                  placeholder="Type your message..."
-                  className="w-full px-4 py-3 bg-[#252525] border border-[#313131] rounded-lg text-white placeholder-[#94A3B8] focus:outline-none focus:border-[#6366F1]"
-                />
-                <div className="absolute left-2 bottom-2">
-                  <MultimodalUpload onFileSelect={handleFileSelect} />
-                </div>
-              </div>
+              <input
+                type="text"
+                value={input}
+                onChange={handleInputChange}
+                placeholder="Type your message..."
+                className="flex-1 px-4 py-3 bg-[#252525] border border-[#313131] rounded-lg text-white placeholder-[#94A3B8] focus:outline-none focus:border-[#6366F1]"
+              />
               <button
                 type="submit"
-                disabled={isProcessing || (!input.trim() && attachedFiles.length === 0)}
+                disabled={isProcessing || !input.trim()}
                 className={`p-3 rounded-lg flex items-center justify-center ${
-                  isProcessing || (!input.trim() && attachedFiles.length === 0)
+                  isProcessing || !input.trim()
                     ? 'bg-[#313131] text-[#94A3B8]'
                     : 'bg-[#6366F1] text-white hover:bg-[#5254CC]'
                 } transition-colors`}

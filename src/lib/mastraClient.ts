@@ -5,25 +5,51 @@
  * Provides a typed API for communicating with server-side Mastra agents through API routes
  */
 
-export async function callMastraAgent(agentId: string, message: string) {
+export async function callMastraAgent(agentId: string, message: string, options?: { metadata?: any }) {
   try {
+    console.log(`[MASTRA CLIENT] Calling agent: ${agentId} with message length: ${message.length}`);
+    
     const response = await fetch('/api/mastra/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ agentId, message }),
+      body: JSON.stringify({ 
+        agentId, 
+        message,
+        metadata: options?.metadata || {}
+      }),
     });
 
     if (!response.ok) {
-      throw new Error(`Error calling Mastra agent: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`[MASTRA CLIENT] HTTP Error: ${response.status} ${response.statusText}`);
+      console.error(`[MASTRA CLIENT] Error Response Body:`, errorText);
+      
+      let errorMessage = `Error calling Mastra agent: ${response.statusText}`;
+      try {
+        // Try to parse as JSON if possible
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.message) {
+          errorMessage = `Error calling Mastra agent: ${errorJson.message}`;
+        }
+        if (errorJson.detailedError) {
+          console.error(`[MASTRA CLIENT] Detailed Error:`, errorJson.detailedError);
+        }
+      } catch (e) {
+        // If it's not valid JSON, use the text as is
+      }
+      
+      throw new Error(errorMessage);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log(`[MASTRA CLIENT] Successfully received response from ${agentId}`);
+    return data;
   } catch (error) {
-    console.error('Error calling Mastra agent:', error);
+    console.error('[MASTRA CLIENT] Error calling Mastra agent:', error);
     return {
-      text: `Sorry, there was an error communicating with the ${agentId}. Please try again later.`,
+      text: `Sorry, there was an error communicating with the ${agentId}. Please try again later or contact support if the issue persists.`,
       error: true
     };
   }
@@ -44,8 +70,8 @@ export type MastraAgentId =
 // Client-side implementation of the Mastra interface
 const mastraClient = {
   getAgent: (agentId: MastraAgentId) => ({
-    generate: async (message: string) => {
-      const result = await callMastraAgent(agentId, message);
+    generate: async (message: string, options?: { metadata?: any }) => {
+      const result = await callMastraAgent(agentId, message, options);
       return {
         text: result.text,
         object: result.object || null

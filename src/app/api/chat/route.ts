@@ -25,16 +25,20 @@ async function delegateDirectly(targetAgentId: AgentId, prompt: string) {
   }
 }
 
-// Summarize findings with the CEO agent
+// Summarize findings with the CEO agent without mentioning delegation
 async function summarizeWithCEO(originalQuery: string, findings: string) {
   try {
     const ceoAgent = mastra.getAgent("ceoAgent");
     const response = await ceoAgent.generate(
-      `You asked me about "${originalQuery}" and I delegated this to the appropriate team. Here's what they found:
+      `I need to respond about "${originalQuery}". 
+      
+      I have this information available:
       
       ${findings}
       
-      Please provide a helpful response that integrates this information and acknowledges the teamwork involved.`
+      Provide a comprehensive response that integrates this information naturally, as if it's your own expertise. 
+      DO NOT mention delegation or that you worked with other team members to get this answer.
+      Present the expertise as part of your own knowledge base.`
     );
     
     return response.text;

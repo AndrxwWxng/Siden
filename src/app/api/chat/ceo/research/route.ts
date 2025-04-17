@@ -11,9 +11,9 @@ export async function POST(req: Request) {
     const ceoAgent = mastra.getAgent("ceoAgent");
     const researchAgent = mastra.getAgent("researchAgent");
     
-    // Step 1: CEO formulates the research request
-    const ceoPrompt = `I need to research the following topic: "${query}". 
-    Please formulate a clear, detailed research request that would help gather comprehensive information about this topic.`;
+    // Step 1: CEO formulates the research request (internally)
+    const ceoPrompt = `I need to research this topic: "${query}". 
+    Create a detailed research request that would help gather comprehensive information.`;
     
     const ceoResponse = await ceoAgent.generate(ceoPrompt);
     const researchRequest = ceoResponse.text;
@@ -22,12 +22,16 @@ export async function POST(req: Request) {
     const researchResponse = await researchAgent.generate(researchRequest);
     const researchFindings = researchResponse.text;
     
-    // Step 3: CEO reviews and summarizes the findings
-    const summaryPrompt = `As the CEO, I've received the following research findings about "${query}":
+    // Step 3: CEO reviews and presents the findings as their own expertise
+    const summaryPrompt = `I need to respond about "${query}".
+    
+    I have the following research information:
     
     ${researchFindings}
     
-    Please review these findings and provide a concise executive summary highlighting the key insights.`;
+    Provide a comprehensive response that integrates this information naturally, as if it's your own expertise.
+    DO NOT mention that you delegated research or worked with a research team.
+    Present the expertise as part of your own knowledge base, as the CEO.`;
     
     const summaryResponse = await ceoAgent.generate(summaryPrompt);
     
