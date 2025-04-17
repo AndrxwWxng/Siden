@@ -232,24 +232,6 @@ export default function ProjectChatPage() {
         role: 'user',
         content: input,
       };
-      let userMessage: Message;
-      
-      // Check if we have files to attach
-      if (attachedFiles.length > 0) {
-        const contentParts = await processFilesForMessage();
-        userMessage = {
-          id: Date.now().toString(),
-          role: 'user',
-          // @ts-expect-error - Message expects string but we're using ContentPart[]
-          content: contentParts,
-        };
-      } else {
-        userMessage = {
-          id: Date.now().toString(),
-          role: 'user',
-          content: input,
-        };
-      }
       
       // Add user message to chat
       append(userMessage);
@@ -262,20 +244,6 @@ export default function ProjectChatPage() {
       
       // Delegate to appropriate agent with context about available agents
       const response = await detectAndDelegateMessage(input, selectedAgent, availableAgentIds);
-      // Clear input and attachments
-      handleInputChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
-      setAttachedFiles([]);
-      
-      // Delegate to appropriate agent
-      const response = await detectAndDelegateMessage(
-        typeof userMessage.content === 'string' 
-          ? userMessage.content 
-          : (userMessage.content as ContentPart[])
-              .filter(part => part.type === 'text')
-              .map(part => part.type === 'text' ? (part as TextContent).text : '')
-              .join('\n'),
-        selectedAgent
-      );
       
       // Add AI response to chat
       append({
