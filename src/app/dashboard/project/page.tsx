@@ -9,10 +9,13 @@ import {
   Folder
 } from 'lucide-react';
 import Logo from '@/components/Logo';
-// Import the mastra system directly
-import { mastra } from '@/mastra';
+// Replace direct Mastra import with stub
+import mockMastra from '@/lib/stubs/mastra';
 import { ProjectService } from '@/services/projectService';
 import { Project } from '@/components/dashboard/types';
+
+// Use the mock Mastra instance
+const mastra = mockMastra;
 
 // Type definitions
 type TabType = 'communication' | 'agents' | 'tools' | 'reports' | 'settings';
