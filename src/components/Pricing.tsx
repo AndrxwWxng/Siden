@@ -134,7 +134,7 @@ export default function Pricing() {
         
         <div className="mt-16 text-center">
           <p className="text-[#A3A3A3] mb-4">Need something specific for your team?</p>
-          <Link href="/contact" className="text-[#6366F1] hover:underline font-medium">
+          <Link href="/contact" className="text-[#6366F1] font-medium">
             Contact us for a custom plan →
           </Link>
         </div>
