@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import OAuthProviders from '@/components/OAuthProviders';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [oauthError, setOauthError] = useState('');
   const router = useRouter();
 
   // Check if user is already authenticated
@@ -90,7 +92,7 @@ export default function SignIn() {
     setError('');
     
     if (!email) {
-      setError('Please enter your email address');
+      setError('Please enter your email');
       setLoading(false);
       return;
     }
@@ -98,140 +100,145 @@ export default function SignIn() {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       });
       
       if (error) {
         setError(error.message);
-      } else {
-        setResetEmailSent(true);
+        setLoading(false);
+        return;
       }
+      
+      setResetEmailSent(true);
+      setLoading(false);
     } catch (err) {
-      console.error('Password reset error:', err);
-      setError('An unexpected error occurred');
-    } finally {
+      console.error('Reset password error:', err);
+      setError('Failed to send reset email. Please try again.');
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0F0F0F]">
-      {/* Header with back button */}
-      <div className="p-6">
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-[#A0A0A0] hover:text-white transition-colors">
-          <ArrowLeft size={16} className="mr-2" />
-          Back to home
-        </Link>
-      </div>
-      
-      <div className="flex flex-1 items-center justify-center px-6 py-12">
+    <div className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
+      <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
+          <div>
+            <Link href="/" className="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-8">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to home
+            </Link>
+            
+            <h2 className="text-3xl font-bold text-white">
+              {resetMode ? 'Reset your password' : 'Sign in to your account'}
+            </h2>
+            <p className="mt-2 text-sm text-gray-400">
+              {resetMode
+                ? 'Enter your email and we\'ll send you a reset link'
+                : "Don't have an account? "}
+              {!resetMode && (
+                <Link href="/signup" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                  Create one
+                </Link>
+              )}
+            </p>
+          </div>
+          
+          {oauthError && (
+            <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3 mt-4">
+              <div className="text-sm text-red-400">{oauthError}</div>
+            </div>
+          )}
+
           {resetMode ? (
             <>
               {resetEmailSent ? (
-                <div className="text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/10 mx-auto">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M2 7L10.1649 12.7154C10.8261 13.1783 11.1567 13.4097 11.5163 13.4993C11.8339 13.5785 12.1661 13.5785 12.4837 13.4993C12.8433 13.4097 13.1739 13.1783 13.8351 12.7154L22 7" stroke="#A855F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M6.2 19H17.8C18.9201 19 19.4802 19 19.908 18.782C20.2843 18.5903 20.5903 18.2843 20.782 17.908C21 17.4802 21 16.9201 21 15.8V8.2C21 7.0799 21 6.51984 20.782 6.09202C20.5903 5.71569 20.2843 5.40973 19.908 5.21799C19.4802 5 18.9201 5 17.8 5H6.2C5.0799 5 4.51984 5 4.09202 5.21799C3.71569 5.40973 3.40973 5.71569 3.21799 6.09202C3 6.51984 3 7.07989 3 8.2V15.8C3 16.9201 3 17.4802 3.21799 17.908C3.40973 18.2843 3.71569 18.5903 4.09202 18.782C4.51984 19 5.07989 19 6.2 19Z" stroke="#A855F7" strokeWidth="1.5"/>
-                    </svg>
+                <div className="rounded-lg bg-green-900/30 border border-green-800/50 px-4 py-3 mt-4">
+                  <div className="text-sm text-green-400">
+                    <p className="font-medium">Reset email sent!</p>
+                    <p className="mt-1">Check your inbox for a link to reset your password.</p>
                   </div>
-                  <h2 className="text-2xl font-bold text-white">Check your email</h2>
-                  <p className="text-[#A0A0A0] text-sm max-w-sm mx-auto">
-                    We've sent a password reset link to <span className="text-indigo-400">{email}</span>. 
-                    Please check your inbox.
-                  </p>
-                  <div className="pt-4">
-                    <button
-                      onClick={() => {
-                        setResetMode(false);
-                        setResetEmailSent(false);
-                      }}
-                      className="text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors"
-                    >
-                      Back to sign in
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetMode(false);
+                      setResetEmailSent(false);
+                    }}
+                    className="mt-3 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    Return to sign in
+                  </button>
                 </div>
               ) : (
-                <>
-                  <div className="text-center">
-                    <div className="inline-block mb-4 p-2 bg-gradient-to-br from-indigo-500 to-indigo-500 rounded-xl bg-opacity-10 backdrop-blur-sm">
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 15V17M12 7V13M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                    <h1 className="text-3xl font-bold text-white">Reset your password</h1>
-                    <p className="mt-2 text-[#A0A0A0] text-sm">Enter your email and we'll send you a link to reset your password</p>
+                <form onSubmit={handleResetPassword} className="mt-8 space-y-5">
+                  <div>
+                    <label htmlFor="reset-email" className="block text-xs font-medium text-[#A0A0A0] mb-2">
+                      Email
+                    </label>
+                    <input
+                      id="reset-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      className="block w-full rounded-lg border-0 bg-[#1A1A1A] px-4 py-3 text-white shadow-sm ring-1 ring-inset ring-[#333] focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm transition-all"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
                   
-                  <form onSubmit={handleResetPassword} className="mt-8 space-y-6">
-                    <div>
-                      <label htmlFor="reset-email" className="block text-xs font-medium text-[#A0A0A0] mb-2">
-                        Email
-                      </label>
-                      <input
-                        id="reset-email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        required
-                        className="block w-full rounded-lg border-0 bg-[#1A1A1A] px-4 py-3 text-white shadow-sm ring-1 ring-inset ring-[#333] focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm transition-all"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
+                  {error && (
+                    <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3">
+                      <div className="text-sm text-red-400">{error}</div>
                     </div>
-
-                    {error && (
-                      <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3">
-                        <div className="text-sm text-red-400">{error}</div>
-                      </div>
-                    )}
-
-                    <div className="flex flex-col space-y-4">
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-3 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#0F0F0F] disabled:opacity-70 transition-all"
-                      >
-                        {loading ? (
-                          <span className="flex items-center">
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Sending...
-                          </span>
-                        ) : 'Send reset link'}
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => setResetMode(false)}
-                        className="text-[#A0A0A0] hover:text-white text-sm transition-colors"
-                      >
-                        Back to sign in
-                      </button>
-                    </div>
-                  </form>
-                </>
+                  )}
+                  
+                  <div className="flex items-center justify-between gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setResetMode(false)}
+                      className="flex-1 py-3 text-sm font-medium text-[#A0A0A0] hover:text-white transition-colors rounded-lg border border-[#333] hover:border-[#444]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="relative overflow-hidden flex-1 flex items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-3 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#0F0F0F] disabled:opacity-70 transition-all group"
+                    >
+                      <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/40 to-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                      {loading ? (
+                        <span className="flex items-center relative z-10">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Sending...
+                        </span>
+                      ) : <span className="relative z-10">Send reset link</span>}
+                    </button>
+                  </div>
+                </form>
               )}
             </>
           ) : (
             <>
-              <div className="text-center">
-                <div className="inline-block mb-4 p-2 bg-gradient-to-br from-indigo-500 to-indigo-500 rounded-xl bg-opacity-10 backdrop-blur-sm">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M8 12L11 15L16 9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <h1 className="text-3xl font-bold text-white">Welcome back</h1>
-                <p className="mt-2 text-[#A0A0A0] text-sm">Sign in to your account</p>
+              <div className="mt-8">
+                <OAuthProviders 
+                  onError={setOauthError}
+                />
               </div>
               
-              <form onSubmit={handleSignIn} className="mt-8 space-y-5">
+              <div className="mt-6 relative">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                  <div className="w-full border-t border-gray-700" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-[#0F0F0F] px-4 text-sm text-gray-500">Or continue with</span>
+                </div>
+              </div>
+              
+              <form onSubmit={handleSignIn} className="mt-6 space-y-5">
                 <div>
                   <label htmlFor="email" className="block text-xs font-medium text-[#A0A0A0] mb-2">
                     Email
@@ -254,7 +261,7 @@ export default function SignIn() {
                     <label htmlFor="password" className="block text-xs font-medium text-[#A0A0A0]">
                       Password
                     </label>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setResetMode(true)}
                       className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -268,7 +275,7 @@ export default function SignIn() {
                     type="password"
                     autoComplete="current-password"
                     required
-                    className="mb-10 block w-full rounded-lg border-0 bg-[#1A1A1A] px-4 py-3 text-white shadow-sm ring-1 ring-inset ring-[#333] focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm transition-all"
+                    className="block w-full rounded-lg border-0 bg-[#1A1A1A] px-4 py-3 text-white shadow-sm ring-1 ring-inset ring-[#333] focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm transition-all"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

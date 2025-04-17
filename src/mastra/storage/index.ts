@@ -3,9 +3,21 @@ import { openai } from '@ai-sdk/openai';
 import { createVectorQueryTool } from '@mastra/rag';
 import { mastra } from '@/mastra';
 import { z } from 'zod';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config({ path: '.env.local' });
+
+// Get database connection from environment variable
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+  console.error('DATABASE_URL environment variable is not set');
+  throw new Error('DATABASE_URL environment variable is not set');
+}
 
 // Initialize PgVector with the database connection string from environment
-export const pgVector = new PgVector(process.env.DATABASE_URL!);
+export const pgVector = new PgVector(DATABASE_URL);
 
 // Initialize the vector indices if they don't exist
 export async function initializeVectorStore() {

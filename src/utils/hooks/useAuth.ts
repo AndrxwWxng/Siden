@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { OAuthProvider, signInWithOAuth } from '@/utils/oauth';
 
 export function useAuth() {
   const [session, setSession] = useState<any>(null);
@@ -9,35 +10,53 @@ export function useAuth() {
   const router = useRouter();
 
   useEffect(() => {
+    // Set up auth state listener
     const supabase = createClient();
-
-    // Get initial session
-    const initializeAuth = async () => {
-      setLoading(true);
-      
+    
+    const getSession = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
       } catch (error) {
-        console.error('Error checking auth session:', error);
+        console.error('Error getting session:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    initializeAuth();
+    getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Update auth state
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+      
+      // Debug auth events
+      console.log('Auth event:', event);
+      
+      if (event === 'SIGNED_IN') {
+        // Force refresh to ensure server components pick up the new session
+        router.refresh();
+      } else if (event === 'SIGNED_OUT') {
+        // Force refresh to ensure server components pick up the removed session
+        router.refresh();
+      } else if (event === 'USER_UPDATED') {
+        console.log('User updated');
+      } else if (event === 'PASSWORD_RECOVERY') {
+        console.log('Password recovery initiated');
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed');
+      }
     });
 
+    // Cleanup subscription on unmount
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   const signOut = async () => {
     setLoading(true);
@@ -46,10 +65,7 @@ export function useAuth() {
       const supabase = createClient();
       await supabase.auth.signOut();
       
-      // First refresh the router for server components
-      router.refresh();
-      
-      // Then do a full page refresh to ensure auth state is fully updated
+      // Force a hard refresh to clear any cached data
       window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
@@ -111,12 +127,73 @@ export function useAuth() {
     }
   };
 
+  const signInWithProvider = async (provider: OAuthProvider) => {
+    setLoading(true);
+    
+    try {
+      const { error } = await signInWithOAuth(provider);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.message || `Failed to sign in with ${provider}` };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPasswordForEmail = async (email: string) => {
+    setLoading(true);
+    
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.message || 'Failed to send password reset email' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    setLoading(true);
+    
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ password });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.message || 'Failed to update password' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     session,
     user,
     loading,
     signIn,
     signUp,
-    signOut
+    signOut,
+    signInWithProvider,
+    resetPasswordForEmail,
+    updatePassword
   };
 } 
