@@ -7,7 +7,7 @@ interface MultimodalUploadProps {
   onFileSelect: (files: { data: File, type: string, preview?: string }[]) => void;
 }
 
-export const MultimodalUpload: React.FC<MultimodalUploadProps> = ({ onFileSelect }) => {
+export default function MultimodalUpload({ onFileSelect }: MultimodalUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<{ data: File, type: string, preview?: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -62,7 +62,7 @@ export const MultimodalUpload: React.FC<MultimodalUploadProps> = ({ onFileSelect
       {selectedFiles.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
           {selectedFiles.map((file, index) => (
-            <div key={index} className="relative flex items-center bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-lg">
+            <div key={index} className="relative flex items-center bg-[#343131] px-3 py-1 rounded-lg">
               {file.type === 'image' ? (
                 <div className="flex items-center">
                   <div className="w-6 h-6 mr-2 overflow-hidden rounded">
@@ -85,7 +85,7 @@ export const MultimodalUpload: React.FC<MultimodalUploadProps> = ({ onFileSelect
               )}
               <button 
                 onClick={() => removeFile(index)}
-                className="ml-2 p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full"
+                className="ml-2 p-1 hover:bg-[#252525] rounded-full"
               >
                 <XIcon className="w-3 h-3" />
               </button>
@@ -94,25 +94,22 @@ export const MultimodalUpload: React.FC<MultimodalUploadProps> = ({ onFileSelect
         </div>
       )}
       
-      <div className="flex items-center">
+      <div className="relative">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          multiple
+          className="absolute w-0 h-0 opacity-0"
+        />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 focus:outline-none"
+          className="p-2 text-[#94A3B8] hover:text-white rounded-full hover:bg-[#252525] transition-colors"
           title="Attach files"
         >
           <PaperclipIcon className="w-5 h-5" />
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          onChange={handleFileChange}
-          accept="image/*,.pdf,.txt,.csv,.json,.html,.docx,.xlsx,.rtf,.odt,.epub"
-          className="hidden"
-        />
       </div>
     </div>
   );
-};
-
-export default MultimodalUpload; 
+} 

@@ -25,8 +25,6 @@ export default async function DashboardLayout({
   
   return (
     <>
-      {/* We don't need to check authentication here since 
-          we're already doing it above and redirecting if needed */}
       {children}
     </>
   )
