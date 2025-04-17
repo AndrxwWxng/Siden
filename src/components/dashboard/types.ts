@@ -22,6 +22,12 @@ export interface ProjectIntegration {
   services: Service[];
 }
 
+export interface NotificationSettings {
+  email_notifications: boolean;
+  daily_summary: boolean;
+  agent_activity_alerts: boolean;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -34,6 +40,7 @@ export interface Project {
   tags: string[];
   chatConfig?: ChatConfig;
   integrations?: ProjectIntegration;
+  notificationSettings?: NotificationSettings;
 }
 
 // Agent related types

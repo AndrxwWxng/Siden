@@ -45,6 +45,11 @@ CREATE TABLE IF NOT EXISTS projects (
     "connected": false,
     "services": []
   }'::JSONB,
+  notification_settings JSONB DEFAULT '{
+    "email_notifications": true,
+    "daily_summary": true,
+    "agent_activity_alerts": false
+  }'::JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   last_active TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())

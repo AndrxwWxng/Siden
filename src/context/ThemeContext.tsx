@@ -3,28 +3,28 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserService } from '@/services/userService';
 
-// type Theme = 'dark' | 'light' | 'system';
-type Theme = 'dark'; // Only allow dark theme
+type Theme = 'dark' | 'light' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  resolvedTheme: 'dark'; // Only dark is allowed
+  resolvedTheme: 'dark' | 'light';
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [resolvedTheme, setResolvedTheme] = useState<'dark'>('dark'); // Always dark
+  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('dark');
 
   // Load user's theme preference on mount
   useEffect(() => {
     const loadTheme = async () => {
       try {
         const settings = await UserService.getUserSettings();
-        // Ignore any saved theme preferences - always use dark
-        setTheme('dark');
+        if (settings?.theme) {
+          setTheme(settings.theme as Theme);
+        }
       } catch (error) {
         console.error('Error loading theme:', error);
       }
@@ -33,15 +33,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     loadTheme();
   }, []);
 
-  // Apply the theme - always dark
+  // Apply the theme
   useEffect(() => {
-    // Force dark theme
-    document.documentElement.classList.add('dark');
-    document.documentElement.classList.remove('light');
-  }, []);
+    // Determine the effective theme
+    const effectiveTheme = 
+      theme === 'system' 
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches 
+          ? 'dark' 
+          : 'light'
+        : theme;
+    
+    setResolvedTheme(effectiveTheme);
+    
+    // Apply theme to document
+    if (effectiveTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
-  // Comment out system theme detection
-  /*
+  // Handle system theme changes
   useEffect(() => {
     if (theme !== 'system') return;
     
@@ -61,23 +75,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
-  */
 
-  // Save theme preference - but force it to dark
+  // Save theme preference when it changes
   useEffect(() => {
     const saveTheme = async () => {
-      await UserService.updateUserSettings({ theme: 'dark' });
+      await UserService.updateUserSettings({ theme });
     };
 
     saveTheme();
-  }, []);
+  }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ 
-      theme: 'dark', 
-      setTheme: () => {}, // No-op function as we don't allow changing theme
-      resolvedTheme: 'dark' 
-    }}>
+    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
       {children}
     </ThemeContext.Provider>
   );

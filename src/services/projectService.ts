@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import { supabaseConfig } from '@/utils/supabase/config';
-import { Project, ChatConfig, ProjectIntegration } from '@/components/dashboard/types';
+import { Project, ChatConfig, ProjectIntegration, NotificationSettings } from '@/components/dashboard/types';
 
 export interface ProjectData {
   id?: string;
@@ -8,12 +8,8 @@ export interface ProjectData {
   description: string;
   status?: string;
   agents?: string[];
-  teamSettings?: {
-    autonomousCommunication?: boolean;
-    knowledgeSharing?: boolean;
-    ceoApprovalMode?: boolean;
-    [key: string]: any; // Allow for additional team settings in the future
-  };
+  chatConfig?: ChatConfig;
+  notificationSettings?: NotificationSettings;
 }
 
 /**
@@ -58,7 +54,7 @@ export class ProjectService {
         updated_at: new Date().toISOString(),
         last_active: new Date().toISOString(),
         // Add chat configuration
-        chat_config: {
+        chat_config: projectData.chatConfig || {
           model: 'gpt-4',
           temperature: 0.7,
           max_tokens: 2000,
@@ -69,6 +65,11 @@ export class ProjectService {
         integrations: {
           connected: false,
           services: []
+        },
+        notification_settings: projectData.notificationSettings || {
+          email: true,
+          push: true,
+          slack: true
         }
       };
       
@@ -101,9 +102,14 @@ export class ProjectService {
           chatConfig: data.chat_config || {},
           integrations: data.integrations || { connected: false, services: [] },
           progress: 0,
-          tags: []
+          tags: [],
+          notificationSettings: data.notification_settings || {
+            email: true,
+            push: true,
+            slack: true
+          }
         };
-      } catch (innerError) {
+      } catch (e) {
         console.error('Failed with single operation, trying two-step approach');
         
         // Try two-step approach if the combined approach fails
@@ -150,23 +156,20 @@ export class ProjectService {
             chatConfig: data.chat_config || {},
             integrations: data.integrations || { connected: false, services: [] },
             progress: 0,
-            tags: []
+            tags: [],
+            notificationSettings: data.notification_settings || {
+              email: true,
+              push: true,
+              slack: true
+            }
           };
-        } catch (twoStepError) {
-          console.error('Two-step approach also failed:', JSON.stringify(twoStepError));
-          throw twoStepError;
+        } catch (error) {
+          console.error('Error in two-step project creation:', error);
+          return null;
         }
       }
     } catch (error) {
-      // Log full details of the error
       console.error('Error in createProject:', error);
-      console.error('Error type:', typeof error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-      } else {
-        console.error('Non-Error object thrown:', JSON.stringify(error));
-      }
       return null;
     }
   }
@@ -210,8 +213,15 @@ export class ProjectService {
         lastActive: project.last_active,
         agents: Array.isArray(project.agents) ? project.agents.length : 0, // Get actual number of agents
         agentIds: Array.isArray(project.agents) ? project.agents : [], // Get array of agent IDs
+        chatConfig: project.chat_config || {}, // Add chat config
+        integrations: project.integrations || { connected: false, services: [] }, // Add integrations
         progress: 0, // Default for now until we implement progress tracking
-        tags: [] // Default for now until we implement tags
+        tags: [], // Default for now until we implement tags
+        notificationSettings: project.notification_settings || {
+          email: true,
+          push: true,
+          slack: true
+        }
       }));
     } catch (error) {
       console.error('Error in getUserProjects:', error);
@@ -260,8 +270,15 @@ export class ProjectService {
         lastActive: data.last_active,
         agents: Array.isArray(data.agents) ? data.agents.length : 0, // Get actual number of agents
         agentIds: Array.isArray(data.agents) ? data.agents : [], // Get array of agent IDs
+        chatConfig: data.chat_config || {}, // Add chat config
+        integrations: data.integrations || { connected: false, services: [] }, // Add integrations
         progress: 0, // Default for now until we implement progress tracking
-        tags: [] // Default for now until we implement tags
+        tags: [], // Default for now until we implement tags
+        notificationSettings: data.notification_settings || {
+          email: true,
+          push: true,
+          slack: true
+        }
       };
     } catch (error) {
       console.error('Error in getProjectById:', error);
@@ -276,62 +293,39 @@ export class ProjectService {
     try {
       const supabase = createClient();
       
-      // Get current user to verify ownership
-      const { data: userData, error: authError } = await supabase.auth.getUser();
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (authError || !userData?.user) {
+      if (authError || !user) {
         console.error('Authentication error:', authError);
         return false;
       }
       
-      // Build update object with provided fields
-      const updateObj: any = {
-        updated_at: new Date().toISOString()
+      // Create update object with all possible fields
+      const updateObject = {
+        name: projectData.name,
+        description: projectData.description,
+        status: projectData.status,
+        updated_at: new Date().toISOString(),
+        last_active: new Date().toISOString()
       };
       
-      if (projectData.name !== undefined) {
-        updateObj.name = projectData.name;
-      }
-      
-      if (projectData.description !== undefined) {
-        updateObj.description = projectData.description;
-      }
-      
-      if (projectData.status !== undefined) {
-        updateObj.status = projectData.status;
-      }
-      
+      // Only add agents if it's provided (to avoid overwriting with undefined)
       if (projectData.agents !== undefined) {
-        updateObj.agents = projectData.agents;
+        updateObject['agents'] = projectData.agents;
       }
       
-      if (projectData.teamSettings !== undefined) {
-        // Fetch current project data to merge team settings
-        const { data: currentProject, error: fetchError } = await supabase
-          .from('projects')
-          .select('team_settings')
-          .eq('id', id)
-          .eq('user_id', userData.user.id)
-          .single();
-        
-        if (fetchError) {
-          console.error('Error fetching current project:', fetchError);
-          return false;
-        }
-        
-        // Merge existing settings with new settings
-        updateObj.team_settings = {
-          ...(currentProject?.team_settings || {}),
-          ...projectData.teamSettings
-        };
+      // Add chat config if provided
+      if (projectData.chatConfig) {
+        updateObject['chat_config'] = projectData.chatConfig;
       }
       
-      // Update the project with new data
+      // Update the project
       const { error } = await supabase
         .from('projects')
-        .update(updateObj)
+        .update(updateObject)
         .eq('id', id)
-        .eq('user_id', userData.user.id); // Ensure user owns this project
+        .eq('user_id', user.id); // Make sure user owns the project
       
       if (error) {
         console.error('Error updating project:', error);
@@ -352,10 +346,20 @@ export class ProjectService {
     try {
       const supabase = createClient();
       
+      // Get current user to verify ownership
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Delete the project (RLS will ensure user can only delete their own projects)
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id); // Extra validation to ensure user owns the project
       
       if (error) {
         console.error('Error deleting project:', error);
@@ -374,7 +378,6 @@ export class ProjectService {
    */
   static async updateProjectChatConfig(projectId: string, chatConfig: ChatConfig): Promise<boolean> {
     try {
-      console.log('Updating chat config for project:', projectId);
       const supabase = createClient();
       
       // Get current user to verify ownership
@@ -441,6 +444,97 @@ export class ProjectService {
       return true;
     } catch (error) {
       console.error('Error in updateProjectIntegrations:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Add an agent to a project
+   */
+  static async addAgentToProject(projectId: string, agentId: string): Promise<boolean> {
+    try {
+      // First get the current project
+      const project = await this.getProjectById(projectId);
+      
+      if (!project) {
+        console.error('Project not found');
+        return false;
+      }
+      
+      // Add agent to the list if not already present
+      const agents = [...(project.agentIds || [])];
+      if (!agents.includes(agentId)) {
+        agents.push(agentId);
+      } else {
+        // Agent already in the project
+        return true;
+      }
+      
+      // Update the project with the new agents list
+      return await this.updateProject(projectId, { agents });
+    } catch (error) {
+      console.error('Error in addAgentToProject:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Remove an agent from a project
+   */
+  static async removeAgentFromProject(projectId: string, agentId: string): Promise<boolean> {
+    try {
+      // First get the current project
+      const project = await this.getProjectById(projectId);
+      
+      if (!project) {
+        console.error('Project not found');
+        return false;
+      }
+      
+      // Remove agent from the list
+      const agents = (project.agentIds || []).filter(id => id !== agentId);
+      
+      // Update the project with the new agents list
+      return await this.updateProject(projectId, { agents });
+    } catch (error) {
+      console.error('Error in removeAgentFromProject:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Update project notification settings
+   */
+  static async updateProjectNotificationSettings(projectId: string, settings: NotificationSettings): Promise<boolean> {
+    try {
+      const supabase = createClient();
+      
+      // Get current user to verify ownership
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !userData?.user) {
+        console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Update the project with new notification settings
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          notification_settings: settings,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId)
+        .eq('user_id', userData.user.id); // Ensure user owns this project
+      
+      if (error) {
+        console.error('Error updating project notification settings:', JSON.stringify(error));
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in updateProjectNotificationSettings:', error);
       return false;
     }
   }

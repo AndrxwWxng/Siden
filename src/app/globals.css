@@ -83,10 +83,9 @@ a {
   color-scheme: dark;
 }
 
-/* Light theme - COMMENTED OUT 
+/* Light theme */
 .light {
   /* Color Palette */
-/*
   --primary-bg: #f8f8f8;
   --secondary-bg: #ffffff;
   --tertiary-bg: #f0f0f0;
@@ -108,7 +107,6 @@ a {
   
   color-scheme: light;
 }
-*/
 
 /* Apply theme colors to body */
 body {
