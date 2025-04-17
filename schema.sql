@@ -45,11 +45,6 @@ CREATE TABLE IF NOT EXISTS projects (
     "connected": false,
     "services": []
   }'::JSONB,
-  notification_settings JSONB DEFAULT '{
-    "email_notifications": true,
-    "daily_summary": true,
-    "agent_activity_alerts": false
-  }'::JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   last_active TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
@@ -73,137 +68,74 @@ CREATE TABLE IF NOT EXISTS project_messages (
 -- Profiles table policies
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
--- Create policies only if they don't already exist
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'profiles' AND policyname = 'Users can view their own profile'
-  ) THEN
-    CREATE POLICY "Users can view their own profile"
-      ON profiles
-      FOR SELECT
-      USING (auth.uid() = id);
-  END IF;
+CREATE POLICY "Users can view their own profile"
+  ON profiles
+  FOR SELECT
+  USING (auth.uid() = id);
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'profiles' AND policyname = 'Users can update their own profile'
-  ) THEN
-    CREATE POLICY "Users can update their own profile"
-      ON profiles
-      FOR UPDATE
-      USING (auth.uid() = id);
-  END IF;
-END $$;
+CREATE POLICY "Users can update their own profile"
+  ON profiles
+  FOR UPDATE
+  USING (auth.uid() = id);
 
 -- User settings policies
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'user_settings' AND policyname = 'Users can view their own settings'
-  ) THEN
-    CREATE POLICY "Users can view their own settings"
-      ON user_settings
-      FOR SELECT
-      USING (auth.uid() = user_id);
-  END IF;
+CREATE POLICY "Users can view their own settings"
+  ON user_settings
+  FOR SELECT
+  USING (auth.uid() = user_id);
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'user_settings' AND policyname = 'Users can update their own settings'
-  ) THEN
-    CREATE POLICY "Users can update their own settings"
-      ON user_settings
-      FOR UPDATE
-      USING (auth.uid() = user_id);
-  END IF;
-END $$;
+CREATE POLICY "Users can update their own settings"
+  ON user_settings
+  FOR UPDATE
+  USING (auth.uid() = user_id);
 
 -- Projects policies
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'projects' AND policyname = 'Users can view their own projects'
-  ) THEN
-    CREATE POLICY "Users can view their own projects"
-      ON projects
-      FOR SELECT
-      USING (auth.uid() = user_id);
-  END IF;
+CREATE POLICY "Users can view their own projects"
+  ON projects
+  FOR SELECT
+  USING (auth.uid() = user_id);
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'projects' AND policyname = 'Users can insert their own projects'
-  ) THEN
-    CREATE POLICY "Users can insert their own projects"
-      ON projects
-      FOR INSERT
-      WITH CHECK (auth.uid() = user_id);
-  END IF;
+CREATE POLICY "Users can insert their own projects"
+  ON projects
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'projects' AND policyname = 'Users can update their own projects'
-  ) THEN
-    CREATE POLICY "Users can update their own projects"
-      ON projects
-      FOR UPDATE
-      USING (auth.uid() = user_id);
-  END IF;
+CREATE POLICY "Users can update their own projects"
+  ON projects
+  FOR UPDATE
+  USING (auth.uid() = user_id);
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'projects' AND policyname = 'Users can delete their own projects'
-  ) THEN
-    CREATE POLICY "Users can delete their own projects"
-      ON projects
-      FOR DELETE
-      USING (auth.uid() = user_id);
-  END IF;
-END $$;
+CREATE POLICY "Users can delete their own projects"
+  ON projects
+  FOR DELETE
+  USING (auth.uid() = user_id);
 
 -- Project messages policies
 ALTER TABLE project_messages ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'project_messages' AND policyname = 'Users can view messages from their projects'
-  ) THEN
-    CREATE POLICY "Users can view messages from their projects"
-      ON project_messages
-      FOR SELECT
-      USING (
-        auth.uid() = user_id OR
-        auth.uid() IN (
-          SELECT user_id FROM projects WHERE id = project_id
-        )
-      );
-  END IF;
+CREATE POLICY "Users can view messages from their projects"
+  ON project_messages
+  FOR SELECT
+  USING (
+    auth.uid() = user_id OR
+    auth.uid() IN (
+      SELECT user_id FROM projects WHERE id = project_id
+    )
+  );
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'project_messages' AND policyname = 'Users can insert messages to their projects'
-  ) THEN
-    CREATE POLICY "Users can insert messages to their projects"
-      ON project_messages
-      FOR INSERT
-      WITH CHECK (
-        auth.uid() = user_id AND
-        auth.uid() IN (
-          SELECT user_id FROM projects WHERE id = project_id
-        )
-      );
-  END IF;
-END $$;
+CREATE POLICY "Users can insert messages to their projects"
+  ON project_messages
+  FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id AND
+    auth.uid() IN (
+      SELECT user_id FROM projects WHERE id = project_id
+    )
+  );
 
 -- Create triggers for user creation
 
@@ -212,11 +144,10 @@ CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Create a profile for the new user
-  INSERT INTO profiles (id, username, full_name, avatar_url)
+  INSERT INTO profiles (id, username, avatar_url)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'preferred_username', split_part(NEW.email, '@', 1)),
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
     NEW.raw_user_meta_data->>'avatar_url'
   );
   
@@ -229,7 +160,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to automatically create profile when a user signs up
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION handle_new_user();
@@ -252,7 +182,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to automatically clean up when a user is deleted
-DROP TRIGGER IF EXISTS on_auth_user_deleted ON auth.users;
 CREATE TRIGGER on_auth_user_deleted
 BEFORE DELETE ON auth.users
 FOR EACH ROW EXECUTE FUNCTION handle_user_deletion(); 
