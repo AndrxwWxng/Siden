@@ -165,6 +165,9 @@ const Dashboard = () => {
     customIntegration: false
   });
   
+  // Inside the Dashboard component, add this state variable with the other state variables
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  
   // Connection handlers
   const handleToggleConnection = (service: string) => {
     // If already connected, show configuration modal instead
@@ -217,6 +220,52 @@ const Dashboard = () => {
       setIsConnecting(prev => ({ ...prev, [service]: false }));
     }, 3000);
   };
+
+  // Add this function early in the component
+  const verifySchema = async () => {
+    try {
+      const response = await fetch('/api/verify-schema');
+      const result = await response.json();
+      console.log('Schema verification result:', result);
+      
+      if (!result.success) {
+        console.error('Schema verification failed:', result.message);
+        // Show warning to the user
+        alert(`Database schema issue detected: ${result.message}. Please make sure the database is set up correctly.`);
+      }
+      
+      return result.success;
+    } catch (error) {
+      console.error('Error verifying schema:', error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingProjects(true);
+      
+      // Verify schema first
+      const schemaValid = await verifySchema();
+      
+      if (!schemaValid) {
+        setIsLoadingProjects(false);
+        return;
+      }
+      
+      try {
+        // Fetch projects
+        const userProjects = await ProjectService.getUserProjects();
+        setProjects(userProjects || []);
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   useEffect(() => {
     const getUser = async () => {
@@ -308,28 +357,43 @@ const Dashboard = () => {
       setIsCreatingProject(true);
       console.log('Starting project creation with name:', projectName);
       
-      // Test the connection before creating the project
-      try {
-        const response = await fetch('/api/test-connection');
-        const connectionTest = await response.json();
-        console.log('Connection test results:', connectionTest);
-        if (!connectionTest.success) {
-          throw new Error('Connection test failed: ' + connectionTest.message);
-        }
-      } catch (connError) {
-        console.error('Connection test error:', connError);
-        alert('Failed to connect to the database. Please check your connection and try again.');
+      // Validate project input
+      if (!projectName.trim()) {
+        alert('Please enter a project name');
         setIsCreatingProject(false);
         return;
       }
       
+      // Test Supabase connection
+      try {
+        const response = await fetch('/api/test-connection');
+        const result = await response.json();
+        console.log('Connection test results:', result);
+        
+        if (!result.success) {
+          throw new Error(`Connection test failed: ${result.message}`);
+        }
+        
+        // Warn if not authenticated but proceed anyway
+        if (result.auth.status !== 'authenticated') {
+          console.warn('Not authenticated, but proceeding with project creation');
+        }
+        
+      } catch (connError) {
+        console.error('Connection test error:', connError);
+        // Continue anyway, the project service will check authentication
+      }
+      
       // Create project in Supabase with selected agents
-      const newProject = await ProjectService.createProject({
+      const projectData = {
         name: projectName,
         description: projectDescription,
         status: 'active',
-        agents: selectedAgents // Save selected agents with the project
-      });
+        agents: selectedAgents
+      };
+      
+      console.log('Submitting project data:', projectData);
+      const newProject = await ProjectService.createProject(projectData);
       
       if (newProject) {
         console.log('Project created successfully:', newProject);
@@ -337,8 +401,17 @@ const Dashboard = () => {
         // Add the new project to the state
         setProjects(prevProjects => [newProject, ...prevProjects]);
         
-        // Redirect to the project page instead of going back to projects list
-        router.push(`/dashboard/project?id=${newProject.id}`);
+        // Reset form data
+        setProjectName('');
+        setProjectDescription('');
+        setCompanyInfo('');
+        setSelectedAgents([]);
+        
+        // Show success message
+        alert('Project created successfully!');
+        
+        // Go back to project list view
+        setSelectedView('projects');
       } else {
         console.error('Failed to create project - no project returned');
         // Show error message to user
@@ -346,8 +419,12 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Error creating project:', error);
-      // Show error message to user
-      alert('An error occurred while creating the project. Please try again.');
+      // Show error message to user with more details
+      let errorMessage = 'An error occurred while creating the project.';
+      if (error instanceof Error) {
+        errorMessage += ' Error: ' + error.message;
+      }
+      alert(errorMessage);
     } finally {
       setIsCreatingProject(false);
     }
@@ -479,7 +556,10 @@ const Dashboard = () => {
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('development')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
                     <Code size={24} className="text-[#6366F1]" />
                   </div>
@@ -487,7 +567,10 @@ const Dashboard = () => {
                   <p className="text-xs text-[#A3A3A3]">Code generation and project development</p>
                 </div>
                 
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('content')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
                     <FileText size={24} className="text-[#6366F1]" />
                   </div>
@@ -495,12 +578,15 @@ const Dashboard = () => {
                   <p className="text-xs text-[#A3A3A3]">Generate marketing content and social media</p>
                 </div>
                 
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('custom')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
-                    <MessageSquare size={24} className="text-[#6366F1]" />
+                    <Settings size={24} className="text-[#6366F1]" />
                   </div>
-                  <h3 className="font-medium mb-1">Customer Support</h3>
-                  <p className="text-xs text-[#A3A3A3]">AI-powered automation for customer inquiries</p>
+                  <h3 className="font-medium mb-1">Custom Team</h3>
+                  <p className="text-xs text-[#A3A3A3]">Build your own team from scratch</p>
                 </div>
               </div>
             </div>
@@ -661,24 +747,19 @@ const Dashboard = () => {
               
               <div className="flex items-center justify-between mt-8">
                 <button
-                  onClick={() => setSelectedView('new-project')}
-                  className="flex items-center gap-2 py-2 px-4 rounded-md hover:bg-[#2E2E2E] transition-colors"
+                  onClick={goBackToProjectDetails} 
+                  className="flex items-center gap-2 px-4 py-2 border border-[#444] rounded-md text-sm hover:bg-[#2A2A2A] transition-colors"
                 >
                   <ChevronLeft size={16} />
-                  <span>Back</span>
+                  Back
                 </button>
                 
                 <button
-                  onClick={() => proceedToConfiguration()}
-                  disabled={selectedAgents.length === 0}
-                  className={`flex items-center gap-2 py-2 px-4 rounded-md ${
-                    selectedAgents.length === 0
-                      ? 'bg-[#2E2E2E] text-[#999999] cursor-not-allowed'
-                      : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white cursor-pointer'
-                  } transition-colors`}
+                  onClick={proceedToConfiguration}
+                  className="flex items-center gap-2 px-6 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors"
                 >
-                  <span>Continue to Configure</span>
-                  <ArrowRight size={16} />
+                  Continue
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -1505,35 +1586,35 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between mt-8">
               <button
-                onClick={() => setSelectedView('select-agents')}
-                className="px-5 py-2.5 border border-[#444] hover:border-[#6366F1] rounded-md transition-colors flex items-center gap-2"
+                onClick={goBackToSelectAgents} 
+                className="flex items-center gap-2 px-4 py-2 border border-[#444] rounded-md text-sm hover:bg-[#2A2A2A] transition-colors"
               >
-                <ChevronRight className="rotate-180" size={18} /> Back to Team Selection
+                <ChevronLeft size={16} />
+                Back
               </button>
+              
               <button
                 onClick={createProject}
                 disabled={!projectName.trim() || isCreatingProject}
-                className={`px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg flex items-center relative overflow-hidden group ${
-                  !projectName.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:from-indigo-600 hover:to-indigo-700'
-                }`}
+                className={`flex items-center gap-2 px-6 py-2 ${
+                  !projectName.trim() || isCreatingProject ? 'bg-[#4A4A4A] cursor-not-allowed' : 'bg-[#6366F1] hover:bg-[#4F46E5]'
+                } text-white rounded-md transition-colors`}
               >
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/30 to-indigo-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
                 {isCreatingProject ? (
                   <>
-                    <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-white rounded-full"></div>
-                    <span className="relative z-10">Creating Project...</span>
+                    <div className="w-4 h-4 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                    <span>Creating...</span>
                   </>
                 ) : (
                   <>
-                    <span className="relative z-10">Create Project</span>
+                    Create Project
+                    <ChevronRight size={16} />
                   </>
                 )}
               </button>
             </div>
-            
             {/* Custom Integration Modal */}
             {showCustomIntegrationModal && (
               <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1941,6 +2022,35 @@ const Dashboard = () => {
     };
     
     return [...commonTools, ...(agentSpecificTools[agentId] || [])];
+  };
+
+  // Template selection handler
+  const selectTemplate = (templateType: string) => {
+    console.log('Selected template:', templateType);
+    // Set template selected state
+    setSelectedTemplate(templateType);
+    // Move to agent selection
+    proceedToAgentSelection();
+  };
+
+  // Back buttons handlers
+  const goBackToProjectDetails = () => {
+    setSelectedView('new-project');
+  };
+
+  const goBackToSelectAgents = () => {
+    setSelectedView('select-agents');
+  };
+
+  const goBackToProjects = () => {
+    // Reset all form state
+    setProjectName('');
+    setProjectDescription('');
+    setCompanyInfo('');
+    setSelectedAgents([]);
+    setSelectedTemplate('');
+    // Go back to projects view
+    setSelectedView('projects');
   };
 
   return (

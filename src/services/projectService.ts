@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
-import { Project } from '@/components/dashboard/types';
+import { supabaseConfig } from '@/utils/supabase/config';
+import { Project, ChatConfig, ProjectIntegration } from '@/components/dashboard/types';
 
 export interface ProjectData {
   id?: string;
@@ -18,17 +19,20 @@ export class ProjectService {
    */
   static async createProject(projectData: ProjectData): Promise<Project | null> {
     try {
+      console.log("Creating Supabase client...");
       const supabase = createClient();
-      console.log("Supabase client created");
+      console.log("Supabase client created with URL:", supabaseConfig.url);
       
       // Get the current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log("Getting current user...");
+      const { data: userData, error: authError } = await supabase.auth.getUser();
       
       if (authError) {
-        console.error('Authentication error:', authError);
+        console.error('Authentication error:', JSON.stringify(authError));
         return null;
       }
       
+      const user = userData?.user;
       if (!user) {
         console.error('User not authenticated');
         return null;
@@ -36,85 +40,127 @@ export class ProjectService {
       
       console.log('Creating project with user ID:', user.id);
       
-      // Create a simpler project object (without agents for now)
+      // Create the project object
       const projectObject = {
         user_id: user.id,
-        name: projectData.name,
-        description: projectData.description,
+        name: projectData.name || 'Untitled Project',
+        description: projectData.description || '',
         status: projectData.status || 'active',
-        // Don't include agents field for now to test
+        agents: projectData.agents || [],
+        // Add timestamps to ensure they're set properly
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_active: new Date().toISOString(),
+        // Add chat configuration
+        chat_config: {
+          model: 'gpt-4',
+          temperature: 0.7,
+          max_tokens: 2000,
+          system_prompt: 'You are a helpful AI assistant working on this project.',
+          tools_enabled: true
+        },
+        // Add default integrations settings
+        integrations: {
+          connected: false,
+          services: []
+        }
       };
       
-      console.log('Project data to insert:', projectObject);
+      console.log('Project data to insert:', JSON.stringify(projectObject));
       
-      // Try to insert without returning data first
-      const insertResult = await supabase
-        .from('projects')
-        .insert(projectObject);
-      
-      console.log('Insert result:', insertResult);
-      
-      if (insertResult.error) {
-        console.error('Insert error:', {
-          message: insertResult.error.message,
-          code: insertResult.error.code,
-          details: insertResult.error.details,
-          hint: insertResult.error.hint,
-          fullError: JSON.stringify(insertResult.error)
-        });
-        return null;
-      }
-      
-      // If insert was successful, get the inserted record
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching inserted project:', error);
-        return null;
-      }
-      
-      if (!data) {
-        console.error('No data returned after project creation');
-        return null;
-      }
-      
-      console.log('Project created successfully:', data);
-      
-      // Now update the project with the agents if needed
-      if (projectData.agents && projectData.agents.length > 0) {
-        const { error: updateError } = await supabase
+      try {
+        // Try to insert with returning in a single operation
+        const { data, error } = await supabase
           .from('projects')
-          .update({ agents: projectData.agents })
-          .eq('id', data.id);
+          .insert(projectObject)
+          .select()
+          .single();
           
-        if (updateError) {
-          console.error('Error updating project with agents:', updateError);
-          // Continue anyway since we have the basic project created
+        if (error) {
+          console.error('Insert error with returning failed:', JSON.stringify(error));
+          throw error;
+        }
+        
+        console.log('Project created successfully with data:', JSON.stringify(data));
+        
+        // Transform to Project interface
+        return {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          status: data.status,
+          lastActive: data.last_active || new Date().toISOString(),
+          agents: Array.isArray(data.agents) ? data.agents.length : 0,
+          agentIds: Array.isArray(data.agents) ? data.agents : [],
+          chatConfig: data.chat_config || {},
+          integrations: data.integrations || { connected: false, services: [] },
+          progress: 0,
+          tags: []
+        };
+      } catch (innerError) {
+        console.error('Failed with single operation, trying two-step approach');
+        
+        // Try two-step approach if the combined approach fails
+        try {
+          // First just insert
+          const { error: insertError } = await supabase
+            .from('projects')
+            .insert(projectObject);
+            
+          if (insertError) {
+            console.error('Insert error in two-step approach:', JSON.stringify(insertError));
+            throw insertError;
+          }
+          
+          // Then query for the most recent project
+          const { data: projects, error: fetchError } = await supabase
+            .from('projects')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('name', projectData.name)
+            .order('created_at', { ascending: false })
+            .limit(1);
+            
+          if (fetchError) {
+            console.error('Fetch error in two-step approach:', JSON.stringify(fetchError));
+            throw fetchError;
+          }
+          
+          if (!projects || projects.length === 0) {
+            throw new Error('No projects found after insertion');
+          }
+          
+          const data = projects[0];
+          console.log('Project created with two-step approach:', JSON.stringify(data));
+          
+          return {
+            id: data.id,
+            name: data.name,
+            description: data.description,
+            status: data.status,
+            lastActive: data.last_active || new Date().toISOString(),
+            agents: Array.isArray(data.agents) ? data.agents.length : 0,
+            agentIds: Array.isArray(data.agents) ? data.agents : [],
+            chatConfig: data.chat_config || {},
+            integrations: data.integrations || { connected: false, services: [] },
+            progress: 0,
+            tags: []
+          };
+        } catch (twoStepError) {
+          console.error('Two-step approach also failed:', JSON.stringify(twoStepError));
+          throw twoStepError;
         }
       }
-      
-      // Transform to Project interface
-      return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        status: data.status,
-        lastActive: data.last_active || new Date().toISOString(),
-        agents: projectData.agents?.length || 0,
-        agentIds: projectData.agents || [],
-        progress: 0,
-        tags: []
-      };
     } catch (error) {
       // Log full details of the error
       console.error('Error in createProject:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
+      console.error('Error type:', typeof error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      } else {
+        console.error('Non-Error object thrown:', JSON.stringify(error));
+      }
       return null;
     }
   }
@@ -224,15 +270,33 @@ export class ProjectService {
     try {
       const supabase = createClient();
       
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Create update object with all possible fields
+      const updateObject = {
+        name: projectData.name,
+        description: projectData.description,
+        status: projectData.status,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only add agents if it's provided (to avoid overwriting with undefined)
+      if (projectData.agents !== undefined) {
+        updateObject['agents'] = projectData.agents;
+      }
+      
+      // Update the project
       const { error } = await supabase
         .from('projects')
-        .update({
-          name: projectData.name,
-          description: projectData.description,
-          status: projectData.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+        .update(updateObject)
+        .eq('id', id)
+        .eq('user_id', user.id); // Make sure user owns the project
       
       if (error) {
         console.error('Error updating project:', error);
@@ -266,6 +330,82 @@ export class ProjectService {
       return true;
     } catch (error) {
       console.error('Error in deleteProject:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Update project chat configuration
+   */
+  static async updateProjectChatConfig(projectId: string, chatConfig: ChatConfig): Promise<boolean> {
+    try {
+      console.log('Updating chat config for project:', projectId);
+      const supabase = createClient();
+      
+      // Get current user to verify ownership
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !userData?.user) {
+        console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Update the project with new chat config
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          chat_config: chatConfig,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId)
+        .eq('user_id', userData.user.id); // Ensure user owns this project
+      
+      if (error) {
+        console.error('Error updating project chat config:', JSON.stringify(error));
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in updateProjectChatConfig:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Update project integrations
+   */
+  static async updateProjectIntegrations(projectId: string, integrations: ProjectIntegration): Promise<boolean> {
+    try {
+      console.log('Updating integrations for project:', projectId);
+      const supabase = createClient();
+      
+      // Get current user to verify ownership
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !userData?.user) {
+        console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Update the project with new integrations
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          integrations: integrations,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', projectId)
+        .eq('user_id', userData.user.id); // Ensure user owns this project
+      
+      if (error) {
+        console.error('Error updating project integrations:', JSON.stringify(error));
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in updateProjectIntegrations:', error);
       return false;
     }
   }

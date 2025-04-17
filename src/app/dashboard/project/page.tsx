@@ -9,10 +9,13 @@ import {
   Folder
 } from 'lucide-react';
 import Logo from '@/components/Logo';
-// Import the mastra system directly
-import { mastra } from '@/mastra';
+// Import the client-side Mastra client instead of server-side
+import mastraClient, { MastraAgentId } from '@/lib/mastraClient';
 import { ProjectService } from '@/services/projectService';
 import { Project } from '@/components/dashboard/types';
+
+// Use the client-side Mastra implementation
+const mastra = mastraClient;
 
 // Type definitions
 type TabType = 'communication' | 'agents' | 'tools' | 'reports' | 'settings';
