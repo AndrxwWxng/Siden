@@ -47,7 +47,7 @@ export default function Footer() {
         
         <div className="border-t border-[#2e2e2e] pt-8 mt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="text-sm text-[#A3A3A3] mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} AgentTeam. All rights reserved.
+            &copy; {new Date().getFullYear()} Siden. All rights reserved.
           </div>
           <div className="flex items-center space-x-4">
             <a href="#" className="text-[#A3A3A3] hover:text-white transition-colors ">

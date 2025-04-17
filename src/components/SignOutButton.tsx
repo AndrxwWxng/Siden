@@ -46,7 +46,7 @@ export default function SignOutButton() {
         </span>
       ) : (
         <>
-          <LogOut size={16} strokeWidth={2} className="text-indigo-400 group-hover:translate-x-0.5 transition-transform duration-300" />
+          
           <span className="text-sm font-medium">Sign out</span>
         </>
       )}

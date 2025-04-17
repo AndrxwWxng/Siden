@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Logo from '@/components/Logo';
 import Image from 'next/image';
 import { 
   PlusCircle, Settings, Users, ChevronRight, Briefcase, ArrowRight, 
