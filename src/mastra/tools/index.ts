@@ -1,7 +1,11 @@
-'use server';
+// 'use server';
 
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
+
+// Import from web-search and web-browser directly instead of re-exporting
+import { webSearchTool, fallbackWebSearchTool } from './web-search';
+import { webBrowserTool, webScraperTool } from './web-browser';
 
 interface GeocodingResponse {
   results: {
@@ -228,10 +232,10 @@ export const databaseTool = createTool({
 });
 
 // Export web search tools
-export { webSearchTool, fallbackWebSearchTool } from './web-search';
+export { webSearchTool, fallbackWebSearchTool };
 
 // Export web browser tools
-export { webBrowserTool, webScraperTool } from './web-browser';
+export { webBrowserTool, webScraperTool };
 
 // Define an interface for the promptsTool
 interface PromptsToolType {

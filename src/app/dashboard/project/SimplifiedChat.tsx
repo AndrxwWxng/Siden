@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Send, MessageSquare, ChevronRight } from 'lucide-react';
-import MessageFormatter from '@/components/MessageFormatter';
 import mastraClient, { MastraAgentId } from '@/lib/mastraClient';
 
 interface SimplifiedChatProps {
@@ -30,7 +29,7 @@ export default function SimplifiedChat({ projectId }: SimplifiedChatProps) {
       sender: {
         id: 'user',
         name: 'You',
-        avatar: '/avatar-placeholder.png'
+        avatar: '/roleheadshots/kenard.png'
       },
       content: newMessage,
       timestamp: new Date().toISOString()
@@ -91,7 +90,7 @@ export default function SimplifiedChat({ projectId }: SimplifiedChatProps) {
       <div className="flex items-center justify-between p-4 border-b border-[#313131] bg-[#343131]">
         <div className="flex items-center">
           <MessageSquare className="w-5 h-5 mr-2 text-[#6366F1]" />
-          <span className="font-medium">Project Chat</span>
+          <span className="font-medium">Quick Chat</span>
         </div>
         <button 
           onClick={() => window.open(`/dashboard/project/chat?id=${projectId}`, '_blank')}
@@ -138,7 +137,7 @@ export default function SimplifiedChat({ projectId }: SimplifiedChatProps) {
                         : 'bg-[#343131] text-white'}
                     `}>
                       <div className="text-sm break-words">
-                        <MessageFormatter content={message.content} />
+                        {message.content}
                       </div>
                     </div>
                     <div className="mt-1">
@@ -189,7 +188,7 @@ export default function SimplifiedChat({ projectId }: SimplifiedChatProps) {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="Message the team..."
+            placeholder="Ask a quick question..."
             className="flex-1 bg-[#252525] border border-[#313131] rounded-md px-3 py-2 text-white focus:outline-none focus:border-[#6366F1]"
             disabled={isLoading}
           />
