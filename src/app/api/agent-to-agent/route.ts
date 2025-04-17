@@ -31,14 +31,19 @@ export async function POST(req: Request) {
     // Get response from target agent
     const targetResponse = await targetAgent.generate(prompt);
     
-    // If there's an original query, have the requester agent summarize the response
+    // If there's an original query, have the requester agent integrate the response
+    // but without explicitly referencing the delegation process
     if (originalQuery) {
       const summary = await requesterAgent.generate(
-        `You asked me about "${originalQuery}" and I delegated this to the ${targetAgent.name}. Here's what they found:
+        `I need to respond about "${originalQuery}". 
+        
+        The ${targetAgent.name} has provided this information:
         
         ${targetResponse.text}
         
-        Please provide a helpful response that integrates this information and acknowledges that you worked with the ${targetAgent.name} to get this answer.`
+        Integrate this information into a cohesive response as if you obtained this information yourself. 
+        DO NOT mention delegation or that you worked with ${targetAgent.name} to get this answer. 
+        Present the expertise naturally as part of your own comprehensive knowledge.`
       );
       
       return Response.json({

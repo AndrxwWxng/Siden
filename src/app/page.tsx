@@ -135,18 +135,23 @@ const [productVisible, setProductVisible] = useState(false);
               {/* Flat image placeholder for dashboard screenshot - to be replaced with custom Figma design */}
               <div className="w-full h-full flex justify-center items-center">
                 <div 
-                  className="w-full max-w-5xl h-full rounded-xl border border-[#3a3a3a] bg-[#171717] shadow-2xl overflow-hidden relative"
-                  style={{
-                    boxShadow: '0 30px 60px -20px rgba(99, 102, 241, 0.2), 0 20px 40px -30px rgba(0, 0, 0, 0.5)',
-                  }}
+                  className="w-full max-w-5xl h-full overflow-hidden relative"
                 >
-                  {/* This div will be replaced with your custom Figma image */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-[#444] text-center">
-                      <p className="text-lg mb-2">Dashboard Preview</p>
-                      <p className="text-sm max-w-md mx-auto">Replace this placeholder with your custom dashboard screenshot from Figma</p>
-                    </div>
-                  </div>
+                  <Image
+                    src="/mac.png"
+                    alt="Siden AI dashboard in MacBook frame"
+                    fill
+                    className="object-contain"
+                    quality={100}
+                    priority
+                  />
+                  {/* Gradient fade overlay at the bottom */}
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(to bottom, rgba(18, 18, 18, 0) 0%, rgba(18, 18, 18, 1) 100%)',
+                    }}
+                  ></div>
                 </div>
               </div>
             </div>
@@ -456,7 +461,7 @@ const [productVisible, setProductVisible] = useState(false);
                   <div className="flex items-start mb-4">
                     <div className="h-16 w-16 mr-4 flex items-center justify-center">
                       <svg className="w-14 h-14 text-white" viewBox="0 0 1024 1024" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" clipRule="evenodd" d="M512 0C229.12 0 0 229.12 0 512C0 738.56 146.56 929.92 350.08 997.76C375.68 1002.24 385.28 986.88 385.28 973.44C385.28 961.28 384.64 920.96 384.64 878.08C256 901.76 222.72 846.72 212.48 817.92C206.72 803.2 181.76 757.76 160 745.6C142.08 736 116.48 712.32 159.36 711.68C199.68 711.04 228.48 748.8 238.08 764.16C284.16 841.6 357.76 819.84 387.2 806.4C391.68 773.12 405.12 751.36 419.84 738.56C305.92 725.76 186.88 681.6 186.88 485.76C186.88 429.44 206.72 383.36 239.36 347.52C234.24 334.72 216.32 282.24 244.48 211.84C244.48 211.84 287.36 198.4 385.28 264.32C426.24 252.8 469.76 247.04 513.28 247.04C556.8 247.04 600.32 252.8 641.28 264.32C739.2 197.76 782.08 211.84 782.08 211.84C810.24 282.24 792.32 334.72 787.2 347.52C819.84 383.36 839.68 428.8 839.68 485.76C839.68 682.24 720 725.76 606.08 738.56C624.64 754.56 640.64 785.28 640.64 833.28C640.64 901.76 640 956.16 640 973.44C640 986.88 649.6 1002.88 675.2 997.76C877.44 929.92 1024 737.92 1024 512C1024 229.12 794.88 0 512 0Z" />
+                        <path fillRule="evenodd" clipRule="evenodd" d="M512 0C229.12 0 0 229.12 0 512C0 738.56 146.56 929.92 350.08 997.76C375.68 1002.24 385.28 986.88 385.28 973.44C385.28 961.28 384.64 920.96 384.64 878.08C256 901.76 222.72 846.72 212.48 817.92C206.72 803.2 181.76 757.76 160 745.6C142.08 736 116.48 712.32 159.36 711.68C199.68 711.04 228.48 748.8 238.08 764.16C284.16 841.6 357.76 819.84 387.2 806.4C391.68 773.12 405.12 751.36 419.84 738.56C305.92 725.76 186.88 681.6 186.88 485.76C186.88 429.44 206.72 383.36 239.36 347.52C234.24 334.72 216.32 282.24 244.48 211.84C244.48 211.84 287.36 198.4 385.28 264.32C426.24 252.8 469.76 247.04 513.28 247.04C556.8 247.04 600.32 252.8 641.28 264.32C739.2 197.76 782.08 211.84 782.08 211.84C810.24 282.24 792.32 334.72 787.2 347.52C819.84 383.36 839.68 428.8 839.68 485.76C839.68 682.24 720 725.76 606.08 738.56C624.64 754.56 640.64 785.28C640.64 833.28C640.64 901.76 640 956.16 640 973.44C640 986.88 649.6 1002.88 675.2 997.76C877.44 929.92 1024 737.92 1024 512C1024 229.12 794.88 0 512 0Z" />
                       </svg>
                     </div>
                     <div>

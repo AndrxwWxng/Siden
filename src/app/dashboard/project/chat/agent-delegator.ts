@@ -16,6 +16,7 @@ interface DelegationRequest {
   targetAgentId: AgentId;
   prompt: string;
   originalQuery?: string;
+  availableAgentIds?: string[];
 }
 
 interface DelegationResponse {
@@ -35,6 +36,9 @@ const roleToAgentId: Record<string, string> = {
   design: 'designAgent',
   research: 'researchAgent',
 };
+
+// Track pending requests to prevent duplicates
+const pendingRequests = new Map<string, Promise<any>>();
 
 /**
  * Delegates a task from one agent to another
@@ -75,7 +79,7 @@ export async function delegateResearch(query: string, requesterId: AgentId = 'ce
   return delegateTask({
     requesterId,
     targetAgentId: 'research',
-    prompt: `Conduct research on the following topic and provide a comprehensive analysis: ${query}`,
+    prompt: `Research this topic thoroughly and provide a comprehensive analysis: ${query}`,
     originalQuery: query
   });
 }
@@ -90,7 +94,9 @@ export async function delegateDevelopment(task: string, requesterId: AgentId = '
   return delegateTask({
     requesterId,
     targetAgentId: 'developer',
-    prompt: `The ${requesterId} has asked you to ${task}. Please provide a detailed plan and initial code for this project, including technology stack recommendations and implementation details.`,
+    prompt: `${task}
+    
+    Provide a detailed technical plan and initial code for this project, including technology stack recommendations and implementation details.`,
     originalQuery: task
   });
 }
@@ -105,7 +111,9 @@ export async function delegateDesign(task: string, requesterId: AgentId = 'ceo')
   return delegateTask({
     requesterId,
     targetAgentId: 'design',
-    prompt: `The ${requesterId} has asked you to design ${task}. Please provide detailed design recommendations and visual concepts.`,
+    prompt: `${task}
+    
+    Provide detailed design recommendations and visual concepts for this request.`,
     originalQuery: task
   });
 }
@@ -120,7 +128,9 @@ export async function delegateMarketing(task: string, requesterId: AgentId = 'ce
   return delegateTask({
     requesterId,
     targetAgentId: 'marketing',
-    prompt: `The ${requesterId} has asked you to ${task}. Please provide a comprehensive marketing strategy and content plan.`,
+    prompt: `${task}
+    
+    Provide a comprehensive marketing strategy and content plan.`,
     originalQuery: task
   });
 }
@@ -192,16 +202,166 @@ export async function detectAndDelegate(
 
 /**
  * Detect which agent should handle a message and delegate to that agent
+ * Added request deduplication to prevent duplicate responses
+ * @param message The user message
+ * @param currentAgent The current agent ID
+ * @param availableAgentIds Optional array of available agent IDs in the project
  */
-export async function detectAndDelegateMessage(message: string, currentAgent: string = 'ceo') {
+export async function detectAndDelegateMessage(
+  message: string, 
+  currentAgent: string = 'ceo',
+  availableAgentIds?: string[]
+) {
   // Get the corresponding agent ID for the current role
   const agentId = roleToAgentId[currentAgent] || 'ceoAgent';
   
+  // Handle direct delegation requests from user (like "ask Chloe to...")
+  if (currentAgent === 'ceo') {
+    // Detect requests to ask another agent to do something
+    const askPattern = /(?:ask|have|get|tell)\s+(alex|chloe|mark|hannah|jenna|maisie|garek)\s+to\s+(.+)/i;
+    const match = message.match(askPattern);
+    
+    if (match) {
+      const targetName = match[1].toLowerCase();
+      const task = match[2];
+      
+      // Map from first names to agent IDs
+      const nameToAgentId: Record<string, string> = {
+        'alex': 'dev',
+        'chloe': 'marketing',
+        'mark': 'product',
+        'hannah': 'sales',
+        'jenna': 'finance',
+        'maisie': 'design',
+        'garek': 'research'
+      };
+      
+      const targetAgentId = nameToAgentId[targetName];
+      
+      // Check if the target agent is available
+      if (targetAgentId && (!availableAgentIds || availableAgentIds.includes(targetAgentId))) {
+        console.log(`[AGENT DELEGATOR] Detected request to delegate to ${targetAgentId}: "${task}"`);
+        
+        try {
+          // First, create a direct instruction from CEO to the target agent (not shown to user)
+          const delegationPrompt = `
+          I need you to ${task}
+          
+          Complete this task directly without explanations or mentioning our communication.
+          Provide only the results as if you're directly responding to the user's request.
+          `;
+          
+          // Call the target agent directly
+          const targetAgentMastraId = roleToAgentId[targetAgentId];
+          const targetResponse = await mastraClient.getAgent(targetAgentMastraId as any).generate(delegationPrompt);
+          
+          // Create a response that makes it look like the CEO coordinated this behind the scenes
+          const finalResponse = {
+            text: targetResponse.text
+          };
+          
+          return finalResponse;
+        } catch (error) {
+          console.error(`[AGENT DELEGATOR] Error delegating to ${targetAgentId}:`, error);
+        }
+      }
+    }
+    
+    // Direct implementation requests to the developer without CEO planning
+    if (message.toLowerCase().includes('make') || 
+        message.toLowerCase().includes('create') || 
+        message.toLowerCase().includes('build') || 
+        message.toLowerCase().includes('develop') || 
+        message.toLowerCase().includes('landing page') ||
+        message.toLowerCase().includes('site') ||
+        message.toLowerCase().includes('rn') ||
+        message.toLowerCase().includes('right now')) {
+      
+      // Check if dev agent is available
+      if (!availableAgentIds || availableAgentIds.includes('dev')) {
+        console.log(`[AGENT DELEGATOR] Directly delegating to developer from CEO`);
+        
+        try {
+          // Developer implementation - skip planning and go straight to implementation
+          const devPrompt = `
+          IMPORTANT: Do not ask questions. Immediately start implementing based on what you know.
+          
+          You need to create ${message} immediately. Do not waste time asking questions or planning.
+          Start by showing the HTML, CSS and JavaScript code for a modern, responsive implementation.
+          
+          Focus on actual implementation, not discussion. The CEO needs this delivered NOW.
+          
+          Show complete code that can be used right away. Make sure it's visually appealing and functional.
+          `;
+          
+          const requestKey = `developerAgent:implementation:${Date.now()}`;
+          
+          const developerResponse = await mastraClient.getAgent('developerAgent').generate(devPrompt);
+          
+          // Have the CEO deliver the developer's response as if they coordinated it behind the scenes
+          const ceoDeliveryPrompt = `
+          The developer has created the implementation requested. Here is what they built:
+          
+          ${developerResponse.text}
+          
+          Deliver this response directly without mentioning working with a developer. Just say "Here's the implementation" 
+          and present the code as if you coordinated this yourself. Don't add commentary about teamwork.
+          `;
+          
+          // Create the promise for this request
+          const requestPromise = mastraClient.getAgent('ceoAgent').generate(ceoDeliveryPrompt, {
+            metadata: {
+              availableAgentIds: availableAgentIds || []
+            }
+          });
+          
+          return await requestPromise;
+        } catch (error) {
+          console.error(`[AGENT DELEGATOR] Error in direct developer delegation:`, error);
+        }
+      }
+    }
+  }
+  
+  // Create a unique key for this request to prevent duplicates
+  const requestKey = `${agentId}:${message}`;
+  
   try {
-    // Call the current agent to generate a response
-    return await mastraClient.getAgent(agentId as any).generate(message);
+    // Check if we already have a pending request for this exact message and agent
+    if (pendingRequests.has(requestKey)) {
+      console.log(`[AGENT DELEGATOR] Using existing request for ${agentId}`);
+      return await pendingRequests.get(requestKey);
+    }
+    
+    // Create the promise for this request
+    console.log(`[AGENT DELEGATOR] Creating new request for ${agentId}`);
+    const requestPromise = mastraClient.getAgent(agentId as any).generate(message, {
+      metadata: {
+        availableAgentIds: availableAgentIds || []
+      }
+    })
+      .then(response => {
+        // On successful completion, remove from pending requests
+        pendingRequests.delete(requestKey);
+        return response;
+      })
+      .catch(error => {
+        // On error, also remove from pending and return error response
+        pendingRequests.delete(requestKey);
+        console.error(`[AGENT DELEGATOR] Error delegating to ${agentId}:`, error);
+        return {
+          text: `Sorry, there was an error communicating with the ${currentAgent} agent. Please try again later.`
+        };
+      });
+    
+    // Store the promise so we can reuse it for duplicate requests
+    pendingRequests.set(requestKey, requestPromise);
+    
+    // Wait for and return the result
+    return await requestPromise;
   } catch (error) {
-    console.error('Error delegating to agent:', error);
+    pendingRequests.delete(requestKey);
+    console.error(`[AGENT DELEGATOR] Unexpected error with ${agentId}:`, error);
     return {
       text: `Sorry, there was an error communicating with the ${currentAgent} agent. Please try again later.`
     };

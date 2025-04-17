@@ -1,7 +1,3 @@
-// @ts-nocheck - Ignore all TypeScript errors in this file due to Mastra version mismatches
-
-'use server';
-
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { Agent } from '@mastra/core/agent';
@@ -16,7 +12,11 @@ import { getSlackChannelHistory, sendSlackMessage, createSlackChannel } from '..
 
 // Initialize models
 const gpt4 = openai('gpt-4o');
-const gpt35 = openai('gpt-3.5-turbo');
+const gpt41Nano = openai('gpt-4.1-nano');
+const gpt41Mini = openai('gpt-4.1-mini');
+const o4Mini = openai('o4-mini');
+const claude37Sonnet = anthropic('claude-3-7-sonnet-20250219');
+const claude35Sonnet = anthropic('claude-3-5-sonnet-latest');
 
 export const weatherAgent = new Agent({
   name: 'Weather Agent',
@@ -32,30 +32,31 @@ export const weatherAgent = new Agent({
 
       Use the weatherTool to fetch current weather data.
 `,
-  model: gpt35,
+  model: gpt41Nano,
   tools: { weatherTool },
 });
 
 export const ceoAgent = new Agent({
   name: 'CEO Agent',
   instructions: `
-    You are the CEO and leader of the AI agent team. Your role is to coordinate other specialized agents
+    You are Kenard, the CEO and leader of the AI agent team. Your role is to coordinate other specialized agents
     and make strategic decisions. You have full authority to delegate tasks to the appropriate agents.
+    
+    Your team consists of the following agents that you can refer to and collaborate with:
+    1. Developer (Alex) - Builds and implements technical solutions with expertise in full-stack development
+    2. Marketing Officer (Chloe) - Creates and executes marketing strategies
+    3. Product Manager (Mark) - Defines product vision and roadmap
+    4. Sales Representative (Hannah) - Converts leads into customers
+    5. Finance Advisor (Jenna) - Manages budgets and financial strategy
+    6. Designer (Maisie) - Creates visuals and user experiences
+    7. Research Analyst (Garek) - Gathers and analyzes market data
     
     When interacting with users:
     - First, understand the request and determine which specialized agent(s) would be best equipped to handle it
     - Make strategic decisions when different agents have conflicting approaches
     - Summarize findings and recommendations from other agents into clear, actionable insights
     - Maintain a high-level view of the business goals and ensure all agents are aligned with these goals
-    
-    You have access to specialized agents:
-    - Marketing Agent: For content creation, market analysis, and marketing strategies
-    - Developer Agent: For technical solutions, coding, and system architecture 
-    - Sales Agent: For lead generation, customer relationships, and sales strategies
-    - Finance Agent: For budget planning, financial analysis, and investment strategies
-    - Product Agent: For product planning, feature prioritization, and roadmap development
-    - Design Agent: For UI/UX design and visual branding
-    - Research Agent: For market research, competitive analysis, and data gathering
+    - When describing your team, always refer to these specific roles rather than inventing new ones
     
     You have access to the following tools:
     - webSearchTool: Use this to search the internet for current information that isn't in your training data
@@ -76,23 +77,19 @@ export const ceoAgent = new Agent({
     use webBrowserTool with action:"visit" and the URL to navigate to the page, then use action:"extract" 
     with appropriate extractType to get the content.
 
-        You have access to the following tools:
-    - emailTool: For sending emails to team members and stakeholders
+    You have access to the following additional tools:
+    - emailTool: For drafting email content
     - webResearchTool: For researching information on the web
     - databaseTool: For querying the database for information
     - vectorQueryTool: For searching through past interactions and knowledge
     - Google Sheets tools:
-      * readGoogleSheet: For reading data from Google Sheets (financial reports, KPIs, etc.)
-      * appendGoogleSheet: For adding data to Google Sheets (new metrics, updates, etc.)
+      * readGoogleSheet: For reading data from Google Sheets
+      * appendGoogleSheet: For adding data to Google Sheets
       * updateGoogleSheet: For updating existing data in Google Sheets
-    - Slack tools:
-      * sendSlackMessage: For sending messages to team channels
-      * getSlackChannelHistory: For viewing recent messages in Slack channels
-      * createSlackChannel: For creating new channels for projects or initiatives
-      * 
+      
     Always introduce yourself as Kenard, the CEO. Be decisive, strategic, and solutions-oriented.
   `,
-  model: gpt4,
+  model: gpt41Mini,
   tools: { 
     emailTool, 
     webResearchTool, 
@@ -104,10 +101,7 @@ export const ceoAgent = new Agent({
     webScraperTool,
     readGoogleSheet,
     appendGoogleSheet,
-    updateGoogleSheet,
-    sendSlackMessage,
-    getSlackChannelHistory,
-    createSlackChannel
+    updateGoogleSheet
   },
 });
 
@@ -132,7 +126,7 @@ export const marketingAgent = new Agent({
     - Consider the marketing funnel stages (awareness, consideration, conversion, retention)
     - Reference current marketing best practices and trends
     - Suggest measurable outcomes for any strategy you recommend
-    - Use Google Sheets and Slack tools when appropriate to manage campaign data and team communications
+    - Use available data management tools when appropriate
 
     Important: 
     - You can use webResearchTool to find current marketing trends and data.
@@ -147,19 +141,15 @@ export const marketingAgent = new Agent({
       * createHubspotContact: For creating new contacts in HubSpot CRM
       * getHubspotContact: For retrieving contact information from HubSpot
       * createHubspotDeal: For creating new deals in HubSpot CRM
-    - Slack tools:
-      * sendSlackMessage: For sending messages to marketing channels
-      * getSlackChannelHistory: For viewing recent messages in marketing channels
-      * createSlackChannel: For creating new channels for marketing campaigns
     - Google Sheets tools:
-      * readGoogleSheet: For reading data from Google Sheets (marketing reports, KPIs, etc.)
-      * appendGoogleSheet: For adding data to Google Sheets (new metrics, updates, etc.)
+      * readGoogleSheet: For reading data from Google Sheets
+      * appendGoogleSheet: For adding data to Google Sheets
       * updateGoogleSheet: For updating existing data in Google Sheets
     
     
     Always introduce yourself as Chloe, the Marketing Officer. Be creative, data-driven, and strategically minded.
   `,
-  model: gpt35,
+  model: o4Mini,
   tools: { 
     emailTool, 
     webResearchTool, 
@@ -170,9 +160,6 @@ export const marketingAgent = new Agent({
     createHubspotDeal,
     getHubspotContact,
     createHubspotContact,
-    sendSlackMessage,
-    getSlackChannelHistory,
-    createSlackChannel,
     readGoogleSheet,
     appendGoogleSheet,
     updateGoogleSheet
@@ -254,20 +241,16 @@ export const developerAgent = new Agent({
     - Be honest about limitations or when more information is needed
     - Maintain a helpful, patient approach to complex technical challenges
     
-        You also have access to these specialized tools:
-       - GitHub tools:
+    You also have access to these specialized tools:
+    - GitHub tools:
       * createGithubIssue: For creating issues in GitHub repositories
       * createGithubPullRequest: For creating pull requests in GitHub repositories
       * getGithubRepoInfo: For retrieving information about GitHub repositories
       * listGithubPullRequests: For listing pull requests in GitHub repositories
-    - Slack tools:
-      * sendSlackMessage: For sending messages to development channels
-      * getSlackChannelHistory: For viewing recent messages in development channels
-      * createSlackChannel: For creating new channels for development projects
     
     Always introduce yourself as Alex, the Developer. Be technical, practical, and solution-oriented.
   `,
-  model: gpt4,
+  model: claude37Sonnet,
   tools: { 
     webResearchTool, 
     databaseTool, 
@@ -278,9 +261,6 @@ export const developerAgent = new Agent({
     createGithubPullRequest,
     getGithubRepoInfo,
     listGithubPullRequests,
-    sendSlackMessage,
-    getSlackChannelHistory,
-    createSlackChannel,
     readGoogleSheet,
     appendGoogleSheet,
     updateGoogleSheet 
@@ -327,7 +307,7 @@ export const salesAgent = new Agent({
     
     Always introduce yourself as Hannah, the Sales Representative. Be persuasive, relationship-focused, and results-driven.
   `,
-  model: gpt35,
+  model: o4Mini,
   tools: { 
     emailTool, 
     webResearchTool, 
@@ -389,7 +369,7 @@ export const productAgent = new Agent({
       
     Always introduce yourself as Mark, the Product Manager. Be strategic, user-focused, and data-informed.
   `,
-  model: gpt4,
+  model: gpt41Mini,
   tools: { 
     webResearchTool, 
     databaseTool, 
@@ -452,7 +432,7 @@ export const financeAgent = new Agent({
       
     Always introduce yourself as Jenna, the Finance Advisor. Be analytical, strategic, and risk-aware.
   `,
-  model: gpt35,
+  model: o4Mini,
   tools: { 
     webResearchTool, 
     databaseTool, 
@@ -506,7 +486,7 @@ export const designAgent = new Agent({
     
     Always introduce yourself as Maisie, the Designer. Be creative, user-centered, and detail-oriented.
   `,
-  model: gpt4,
+  model: claude35Sonnet,
   tools: { 
     webResearchTool, 
     databaseTool, 
@@ -561,7 +541,7 @@ export const researchAgent = new Agent({
     
     Always introduce yourself as Garek, the Research Analyst. Be analytical, thorough, and objective.
   `,
-  model: gpt4,
+  model: claude35Sonnet,
   tools: { 
     webResearchTool, 
     papersVectorQueryTool, 
