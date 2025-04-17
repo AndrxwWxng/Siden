@@ -166,6 +166,9 @@ const Dashboard = () => {
     customIntegration: false
   });
   
+  // Inside the Dashboard component, add this state variable with the other state variables
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  
   // Connection handlers
   const handleToggleConnection = (service: string) => {
     // If already connected, show configuration modal instead
@@ -309,28 +312,34 @@ const Dashboard = () => {
       setIsCreatingProject(true);
       console.log('Starting project creation with name:', projectName);
       
-      // Test the connection before creating the project
-      try {
-        const response = await fetch('/api/test-connection');
-        const connectionTest = await response.json();
-        console.log('Connection test results:', connectionTest);
-        if (!connectionTest.success) {
-          throw new Error('Connection test failed: ' + connectionTest.message);
-        }
-      } catch (connError) {
-        console.error('Connection test error:', connError);
-        alert('Failed to connect to the database. Please check your connection and try again.');
+      // Validate project input
+      if (!projectName.trim()) {
+        alert('Please enter a project name');
+        setIsCreatingProject(false);
+        return;
+      }
+      
+      // Create client directly to avoid test-connection issues
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        alert('You must be signed in to create a project. Please sign in and try again.');
         setIsCreatingProject(false);
         return;
       }
       
       // Create project in Supabase with selected agents
-      const newProject = await ProjectService.createProject({
+      const projectData = {
         name: projectName,
         description: projectDescription,
         status: 'active',
-        agents: selectedAgents // Save selected agents with the project
-      });
+        agents: selectedAgents
+      };
+      
+      console.log('Submitting project data:', projectData);
+      const newProject = await ProjectService.createProject(projectData);
       
       if (newProject) {
         console.log('Project created successfully:', newProject);
@@ -338,7 +347,16 @@ const Dashboard = () => {
         // Add the new project to the state
         setProjects(prevProjects => [newProject, ...prevProjects]);
         
-        // Redirect to the project page instead of going back to projects list
+        // Reset form data
+        setProjectName('');
+        setProjectDescription('');
+        setCompanyInfo('');
+        setSelectedAgents([]);
+        
+        // Show success message
+        alert('Project created successfully!');
+        
+        // Redirect to the project page
         router.push(`/dashboard/project?id=${newProject.id}`);
       } else {
         console.error('Failed to create project - no project returned');
@@ -480,7 +498,10 @@ const Dashboard = () => {
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('development')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
                     <Code size={24} className="text-[#6366F1]" />
                   </div>
@@ -488,7 +509,10 @@ const Dashboard = () => {
                   <p className="text-xs text-[#A3A3A3]">Code generation and project development</p>
                 </div>
                 
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('content')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
                     <FileText size={24} className="text-[#6366F1]" />
                   </div>
@@ -496,12 +520,15 @@ const Dashboard = () => {
                   <p className="text-xs text-[#A3A3A3]">Generate marketing content and social media</p>
                 </div>
                 
-                <div className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group">
+                <div 
+                  className="border border-[#444] hover:border-[#6366F1] rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center text-center group"
+                  onClick={() => selectTemplate('custom')}
+                >
                   <div className="w-12 h-12 bg-[#202020] group-hover:bg-[#6366F1]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
-                    <MessageSquare size={24} className="text-[#6366F1]" />
+                    <Settings size={24} className="text-[#6366F1]" />
                   </div>
-                  <h3 className="font-medium mb-1">Customer Support</h3>
-                  <p className="text-xs text-[#A3A3A3]">AI-powered automation for customer inquiries</p>
+                  <h3 className="font-medium mb-1">Custom Team</h3>
+                  <p className="text-xs text-[#A3A3A3]">Build your own team from scratch</p>
                 </div>
               </div>
               
@@ -661,24 +688,19 @@ const Dashboard = () => {
               
               <div className="flex items-center justify-between mt-8">
                 <button
-                  onClick={() => setSelectedView('new-project')}
-                  className="flex items-center gap-2 py-2 px-4 rounded-md hover:bg-[#2E2E2E] transition-colors"
+                  onClick={goBackToProjectDetails} 
+                  className="flex items-center gap-2 px-4 py-2 border border-[#444] rounded-md text-sm hover:bg-[#2A2A2A] transition-colors"
                 >
                   <ChevronLeft size={16} />
-                  <span>Back</span>
+                  Back
                 </button>
                 
                 <button
-                  onClick={() => proceedToConfiguration()}
-                  disabled={selectedAgents.length === 0}
-                  className={`flex items-center gap-2 py-2 px-4 rounded-md ${
-                    selectedAgents.length === 0
-                      ? 'bg-[#2E2E2E] text-[#999999] cursor-not-allowed'
-                      : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white cursor-pointer'
-                  } transition-colors`}
+                  onClick={proceedToConfiguration}
+                  className="flex items-center gap-2 px-6 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors"
                 >
-                  <span>Continue to Configure</span>
-                  <ArrowRight size={16} />
+                  Continue
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -1502,477 +1524,35 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between mt-8">
               <button
-                onClick={() => setSelectedView('select-agents')}
-                className="px-5 py-2.5 border border-[#444] hover:border-[#6366F1] rounded-md transition-colors flex items-center gap-2"
+                onClick={goBackToSelectAgents} 
+                className="flex items-center gap-2 px-4 py-2 border border-[#444] rounded-md text-sm hover:bg-[#2A2A2A] transition-colors"
               >
-                <ChevronRight className="rotate-180" size={18} /> Back to Team Selection
+                <ChevronLeft size={16} />
+                Back
               </button>
+              
               <button
                 onClick={createProject}
                 disabled={!projectName.trim() || isCreatingProject}
-                className={`px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg flex items-center relative overflow-hidden group ${
-                  !projectName.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:from-indigo-600 hover:to-indigo-700'
-                }`}
+                className={`flex items-center gap-2 px-6 py-2 ${
+                  !projectName.trim() || isCreatingProject ? 'bg-[#4A4A4A] cursor-not-allowed' : 'bg-[#6366F1] hover:bg-[#4F46E5]'
+                } text-white rounded-md transition-colors`}
               >
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/30 to-indigo-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
                 {isCreatingProject ? (
                   <>
-                    <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-white rounded-full"></div>
-                    <span className="relative z-10">Creating Project...</span>
+                    <div className="w-4 h-4 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                    <span>Creating...</span>
                   </>
                 ) : (
                   <>
-                    <span className="relative z-10">Create Project</span>
+                    Create Project
+                    <ChevronRight size={16} />
                   </>
                 )}
               </button>
             </div>
-            
-            {/* Custom Integration Modal */}
-            {showCustomIntegrationModal && (
-              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-[#202020] border border-[#444] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
-                  <div className="sticky top-0 bg-[#202020] border-b border-[#444] px-6 py-4 flex items-center justify-between z-10">
-                    <h2 className="text-xl font-medium">
-                      {integrationAdded ? 'Integration Added' : 'Set Up Custom Integration'}
-                    </h2>
-                    <button 
-                      onClick={() => {
-                        setShowCustomIntegrationModal(false);
-                        if (integrationAdded) {
-                          setIntegrationAdded(false);
-                          setCustomIntegrationName('');
-                          setCustomIntegrationEndpoint('');
-                          setCustomIntegrationAPIKey('');
-                          setCustomIntegrationDescription('');
-                        }
-                      }}
-                      className="text-[#8A8F98] hover:text-white transition-colors"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 6L6 18M6 6L18 18"></path>
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  <div className="p-6">
-                    {integrationAdded ? (
-                      <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 6L9 17l-5-5"></path>
-                          </svg>
-                        </div>
-                        <h3 className="text-xl font-medium mb-2">Integration Added Successfully</h3>
-                        <p className="text-[#A3A3A3] mb-8">
-                          Your custom integration "{customIntegrationName}" has been added to your project.
-                        </p>
-                        <div className="bg-[#2E2E2E] rounded-lg p-4 mb-8 text-left">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-[#A3A3A3]">Endpoint</span>
-                            <span className="text-xs px-2 py-1 bg-[#1E293B] text-[#38BDF8] rounded-full border border-[#38BDF8]/30">Connected</span>
-                          </div>
-                          <p className="font-mono text-sm truncate">{customIntegrationEndpoint}</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setShowCustomIntegrationModal(false);
-                            setIntegrationAdded(false);
-                            setCustomIntegrationName('');
-                            setCustomIntegrationEndpoint('');
-                            setCustomIntegrationAPIKey('');
-                            setCustomIntegrationDescription('');
-                          }}
-                          className="px-6 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-md transition-colors"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-6">
-                          <p className="text-[#A3A3A3] mb-6">
-                            Connect your custom API endpoints to enable your AI agents to interact with your services.
-                          </p>
-                          
-                          <div className="bg-[#2E2E2E] rounded-lg p-4 mb-6">
-                            <h3 className="font-medium mb-2 flex items-center">
-                              <svg className="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                              </svg>
-                              What You'll Need
-                            </h3>
-                            <ul className="space-y-2 text-sm text-[#A3A3A3]">
-                              <li className="flex items-start gap-2">
-                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                  <span className="w-2 h-2 bg-white rounded-full"></span>
-                                </span>
-                                <span>API endpoint URL (HTTPS required)</span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                  <span className="w-2 h-2 bg-white rounded-full"></span>
-                                </span>
-                                <span>Authentication credentials (API key, OAuth tokens, etc.)</span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                  <span className="w-2 h-2 bg-white rounded-full"></span>
-                                </span>
-                                <span>API documentation for endpoints your agents will use</span>
-                              </li>
-                            </ul>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Integration Name</label>
-                              <input
-                                type="text"
-                                value={customIntegrationName}
-                                onChange={(e) => setCustomIntegrationName(e.target.value)}
-                                placeholder="e.g., CRM API, Payment Gateway, etc."
-                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                              />
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-medium mb-2">API Endpoint URL</label>
-                              <input
-                                type="url"
-                                value={customIntegrationEndpoint}
-                                onChange={(e) => setCustomIntegrationEndpoint(e.target.value)}
-                                placeholder="https://api.example.com/v1"
-                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                              />
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Authentication Type</label>
-                              <div className="grid grid-cols-3 gap-3">
-                                <button
-                                  onClick={() => setCustomIntegrationAuthType('api_key')}
-                                  className={`p-3 rounded-lg text-center text-sm border ${
-                                    customIntegrationAuthType === 'api_key' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                                  } transition-colors`}
-                                >
-                                  API Key
-                                </button>
-                                <button
-                                  onClick={() => setCustomIntegrationAuthType('oauth')}
-                                  className={`p-3 rounded-lg text-center text-sm border ${
-                                    customIntegrationAuthType === 'oauth' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                                  } transition-colors`}
-                                >
-                                  OAuth 2.0
-                                </button>
-                                <button
-                                  onClick={() => setCustomIntegrationAuthType('basic')}
-                                  className={`p-3 rounded-lg text-center text-sm border ${
-                                    customIntegrationAuthType === 'basic' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                                  } transition-colors`}
-                                >
-                                  Basic Auth
-                                </button>
-                              </div>
-                            </div>
-                            
-                            {customIntegrationAuthType === 'api_key' && (
-                              <div>
-                                <label className="block text-sm font-medium mb-2">API Key</label>
-                                <input
-                                  type="password"
-                                  value={customIntegrationAPIKey}
-                                  onChange={(e) => setCustomIntegrationAPIKey(e.target.value)}
-                                  placeholder="Enter your API key"
-                                  className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                                />
-                              </div>
-                            )}
-                            
-                            {customIntegrationAuthType === 'oauth' && (
-                              <div className="bg-[#2E2E2E] p-4 rounded-lg">
-                                <p className="text-sm text-[#A3A3A3] mb-3">
-                                  OAuth 2.0 setup requires additional configuration through our developer console.
-                                </p>
-                                <button className="text-[#6366F1] text-sm hover:underline">
-                                  Open Developer Console
-                                </button>
-                              </div>
-                            )}
-                            
-                            {customIntegrationAuthType === 'basic' && (
-                              <div className="space-y-4">
-                                <div>
-                                  <label className="block text-sm font-medium mb-2">Username</label>
-                                  <input
-                                    type="text"
-                                    placeholder="Enter username"
-                                    className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium mb-2">Password</label>
-                                  <input
-                                    type="password"
-                                    placeholder="Enter password"
-                                    className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Description (Optional)</label>
-                              <textarea
-                                value={customIntegrationDescription}
-                                onChange={(e) => setCustomIntegrationDescription(e.target.value)}
-                                placeholder="Describe what this API will be used for"
-                                rows={3}
-                                className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-end space-x-3">
-                          <button
-                            onClick={() => setShowCustomIntegrationModal(false)}
-                            className="px-4 py-2 border border-[#444] hover:border-[#6366F1] rounded-md transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => {
-                              setIsAddingIntegration(true);
-                              // Simulate API call to add the integration
-                              setTimeout(() => {
-                                setIsAddingIntegration(false);
-                                setIntegrationAdded(true);
-                              }, 1500);
-                            }}
-                            disabled={!customIntegrationName || !customIntegrationEndpoint || (customIntegrationAuthType === 'api_key' && !customIntegrationAPIKey) || isAddingIntegration}
-                            className={`px-6 py-2.5 rounded-md transition-colors flex items-center ${
-                              !customIntegrationName || !customIntegrationEndpoint || (customIntegrationAuthType === 'api_key' && !customIntegrationAPIKey) || isAddingIntegration
-                                ? 'bg-[#444] text-[#999] cursor-not-allowed'
-                                : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white'
-                            }`}
-                          >
-                            {isAddingIntegration ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                Setting Up...
-                              </>
-                            ) : (
-                              'Add Integration'
-                            )}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Database Connection Modal */}
-            {showDatabaseModal && (
-              <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-[#202020] border border-[#444] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
-                  <div className="sticky top-0 bg-[#202020] border-b border-[#444] px-6 py-4 flex items-center justify-between z-10">
-                    <h2 className="text-xl font-medium">Configure Database Connection</h2>
-                    <button 
-                      onClick={() => setShowDatabaseModal(false)}
-                      className="text-[#8A8F98] hover:text-white transition-colors"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 6L6 18M6 6L18 18"></path>
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  <div className="p-6">
-                    <div className="mb-6">
-                      <p className="text-[#A3A3A3] mb-6">
-                        Configure your database connection to allow AI agents to securely query and manage your data.
-                      </p>
-                      
-                      <div className="bg-[#2E2E2E] rounded-lg p-4 mb-6">
-                        <h3 className="font-medium mb-2 flex items-center">
-                          <svg className="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                          </svg>
-                          Security Information
-                        </h3>
-                        <p className="text-sm text-[#A3A3A3] mb-2">
-                          Your database credentials are securely stored and encrypted. Our system:
-                        </p>
-                        <ul className="space-y-2 text-sm text-[#A3A3A3]">
-                          <li className="flex items-start gap-2">
-                            <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="w-2 h-2 bg-white rounded-full"></span>
-                            </span>
-                            <span>Uses end-to-end encryption for all credentials</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="w-2 h-2 bg-white rounded-full"></span>
-                            </span>
-                            <span>Only executes read-only queries by default</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="w-4 h-4 rounded-full bg-[#6366F1] flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="w-2 h-2 bg-white rounded-full"></span>
-                            </span>
-                            <span>Allows you to set explicit permissions and access controls</span>
-                          </li>
-                        </ul>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Database Type</label>
-                          <div className="grid grid-cols-3 gap-3">
-                            <button
-                              onClick={() => setDatabaseType('postgres')}
-                              className={`p-3 rounded-lg text-center text-sm border ${
-                                databaseType === 'postgres' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                              } transition-colors`}
-                            >
-                              PostgreSQL
-                            </button>
-                            <button
-                              onClick={() => setDatabaseType('mysql')}
-                              className={`p-3 rounded-lg text-center text-sm border ${
-                                databaseType === 'mysql' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                              } transition-colors`}
-                            >
-                              MySQL
-                            </button>
-                            <button
-                              onClick={() => setDatabaseType('mongodb')}
-                              className={`p-3 rounded-lg text-center text-sm border ${
-                                databaseType === 'mongodb' ? 'border-[#6366F1] bg-[#6366F1]/10' : 'border-[#444] hover:border-[#6366F1]'
-                              } transition-colors`}
-                            >
-                              MongoDB
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Host</label>
-                            <input
-                              type="text"
-                              value={databaseHost}
-                              onChange={(e) => setDatabaseHost(e.target.value)}
-                              placeholder="e.g., db.example.com"
-                              className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Port</label>
-                            <input
-                              type="text"
-                              value={databasePort}
-                              onChange={(e) => setDatabasePort(e.target.value)}
-                              placeholder={databaseType === 'postgres' ? '5432' : databaseType === 'mysql' ? '3306' : '27017'}
-                              className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Database Name</label>
-                          <input
-                            type="text"
-                            value={databaseName}
-                            onChange={(e) => setDatabaseName(e.target.value)}
-                            placeholder="e.g., my_application_db"
-                            className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Username</label>
-                          <input
-                            type="text"
-                            value={databaseUser}
-                            onChange={(e) => setDatabaseUser(e.target.value)}
-                            placeholder="Database username"
-                            className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Password</label>
-                          <input
-                            type="password"
-                            value={databasePassword}
-                            onChange={(e) => setDatabasePassword(e.target.value)}
-                            placeholder="Database password"
-                            className="w-full px-4 py-3 bg-[#2E2E2E] border border-[#444] rounded-lg focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-colors"
-                          />
-                        </div>
-                        
-                        <div className="flex items-center py-2">
-                          <input 
-                            id="read-only-access" 
-                            type="checkbox" 
-                            className="w-4 h-4 accent-[#6366F1]" 
-                            defaultChecked 
-                          />
-                          <label htmlFor="read-only-access" className="ml-2 text-sm text-[#A3A3A3]">
-                            Limit to read-only access (recommended)
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        onClick={() => setShowDatabaseModal(false)}
-                        className="px-4 py-2 border border-[#444] hover:border-[#6366F1] rounded-md transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsConnectingDatabase(true);
-                          // Simulate testing the connection
-                          setTimeout(() => {
-                            setIsConnectingDatabase(false);
-                            // Mark database as connected (or reconnected with new settings)
-                            setConnectedServices(prev => ({ ...prev, database: true }));
-                            setShowDatabaseModal(false);
-                          }, 2000);
-                        }}
-                        disabled={!databaseHost || !databaseName || !databaseUser || !databasePassword || isConnectingDatabase}
-                        className={`px-6 py-2.5 rounded-md transition-colors flex items-center ${
-                          !databaseHost || !databaseName || !databaseUser || !databasePassword || isConnectingDatabase
-                            ? 'bg-[#444] text-[#999] cursor-not-allowed'
-                            : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white'
-                        }`}
-                      >
-                        {isConnectingDatabase ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Testing Connection...
-                          </>
-                        ) : (
-                          'Connect Database'
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         );
       case 'chat':
@@ -2134,6 +1714,35 @@ const Dashboard = () => {
     };
     
     return [...commonTools, ...(agentSpecificTools[agentId] || [])];
+  };
+
+  // Template selection handler
+  const selectTemplate = (templateType: string) => {
+    console.log('Selected template:', templateType);
+    // Set template selected state
+    setSelectedTemplate(templateType);
+    // Move to agent selection
+    proceedToAgentSelection();
+  };
+
+  // Back buttons handlers
+  const goBackToProjectDetails = () => {
+    setSelectedView('new-project');
+  };
+
+  const goBackToSelectAgents = () => {
+    setSelectedView('select-agents');
+  };
+
+  const goBackToProjects = () => {
+    // Reset all form state
+    setProjectName('');
+    setProjectDescription('');
+    setCompanyInfo('');
+    setSelectedAgents([]);
+    setSelectedTemplate('');
+    // Go back to projects view
+    setSelectedView('projects');
   };
 
   return (

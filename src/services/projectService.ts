@@ -36,46 +36,37 @@ export class ProjectService {
       
       console.log('Creating project with user ID:', user.id);
       
-      // Create a simpler project object (without agents for now)
+      // Create the complete project object including agents
       const projectObject = {
         user_id: user.id,
         name: projectData.name,
         description: projectData.description,
         status: projectData.status || 'active',
-        // Don't include agents field for now to test
+        agents: projectData.agents || [],
+        last_active: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       console.log('Project data to insert:', projectObject);
       
-      // Try to insert without returning data first
-      const insertResult = await supabase
-        .from('projects')
-        .insert(projectObject);
-      
-      console.log('Insert result:', insertResult);
-      
-      if (insertResult.error) {
-        console.error('Insert error:', {
-          message: insertResult.error.message,
-          code: insertResult.error.code,
-          details: insertResult.error.details,
-          hint: insertResult.error.hint,
-          fullError: JSON.stringify(insertResult.error)
-        });
-        return null;
-      }
-      
-      // If insert was successful, get the inserted record
+      // Insert the project and return the created data in one operation
       const { data, error } = await supabase
         .from('projects')
+        .insert(projectObject)
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
         .single();
       
+      console.log('Insert result:', { data, error });
+      
       if (error) {
-        console.error('Error fetching inserted project:', error);
+        console.error('Insert error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          fullError: JSON.stringify(error)
+        });
         return null;
       }
       
@@ -86,19 +77,6 @@ export class ProjectService {
       
       console.log('Project created successfully:', data);
       
-      // Now update the project with the agents if needed
-      if (projectData.agents && projectData.agents.length > 0) {
-        const { error: updateError } = await supabase
-          .from('projects')
-          .update({ agents: projectData.agents })
-          .eq('id', data.id);
-          
-        if (updateError) {
-          console.error('Error updating project with agents:', updateError);
-          // Continue anyway since we have the basic project created
-        }
-      }
-      
       // Transform to Project interface
       return {
         id: data.id,
@@ -106,8 +84,8 @@ export class ProjectService {
         description: data.description,
         status: data.status,
         lastActive: data.last_active || new Date().toISOString(),
-        agents: projectData.agents?.length || 0,
-        agentIds: projectData.agents || [],
+        agents: Array.isArray(data.agents) ? data.agents.length : 0,
+        agentIds: Array.isArray(data.agents) ? data.agents : [],
         progress: 0,
         tags: []
       };
@@ -224,15 +202,33 @@ export class ProjectService {
     try {
       const supabase = createClient();
       
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        return false;
+      }
+      
+      // Create update object with all possible fields
+      const updateObject = {
+        name: projectData.name,
+        description: projectData.description,
+        status: projectData.status,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only add agents if it's provided (to avoid overwriting with undefined)
+      if (projectData.agents !== undefined) {
+        updateObject['agents'] = projectData.agents;
+      }
+      
+      // Update the project
       const { error } = await supabase
         .from('projects')
-        .update({
-          name: projectData.name,
-          description: projectData.description,
-          status: projectData.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+        .update(updateObject)
+        .eq('id', id)
+        .eq('user_id', user.id); // Make sure user owns the project
       
       if (error) {
         console.error('Error updating project:', error);
