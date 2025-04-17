@@ -1,3 +1,5 @@
+'use server';
+
 import { PgVector } from '@mastra/pg';
 import { openai } from '@ai-sdk/openai';
 import { createVectorQueryTool } from '@mastra/rag';

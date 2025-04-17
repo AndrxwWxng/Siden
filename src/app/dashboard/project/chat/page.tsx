@@ -10,7 +10,7 @@ import Logo from '@/components/Logo';
 import MessageFormatter from '@/components/MessageFormatter';
 
 // Import the delegator functionality
-import { detectAndDelegate } from "./agent-delegator";
+import { detectAndDelegateMessage } from "./agent-delegator";
 
 // Define types for multimodal content
 interface TextContent {
@@ -213,11 +213,6 @@ export default function ProjectChatPage() {
   const processFilesForMessage = async () => {
     const contentParts = [];
     
-    // Add text content if it exists
-    if (input.trim()) {
-      contentParts.push({ type: 'text', text: input });
-    }
-    
     // Process each file
     for (const file of attachedFiles) {
       try {
@@ -280,152 +275,67 @@ export default function ProjectChatPage() {
     });
   };
   
-  // Custom submit handler to intercept delegation requests and handle files
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+  // Override handle submit to use our custom delegation logic
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!input.trim() && attachedFiles.length === 0) return;
     
     setIsProcessing(true);
+    setError(null);
     
     try {
-      let userContent: string | any[] = input;
+      // Prepare user message
+      let userMessage: Message;
       
-      // If we have attached files, process them
+      // Check if we have files to attach
       if (attachedFiles.length > 0) {
-        userContent = await processFilesForMessage();
-        
-        // For UI display purposes only - actual content is handled differently
-        const fileNames = attachedFiles.map(f => f.data.name).join(', ');
-        
-        // Visual-only representation for the UI - need to use 'as any' to bypass type checking
-        append({ role: "user", content: userContent as any });
+        const contentParts = await processFilesForMessage();
+        userMessage = {
+          id: Date.now().toString(),
+          role: 'user',
+          content: contentParts,
+        };
       } else {
-        // Text-only message
-        append({ role: "user", content: input });
+        userMessage = {
+          id: Date.now().toString(),
+          role: 'user',
+          content: input,
+        };
       }
       
-      // Keep a copy for delegation
-      const userInput = input;
+      // Add user message to chat
+      append(userMessage);
       
-      // Clear input and files
-      handleInputChange({ target: { value: "" } } as React.ChangeEvent<HTMLInputElement>);
+      // Clear input and attachments
+      handleInputChange('');
       setAttachedFiles([]);
       
-      // First check if we need to delegate this to another agent (only for text-only messages)
-      if (selectedAgent === 'ceo' && (!attachedFiles.length || typeof userContent === 'string')) {
-        try {
-          // Get list of available agent IDs for delegation
-          const availableAgentIds = availableAgents.map(agent => agent.id);
-          
-          const delegationResponse = await detectAndDelegate(
-            userInput, 
-            'ceo', 
-            availableAgentIds
-          );
-          
-          if (delegationResponse) {
-            // If delegation was successful, add the delegated response
-            append({ role: "assistant", content: delegationResponse.result });
-            setIsProcessing(false);
-            return;
-          }
-        } catch (err) {
-          console.error("Delegation error:", err);
-          setError("An error occurred when delegating to other agents. Falling back to direct response.");
-        }
-      }
+      // Delegate to appropriate agent
+      const response = await detectAndDelegateMessage(
+        typeof userMessage.content === 'string' 
+          ? userMessage.content 
+          : userMessage.content
+              .filter(part => part.type === 'text')
+              .map(part => (part as TextContent).text)
+              .join('\n'),
+        selectedAgent
+      );
       
-      // If we didn't delegate or delegation failed, use the original API
-      // We need to manually call the API with our processed content
-      try {
-        const response = await fetch(agentEndpoints[selectedAgent], {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messages: [
-              ...messages.slice(0, -1), // All previous messages except the last one we just added
-              { role: "user", content: userContent }
-            ]
-          }),
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => 'No error details available');
-          console.error(`API request failed: ${response.status}`, errorText);
-          throw new Error(`API request failed: ${response.status}. ${response.status === 500 ? 'Server error' : errorText}`);
-        }
-        
-        // Handle streaming response
-        const reader = response.body?.getReader();
-        if (!reader) {
-          throw new Error('Response body is null');
-        }
-        
-        let responseContent = '';
-        
-        // Read the streamed response
-        const read = async () => {
-          const { done, value } = await reader.read();
-          
-          if (done) {
-            append({ role: "assistant", content: responseContent });
-            setIsProcessing(false);
-            return;
-          }
-          
-          // Decode and process chunk
-          const chunk = new TextDecoder().decode(value);
-          try {
-            // Process SSE format
-            const lines = chunk.split('\n').filter(line => line.trim() !== '');
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(5);
-                if (data === '[DONE]') continue;
-                
-                try {
-                  const parsed = JSON.parse(data);
-                  if (parsed.choices?.[0]?.delta?.content) {
-                    responseContent += parsed.choices[0].delta.content;
-                  }
-                } catch (e) {
-                  console.error('Error parsing JSON from stream:', e);
-                }
-              }
-            }
-          } catch (e) {
-            console.error('Error processing stream chunk:', e);
-          }
-          
-          // Continue reading
-          await read();
-        };
-        
-        await read();
-        
-      } catch (err) {
-        console.error("Error in chat:", err);
-        setError(`An error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        setIsProcessing(false);
-        
-        // Add fallback message if appropriate
-        if (err instanceof Error && err.message.includes('500')) {
-          append({ 
-            role: "assistant", 
-            content: "I'm having trouble connecting to my backend services. This might be due to high traffic or a temporary issue. Please try again in a moment." 
-          });
-        }
-      }
+      // Add AI response to chat
+      append({
+        id: Date.now() + 1000 + '',
+        role: 'assistant',
+        content: response.text,
+      });
       
-    } catch (err) {
-      console.error("Error in chat:", err);
-      setError("An error occurred while processing your message.");
+    } catch (error) {
+      console.error('Error handling message:', error);
+      setError('An error occurred while processing your message. Please try again.');
+    } finally {
       setIsProcessing(false);
     }
-  }, [input, selectedAgent, originalHandleSubmit, append, handleInputChange, messages, attachedFiles, availableAgents]);
+  };
   
   // Clear messages when changing agents
   useEffect(() => {

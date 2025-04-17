@@ -9,13 +9,13 @@ import {
   Folder
 } from 'lucide-react';
 import Logo from '@/components/Logo';
-// Replace direct Mastra import with stub
-import mockMastra from '@/lib/stubs/mastra';
+// Import the client-side Mastra client instead of server-side
+import mastraClient, { MastraAgentId } from '@/lib/mastraClient';
 import { ProjectService } from '@/services/projectService';
 import { Project } from '@/components/dashboard/types';
 
-// Use the mock Mastra instance
-const mastra = mockMastra;
+// Use the client-side Mastra implementation
+const mastra = mastraClient;
 
 // Type definitions
 type TabType = 'communication' | 'agents' | 'tools' | 'reports' | 'settings';
