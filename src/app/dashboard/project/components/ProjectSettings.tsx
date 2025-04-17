@@ -18,7 +18,7 @@ interface ProjectSettingsProps {
 export default function ProjectSettings({ project, onProjectUpdated }: ProjectSettingsProps) {
   const router = useRouter();
   
-  // Default notification settings
+  // Default notification settings with correct property names
   const defaultNotifications: NotificationSettings = {
     email_notifications: true,
     daily_summary: true,
@@ -86,7 +86,7 @@ export default function ProjectSettings({ project, onProjectUpdated }: ProjectSe
         }
       }
       
-      if (success && onProjectUpdated) {
+      if (success && onProjectUpdated && projectWithAllUpdates) {
         onProjectUpdated(projectWithAllUpdates);
         setHasUnsavedChanges(false);
         setHasNotificationChanges(false);
@@ -100,24 +100,24 @@ export default function ProjectSettings({ project, onProjectUpdated }: ProjectSe
   
   // Update notification settings handlers
   const handleEmailNotificationsChange = (value: boolean) => {
-    setNotificationSettings({
-      ...notificationSettings,
+    setNotificationSettings(prev => ({
+      ...prev,
       email_notifications: value
-    });
+    }));
   };
   
   const handleDailySummaryChange = (value: boolean) => {
-    setNotificationSettings({
-      ...notificationSettings,
+    setNotificationSettings(prev => ({
+      ...prev,
       daily_summary: value
-    });
+    }));
   };
   
   const handleActivityAlertsChange = (value: boolean) => {
-    setNotificationSettings({
-      ...notificationSettings,
+    setNotificationSettings(prev => ({
+      ...prev,
       agent_activity_alerts: value
-    });
+    }));
   };
   
   // Delete project
@@ -227,7 +227,7 @@ export default function ProjectSettings({ project, onProjectUpdated }: ProjectSe
                   type="checkbox" 
                   className="sr-only" 
                   checked={notificationSettings.email_notifications}
-                  onChange={() => handleEmailNotificationsChange(!notificationSettings.email_notifications)}
+                  onChange={() => {}} // Add empty handler to avoid React warning
                 />
                 <span className={`block h-5 w-5 rounded-md ${notificationSettings.email_notifications ? 'bg-[#6366F1]' : 'bg-[#313131]'} absolute left-0 transition-transform transform ${notificationSettings.email_notifications ? 'translate-x-5' : 'translate-x-0'}`}></span>
               </div>
@@ -242,7 +242,7 @@ export default function ProjectSettings({ project, onProjectUpdated }: ProjectSe
                   type="checkbox" 
                   className="sr-only" 
                   checked={notificationSettings.daily_summary}
-                  onChange={() => handleDailySummaryChange(!notificationSettings.daily_summary)}
+                  onChange={() => {}} // Add empty handler to avoid React warning
                 />
                 <span className={`block h-5 w-5 rounded-md ${notificationSettings.daily_summary ? 'bg-[#6366F1]' : 'bg-[#313131]'} absolute left-0 transition-transform transform ${notificationSettings.daily_summary ? 'translate-x-5' : 'translate-x-0'}`}></span>
               </div>
@@ -257,7 +257,7 @@ export default function ProjectSettings({ project, onProjectUpdated }: ProjectSe
                   type="checkbox" 
                   className="sr-only" 
                   checked={notificationSettings.agent_activity_alerts}
-                  onChange={() => handleActivityAlertsChange(!notificationSettings.agent_activity_alerts)}
+                  onChange={() => {}} // Add empty handler to avoid React warning
                 />
                 <span className={`block h-5 w-5 rounded-md ${notificationSettings.agent_activity_alerts ? 'bg-[#6366F1]' : 'bg-[#313131]'} absolute left-0 transition-transform transform ${notificationSettings.agent_activity_alerts ? 'translate-x-5' : 'translate-x-0'}`}></span>
               </div>
