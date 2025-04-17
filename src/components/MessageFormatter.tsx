@@ -103,13 +103,13 @@ const formatMarkdownContent = (content: string) => {
 export default function MessageFormatter({ content }: MessageFormatterProps) {
   // If content is just a string, render it directly
   if (typeof content === 'string') {
-    return <div className="whitespace-pre-wrap">{content}</div>;
+    return <div className={`whitespace-pre-wrap ${styles.messageContent}`}>{content}</div>;
   }
   
   // If content is an array (multimodal content), render each part appropriately
   if (Array.isArray(content)) {
     return (
-      <div className="space-y-3">
+      <div className={`space-y-3 ${styles.messageContent}`}>
         {(content as ContentPart[]).map((part, index) => {
           if (part.type === 'text') {
             return <div key={index} className="whitespace-pre-wrap">{part.text}</div>;

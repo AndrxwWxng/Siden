@@ -3,6 +3,10 @@
  * This file provides utility functions to handle direct agent-to-agent communication
  */
 
+'use client';
+
+import mastraClient from '@/lib/mastraClient';
+
 // Valid agent IDs in the system (client-side IDs)
 type AgentId = 'ceo' | 'marketing' | 'developer' | 
               'sales' | 'product' | 'finance' | 'design' | 'research';
@@ -19,6 +23,18 @@ interface DelegationResponse {
   rawResponse?: string;
   error?: string;
 }
+
+// Map from role IDs to agent IDs that match the server-side Mastra implementation
+const roleToAgentId: Record<string, string> = {
+  ceo: 'ceoAgent',
+  dev: 'developerAgent',
+  marketing: 'marketingAgent',
+  product: 'productAgent',
+  sales: 'salesAgent',
+  finance: 'financeAgent',
+  design: 'designAgent',
+  research: 'researchAgent',
+};
 
 /**
  * Delegates a task from one agent to another
@@ -172,4 +188,22 @@ export async function detectAndDelegate(
   
   // No delegation performed
   return null;
+}
+
+/**
+ * Detect which agent should handle a message and delegate to that agent
+ */
+export async function detectAndDelegateMessage(message: string, currentAgent: string = 'ceo') {
+  // Get the corresponding agent ID for the current role
+  const agentId = roleToAgentId[currentAgent] || 'ceoAgent';
+  
+  try {
+    // Call the current agent to generate a response
+    return await mastraClient.getAgent(agentId as any).generate(message);
+  } catch (error) {
+    console.error('Error delegating to agent:', error);
+    return {
+      text: `Sorry, there was an error communicating with the ${currentAgent} agent. Please try again later.`
+    };
+  }
 } 

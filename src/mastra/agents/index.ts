@@ -1,3 +1,5 @@
+'use server';
+
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { Agent } from '@mastra/core/agent';
@@ -9,6 +11,11 @@ import { createHubspotContact, getHubspotContact, createHubspotDeal } from '../t
 import { createGithubIssue, createGithubPullRequest, getGithubRepoInfo, listGithubPullRequests } from '../tools/github';
 import { vectorQueryTool, papersVectorQueryTool } from '../storage';
 import { getSlackChannelHistory, sendSlackMessage, createSlackChannel } from '../tools/slack';
+
+// Initialize models
+const gpt4 = openai('gpt-4o');
+const gpt35 = openai('gpt-3.5-turbo');
+
 export const weatherAgent = new Agent({
   name: 'Weather Agent',
   instructions: `
@@ -23,7 +30,7 @@ export const weatherAgent = new Agent({
 
       Use the weatherTool to fetch current weather data.
 `,
-  model: openai('gpt-4.1-nano'),
+  model: gpt35,
   tools: { weatherTool },
 });
 
@@ -83,7 +90,7 @@ export const ceoAgent = new Agent({
       * 
     Always introduce yourself as Kenard, the CEO. Be decisive, strategic, and solutions-oriented.
   `,
-  model: openai('gpt-4.1-mini'),
+  model: gpt4,
   tools: { 
     emailTool, 
     webResearchTool, 
@@ -150,7 +157,7 @@ export const marketingAgent = new Agent({
     
     Always introduce yourself as Chloe, the Marketing Officer. Be creative, data-driven, and strategically minded.
   `,
-  model: openai('gpt-4.1'),
+  model: gpt35,
   tools: { 
     emailTool, 
     webResearchTool, 
@@ -258,7 +265,7 @@ export const developerAgent = new Agent({
     
     Always introduce yourself as Alex, the Developer. Be technical, practical, and solution-oriented.
   `,
-  model: anthropic('claude-3-7-sonnet-20250219'),
+  model: gpt4,
   tools: { 
     webResearchTool, 
     databaseTool, 
@@ -318,7 +325,7 @@ export const salesAgent = new Agent({
     
     Always introduce yourself as Hannah, the Sales Representative. Be persuasive, relationship-focused, and results-driven.
   `,
-  model: openai('gpt-4.1'),
+  model: gpt35,
   tools: { 
     emailTool, 
     webResearchTool, 
@@ -380,7 +387,7 @@ export const productAgent = new Agent({
       
     Always introduce yourself as Mark, the Product Manager. Be strategic, user-focused, and data-informed.
   `,
-  model: openai('gpt-4.1-mini'),
+  model: gpt4,
   tools: { 
     webResearchTool, 
     databaseTool, 
@@ -443,7 +450,7 @@ export const financeAgent = new Agent({
       
     Always introduce yourself as Jenna, the Finance Advisor. Be analytical, strategic, and risk-aware.
   `,
-  model: openai('gpt-4.1'),
+  model: gpt35,
   tools: { 
     webResearchTool, 
     databaseTool, 
@@ -497,7 +504,7 @@ export const designAgent = new Agent({
     
     Always introduce yourself as Maisie, the Designer. Be creative, user-centered, and detail-oriented.
   `,
-  model: anthropic('claude-3-5-sonnet-20241022'),
+  model: gpt4,
   tools: { 
     webResearchTool, 
     databaseTool, 
@@ -552,7 +559,7 @@ export const researchAgent = new Agent({
     
     Always introduce yourself as Garek, the Research Analyst. Be analytical, thorough, and objective.
   `,
-  model: anthropic('claude-3-5-sonnet-20241022'),
+  model: gpt4,
   tools: { 
     webResearchTool, 
     papersVectorQueryTool, 

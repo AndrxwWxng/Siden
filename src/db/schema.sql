@@ -38,6 +38,8 @@ create table if not exists projects (
   description text,
   status text default 'active',
   agents text[] default '{}',
+  chat_config jsonb default '{"model": "gpt-4", "temperature": 0.7, "max_tokens": 2000, "system_prompt": "You are a helpful AI assistant working on this project.", "tools_enabled": true}',
+  integrations jsonb default '{"connected": false, "services": []}',
   last_active timestamptz default now(),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
