@@ -4,6 +4,7 @@ export interface Project {
   name: string;
   description: string;
   agents: number;
+  agentIds?: string[]; // Array of agent IDs selected for this project
   status: string;
   lastActive: string;
   progress: number;

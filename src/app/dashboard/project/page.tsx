@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   MessageSquare, Users, Wrench, LineChart, 
   Settings, PlusCircle, Send, Paperclip,
@@ -9,14 +9,38 @@ import {
   Folder
 } from 'lucide-react';
 import Logo from '@/components/Logo';
-import { AgentFactory } from '@/agents/agentFactory';
+// Import the mastra system directly
+import { mastra } from '@/mastra';
+import { ProjectService } from '@/services/projectService';
+import { Project } from '@/components/dashboard/types';
 
-// Tab interfaces
+// Type definitions
 type TabType = 'communication' | 'agents' | 'tools' | 'reports' | 'settings';
+
+// Type definition for Mastra agent IDs - must match what the API expects
+type MastraAgentId = 'weatherAgent' | 'ceoAgent' | 'marketingAgent' | 'developerAgent' | 
+                     'salesAgent' | 'productAgent' | 'financeAgent' | 'designAgent' | 'researchAgent';
+
+// Message and sender interfaces
+interface Sender {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+}
+
+interface Message {
+  id: string;
+  sender: Sender;
+  content: string;
+  timestamp: string;
+  status: 'sent' | 'delivered' | 'read' | 'typing';
+}
 
 export default function ProjectDetail() {
   const searchParams = useSearchParams();
-  const projectId = searchParams.get('id') || 'unknown';
+  const projectId = searchParams?.get('id') || 'unknown';
+  const router = useRouter();
   
   const [activeTab, setActiveTab] = useState<TabType>('communication');
   const [messages, setMessages] = useState<Message[]>(mockMessages);
@@ -30,6 +54,41 @@ export default function ProjectDetail() {
   const [dailySummary, setDailySummary] = useState<boolean>(true);
   const [activityAlerts, setActivityAlerts] = useState<boolean>(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Load project data
+  useEffect(() => {
+    const loadProject = async () => {
+      if (projectId === 'unknown') return;
+      
+      setIsLoading(true);
+      try {
+        const project = await ProjectService.getProjectById(projectId);
+        if (project) {
+          setProject(project);
+          setProjectName(project.name);
+          setProjectDescription(project.description);
+          
+          // Set active agents based on project data
+          if (project.agentIds && project.agentIds.length > 0) {
+            setActiveAgents(project.agentIds);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading project:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadProject();
+  }, [projectId]);
+
+  // Function to navigate to chat page
+  const navigateToChat = () => {
+    router.push(`/dashboard/project/chat?id=${projectId}`);
+  };
   
   // Handle sending a new message
   const handleSendMessage = async () => {
@@ -52,33 +111,38 @@ export default function ProjectDetail() {
     setNewMessage('');
     
     // Determine which agent should respond based on message content
-    const respondingAgent = determineRespondingAgent(newMessage);
-    console.log('Selected agent:', respondingAgent); // Debug log
+    const respondingAgentId = determineRespondingAgent(newMessage);
+    console.log('Selected agent:', respondingAgentId); // Debug log
     
     // Show typing indicator
-    setTypingAgent(respondingAgent);
+    setTypingAgent(respondingAgentId);
     
     try {
-      const agent = await AgentFactory.getAgent(respondingAgent);
-      if (!agent) {
-        throw new Error(`Failed to initialize ${respondingAgent} agent`);
+      // Get the agent from Mastra
+      const mastraAgentId = `${respondingAgentId}Agent` as MastraAgentId; // Convert to Mastra format (e.g., 'marketing' -> 'marketingAgent')
+      const mastraAgent = mastra.getAgent(mastraAgentId);
+      
+      if (!mastraAgent) {
+        throw new Error(`Failed to initialize ${respondingAgentId} agent`);
       }
 
-      const response = await agent.generateResponse(newMessage);
-      if (!response) {
-        throw new Error(`No response from ${respondingAgent} agent`);
+      // Generate response using Mastra
+      const response = await mastraAgent.generate(newMessage);
+      if (!response || !response.text) {
+        throw new Error(`No response from ${respondingAgentId} agent`);
       }
 
-      const agentProfile = agent.getProfile();
+      // Create agent profile from known information
+      const agentProfile = getAgentProfile(respondingAgentId);
       const agentResponse: Message = {
         id: `msg-${Date.now() + 1}`,
         sender: {
-          id: respondingAgent,
+          id: respondingAgentId,
           name: agentProfile.name,
           role: agentProfile.role,
           avatar: agentProfile.avatar
         },
-        content: response,
+        content: response.text,
         timestamp: new Date().toISOString(),
         status: 'sent'
       };
@@ -88,29 +152,35 @@ export default function ProjectDetail() {
       
       // Sometimes have another agent chime in
       if (Math.random() > 0.6) {
-        const secondaryAgent = activeAgents.find(a => a !== respondingAgent) || 'product';
+        const secondaryAgentId = activeAgents.find(a => a !== respondingAgentId) || 'product';
         
-        setTypingAgent(secondaryAgent);
-        const secondAgent = await AgentFactory.getAgent(secondaryAgent);
-        if (!secondAgent) {
-          throw new Error(`Failed to initialize ${secondaryAgent} agent`);
+        setTypingAgent(secondaryAgentId);
+        
+        // Get the secondary agent from Mastra
+        const secondaryMastraAgentId = `${secondaryAgentId}Agent` as MastraAgentId;
+        const secondaryMastraAgent = mastra.getAgent(secondaryMastraAgentId);
+        
+        if (!secondaryMastraAgent) {
+          throw new Error(`Failed to initialize ${secondaryAgentId} agent`);
         }
 
-        const followUpResponse = await secondAgent.generateResponse(newMessage);
-        if (!followUpResponse) {
-          throw new Error(`No response from ${secondaryAgent} agent`);
+        // Generate follow-up response
+        const followUpResponse = await secondaryMastraAgent.generate(newMessage);
+        if (!followUpResponse || !followUpResponse.text) {
+          throw new Error(`No response from ${secondaryAgentId} agent`);
         }
 
-        const secondAgentProfile = secondAgent.getProfile();
+        // Create agent profile
+        const secondaryAgentProfile = getAgentProfile(secondaryAgentId);
         const followUpMessage: Message = {
           id: `msg-${Date.now() + 2}`,
           sender: {
-            id: secondaryAgent,
-            name: secondAgentProfile.name,
-            role: secondAgentProfile.role,
-            avatar: secondAgentProfile.avatar
+            id: secondaryAgentId,
+            name: secondaryAgentProfile.name,
+            role: secondaryAgentProfile.role,
+            avatar: secondaryAgentProfile.avatar
           },
-          content: followUpResponse,
+          content: followUpResponse.text,
           timestamp: new Date().toISOString(),
           status: 'sent'
         };
@@ -164,20 +234,68 @@ export default function ProjectDetail() {
     return 'marketing';
   };
   
-  // Helper function to generate agent avatar
-  const getAgentAvatar = (agentId: string): string => {
+  // Helper function to generate agent profile information
+  const getAgentProfile = (agentId: string): {
+    name: string;
+    role: string;
+    avatar: string;
+  } => {
     switch (agentId) {
       case 'marketing':
-        return '/roleheadshots/chloe.png';
+        return {
+          name: 'Chloe',
+          role: 'Marketing Officer',
+          avatar: '/roleheadshots/chloe.png'
+        };
       case 'product':
-        return '/roleheadshots/mark.png';
+        return {
+          name: 'Mark',
+          role: 'Product Manager',
+          avatar: '/roleheadshots/mark.png'
+        };
       case 'developer':
-        return '/roleheadshots/alex.png';
+        return {
+          name: 'Alex',
+          role: 'Developer',
+          avatar: '/roleheadshots/alex.png'
+        };
       case 'sales':
-        return '/roleheadshots/hannah.png';
+        return {
+          name: 'Hannah',
+          role: 'Sales Representative',
+          avatar: '/roleheadshots/hannah.png'
+        };
+      case 'finance':
+        return {
+          name: 'Jenna',
+          role: 'Finance Advisor',
+          avatar: '/roleheadshots/jenna.png'
+        };
+      case 'design':
+        return {
+          name: 'Maisie',
+          role: 'Designer',
+          avatar: '/roleheadshots/maisie.png'
+        };
+      case 'research':
+        return {
+          name: 'Garek',
+          role: 'Research Analyst',
+          avatar: '/roleheadshots/garek.png'
+        };
+      case 'ceo':
       default:
-        return '/roleheadshots/kenard.png';
+        return {
+          name: 'Kenard',
+          role: 'CEO',
+          avatar: '/roleheadshots/kenard.png'
+        };
     }
+  };
+  
+  // Helper function to generate agent avatar (for compatibility)
+  const getAgentAvatar = (agentId: string): string => {
+    return getAgentProfile(agentId).avatar;
   };
   
   // Helper function to generate agent response based on message
@@ -255,6 +373,13 @@ export default function ProjectDetail() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <button 
+                  onClick={navigateToChat}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#6366F1] text-white rounded-md hover:bg-[#5254CC] transition-colors"
+                >
+                  <MessageSquare size={16} />
+                  <span>Open Full Chat</span>
+                </button>
                 <button className="p-2 text-[#94A3B8] hover:text-white rounded-md hover:bg-[#252525] transition-colors">
                   <Search size={18} />
                 </button>
@@ -422,50 +547,245 @@ export default function ProjectDetail() {
       case 'agents':
         return (
           <div className="bg-[#252525] rounded-xl border border-[#313131] p-6">
-            <h2 className="text-xl font-medium mb-6">Manage Your Team</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {mockAgents.map(agent => (
-                <div key={agent.id} className="bg-[#343131] border border-[#313131] rounded-md p-5 hover:border-[#444] transition-all">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#252525] flex items-center justify-center overflow-hidden mr-4">
-                      <img 
-                        src={agent.avatar} 
-                        alt={agent.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium text-white">{agent.name}</h3>
-                        <span className={`
-                          px-2 py-0.5 text-xs rounded-md border
-                          ${agent.status === 'active' 
-                            ? 'bg-[#1E293B] text-[#38BDF8] border-[#38BDF8]/30' 
-                            : 'bg-[#1E293B] text-yellow-400 border-yellow-500/30'}
-                        `}>
-                          {agent.status}
-                        </span>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-medium">Configure Your Team</h2>
+              <div className="flex gap-2">
+                <button className="px-4 py-2 bg-[#343131] hover:bg-[#252525] text-sm rounded-md transition-colors flex items-center gap-2">
+                  <Settings size={14} />
+                  <span>Team Settings</span>
+                </button>
+                <button className="px-4 py-2 bg-[#6366F1] hover:bg-[#5254CC] text-white text-sm rounded-md transition-colors flex items-center gap-2">
+                  <PlusCircle size={14} />
+                  <span>Add Agent</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* Agent roles and personality types */}
+            <div className="mb-8">
+              <div className="bg-[#343131] border border-[#313131] rounded-md p-5 mb-6">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Users size={16} className="text-[#6366F1]" />
+                  <span>Active Team Members</span>
+                </h3>
+                <p className="text-sm text-[#94A3B8] mb-4">Configure which AI team members are active in your project and customize their roles.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {mockAgents.map(agent => (
+                    <div key={agent.id} className="bg-[#252525] border border-[#313131] rounded-md p-4 hover:border-[#444] transition-all">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#343131] flex items-center justify-center overflow-hidden mr-4">
+                          <img 
+                            src={agent.avatar} 
+                            alt={agent.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-medium text-white">{agent.name}</h3>
+                            <span className={`
+                              px-2 py-0.5 text-xs rounded-md border
+                              ${agent.status === 'active' 
+                                ? 'bg-[#1E293B] text-[#38BDF8] border-[#38BDF8]/30' 
+                                : 'bg-[#1E293B] text-yellow-400 border-yellow-500/30'}
+                            `}>
+                              {agent.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-[#94A3B8] mb-3">{agent.role}</p>
+                          
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {agent.id === 'marketing' && (
+                              <>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">Content Strategy</span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">SEO</span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">Analytics</span>
+                              </>
+                            )}
+                            {agent.id === 'product' && (
+                              <>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">Roadmapping</span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">User Research</span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">Strategy</span>
+                              </>
+                            )}
+                            {agent.id === 'developer' && (
+                              <>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">JavaScript</span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">Python</span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">React</span>
+                              </>
+                            )}
+                            {agent.id === 'sales' && (
+                              <>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">Relationship Management</span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">Negotiation</span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]">Lead Generation</span>
+                              </>
+                            )}
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <button className="px-3 py-1.5 bg-[#343131] hover:bg-[#252525] text-sm rounded-md transition-colors flex-1 flex items-center justify-center gap-1">
+                              <Settings size={12} />
+                              <span>Configure</span>
+                            </button>
+                            <button className="px-3 py-1.5 border border-[#313131] hover:border-[#6366F1] text-sm rounded-md transition-colors flex-1 flex items-center justify-center gap-1">
+                              <Wrench size={12} />
+                              <span>Tools</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-[#94A3B8] mb-4">{agent.role}</p>
-                      
-                      <div className="flex gap-2">
-                        <button className="px-3 py-1.5 bg-[#252525] hover:bg-[#333] text-sm rounded-md transition-colors flex-1">
-                          Configure
-                        </button>
-                        <button className="px-3 py-1.5 border border-[#313131] hover:border-[#6366F1] text-sm rounded-md transition-colors flex-1">
-                          Manage Access
-                        </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-[#343131] border border-[#313131] rounded-md p-5">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <PlusCircle size={16} className="text-[#6366F1]" />
+                  <span>Available Roles</span>
+                </h3>
+                <p className="text-sm text-[#94A3B8] mb-4">Add more specialized agents to your team based on your project needs.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-[#252525] border border-[#313131] rounded-md p-4 hover:border-[#444] transition-all">
+                    <div className="flex items-center mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#343131] flex items-center justify-center overflow-hidden mr-3">
+                        <img 
+                          src="/roleheadshots/jenna.png" 
+                          alt="Finance Advisor"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Finance Advisor</h4>
+                        <p className="text-xs text-[#94A3B8]">Budget & financial planning</p>
                       </div>
                     </div>
+                    <button className="w-full px-3 py-1.5 border border-dashed border-[#313131] hover:border-[#6366F1] text-sm rounded-md transition-colors flex items-center justify-center gap-1">
+                      <PlusCircle size={14} />
+                      <span>Add to Team</span>
+                    </button>
+                  </div>
+                  
+                  <div className="bg-[#252525] border border-[#313131] rounded-md p-4 hover:border-[#444] transition-all">
+                    <div className="flex items-center mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#343131] flex items-center justify-center overflow-hidden mr-3">
+                        <img 
+                          src="/roleheadshots/maisie.png" 
+                          alt="Designer"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Designer</h4>
+                        <p className="text-xs text-[#94A3B8]">UI/UX & visual design</p>
+                      </div>
+                    </div>
+                    <button className="w-full px-3 py-1.5 border border-dashed border-[#313131] hover:border-[#6366F1] text-sm rounded-md transition-colors flex items-center justify-center gap-1">
+                      <PlusCircle size={14} />
+                      <span>Add to Team</span>
+                    </button>
+                  </div>
+                  
+                  <div className="bg-[#252525] border border-[#313131] rounded-md p-4 hover:border-[#444] transition-all">
+                    <div className="flex items-center mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#343131] flex items-center justify-center overflow-hidden mr-3">
+                        <img 
+                          src="/roleheadshots/garek.png" 
+                          alt="Research Analyst"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Research Analyst</h4>
+                        <p className="text-xs text-[#94A3B8]">Data analysis & insights</p>
+                      </div>
+                    </div>
+                    <button className="w-full px-3 py-1.5 border border-dashed border-[#313131] hover:border-[#6366F1] text-sm rounded-md transition-colors flex items-center justify-center gap-1">
+                      <PlusCircle size={14} />
+                      <span>Add to Team</span>
+                    </button>
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+            
+            {/* Team behavior settings */}
+            <div className="bg-[#343131] border border-[#313131] rounded-md p-5">
+              <h3 className="font-medium mb-3 flex items-center gap-2">
+                <Settings size={16} className="text-[#6366F1]" />
+                <span>Team Behavior</span>
+              </h3>
+              <p className="text-sm text-[#94A3B8] mb-4">Configure how your team of agents works together.</p>
               
-              <div className="bg-[#343131] border border-dashed border-[#313131] rounded-md p-5 flex items-center justify-center hover:border-[#6366F1] transition-colors">
-                <button className="flex items-center gap-2 text-[#94A3B8] hover:text-[#6366F1] transition-colors">
-                  <PlusCircle size={18} />
-                  <span>Add New Agent</span>
-                </button>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-2 border-b border-[#252525]">
+                  <div>
+                    <h4 className="text-sm font-medium">Autonomous Communication</h4>
+                    <p className="text-xs text-[#94A3B8] mt-1">Allow agents to communicate without your input</p>
+                  </div>
+                  <div 
+                    className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                  >
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={true}
+                    />
+                    <span className="block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform translate-x-5"></span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between py-2 border-b border-[#252525]">
+                  <div>
+                    <h4 className="text-sm font-medium">Knowledge Sharing</h4>
+                    <p className="text-xs text-[#94A3B8] mt-1">Share context and information between agents</p>
+                  </div>
+                  <div 
+                    className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                  >
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={true}
+                    />
+                    <span className="block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform translate-x-5"></span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between py-2 border-b border-[#252525]">
+                  <div>
+                    <h4 className="text-sm font-medium">CEO Approval Mode</h4>
+                    <p className="text-xs text-[#94A3B8] mt-1">Require your approval for major decisions</p>
+                  </div>
+                  <div 
+                    className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                  >
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={true}
+                    />
+                    <span className="block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform translate-x-5"></span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <h4 className="text-sm font-medium">Team Personality</h4>
+                    <p className="text-xs text-[#94A3B8] mt-1">Overall team interaction style</p>
+                  </div>
+                  <select className="bg-[#252525] border border-[#313131] rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#6366F1]">
+                    <option>Professional</option>
+                    <option>Creative</option>
+                    <option>Analytical</option>
+                    <option>Collaborative</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -473,51 +793,203 @@ export default function ProjectDetail() {
       case 'tools':
         return (
           <div className="bg-[#252525] rounded-xl border border-[#313131] p-6">
-            <h2 className="text-xl font-medium mb-6">Tool Integration</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockTools.map(tool => (
-                <div 
-                  key={tool.id}
-                  className={`bg-[#343131] border ${
-                    tool.connected 
-                      ? 'border-[#38BDF8]/30' 
-                      : 'border-[#313131] hover:border-[#444]'
-                  } rounded-md p-5 transition-all`}
-                >
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#252525] flex items-center justify-center overflow-hidden mr-3">
-                      <img 
-                        src={tool.icon} 
-                        alt={tool.name}
-                        className="w-full h-full object-cover"
-                      />
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-medium">Connect Tools & Resources</h2>
+              <button className="px-4 py-2 bg-[#6366F1] hover:bg-[#5254CC] text-white text-sm rounded-md transition-colors flex items-center gap-2">
+                <PlusCircle size={14} />
+                <span>Add New Tool</span>
+              </button>
+            </div>
+            
+            {/* Tool categories */}
+            <div className="flex border-b border-[#313131] mb-6">
+              <button className="px-4 py-2 border-b-2 border-[#6366F1] text-white">All Tools</button>
+              <button className="px-4 py-2 text-[#94A3B8] hover:text-white">Communication</button>
+              <button className="px-4 py-2 text-[#94A3B8] hover:text-white">Data & Analytics</button>
+              <button className="px-4 py-2 text-[#94A3B8] hover:text-white">Productivity</button>
+              <button className="px-4 py-2 text-[#94A3B8] hover:text-white">Development</button>
+            </div>
+            
+            {/* Connected tools */}
+            <div className="mb-8">
+              <h3 className="font-medium mb-4 flex items-center gap-2">
+                <span className="text-[#38BDF8] text-xl">•</span>
+                <span>Connected Tools</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mockTools.filter(t => t.connected).map(tool => (
+                  <div 
+                    key={tool.id}
+                    className="bg-[#343131] border border-[#38BDF8]/30 rounded-md p-5 relative overflow-hidden transition-all group"
+                  >
+                    <div className="absolute right-0 top-0 bg-[#38BDF8]/10 w-16 h-16 rounded-bl-[56px] flex items-center justify-center p-3">
+                      <div className="text-[#38BDF8] text-xs font-medium ml-3 mt-3">ACTIVE</div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium text-white">{tool.name}</h3>
-                        {tool.connected && (
-                          <span className="text-xs bg-[#1E293B] text-[#38BDF8] px-2 py-0.5 rounded-md border border-[#38BDF8]/30">
-                            Connected
-                          </span>
-                        )}
+                    
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-md bg-[#252525] flex items-center justify-center overflow-hidden mr-3 text-lg">
+                        {tool.icon}
                       </div>
-                      <p className="text-sm text-[#94A3B8] mb-4">{tool.description}</p>
-                      
-                      <div>
-                        {tool.connected ? (
-                          <button className="w-full px-3 py-1.5 border border-[#313131] hover:border-[#6366F1] text-sm rounded-md transition-colors">
-                            Configure
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium text-white">{tool.name}</h3>
+                        </div>
+                        <p className="text-sm text-[#94A3B8] mb-4">{tool.description}</p>
+                        
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="px-2 py-1 text-xs rounded-full bg-[#252525] text-[#38BDF8]">
+                            Connected
+                          </div>
+                          <div className="text-xs text-[#94A3B8]">
+                            Last used: 2 hours ago
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <button className="px-3 py-1.5 border border-[#313131] hover:border-[#6366F1] text-sm rounded-md transition-colors flex-1 flex items-center justify-center gap-1">
+                            <Settings size={12} />
+                            <span>Configure</span>
                           </button>
-                        ) : (
-                          <button className="w-full px-3 py-1.5 bg-[#6366F1] hover:bg-[#5254CC] text-white text-sm rounded-md transition-colors">
-                            Connect
+                          <button className="px-3 py-1.5 bg-[#252525] hover:bg-[#202020] text-sm rounded-md transition-colors flex items-center justify-center gap-1 w-9 group-hover:text-[#EF4444]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                           </button>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Available tools */}
+            <div>
+              <h3 className="font-medium mb-4 flex items-center gap-2">
+                <span className="text-[#94A3B8] text-xl">•</span>
+                <span>Available Tools</span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mockTools.filter(t => !t.connected).map(tool => (
+                  <div 
+                    key={tool.id}
+                    className="bg-[#343131] border border-[#313131] hover:border-[#444] rounded-md p-5 transition-all"
+                  >
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-md bg-[#252525] flex items-center justify-center overflow-hidden mr-3 text-lg">
+                        {tool.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium text-white">{tool.name}</h3>
+                        </div>
+                        <p className="text-sm text-[#94A3B8] mb-4">{tool.description}</p>
+                        
+                        <div className="space-y-1 mb-4">
+                          <div className="flex items-center gap-2 text-xs text-[#94A3B8]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Easy setup</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-[#94A3B8]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Works with all agents</span>
+                          </div>
+                        </div>
+                        
+                        <button className="w-full px-3 py-1.5 bg-[#6366F1] hover:bg-[#5254CC] text-white text-sm rounded-md transition-colors">
+                          Connect
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="bg-[#343131] border border-dashed border-[#313131] rounded-md p-5 hover:border-[#6366F1] transition-colors flex flex-col items-center justify-center text-center">
+                  <div className="w-10 h-10 rounded-full bg-[#252525] flex items-center justify-center mb-3">
+                    <PlusCircle size={20} className="text-[#6366F1]" />
+                  </div>
+                  <h3 className="font-medium mb-1">Custom Integration</h3>
+                  <p className="text-sm text-[#94A3B8] mb-3">Connect a custom API endpoint</p>
+                  <button className="px-4 py-1.5 border border-[#313131] hover:border-[#6366F1] text-sm rounded-md transition-colors">
+                    Create Integration
+                  </button>
                 </div>
-              ))}
+              </div>
+            </div>
+            
+            {/* Advanced settings */}
+            <div className="mt-8 bg-[#343131] border border-[#313131] rounded-md p-5">
+              <h3 className="font-medium mb-3 flex items-center gap-2">
+                <Settings size={16} className="text-[#6366F1]" />
+                <span>Advanced Settings</span>
+              </h3>
+              <p className="text-sm text-[#94A3B8] mb-4">Configure advanced options for tool integrations.</p>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-2 border-b border-[#252525]">
+                  <div>
+                    <h4 className="text-sm font-medium">Tool Usage Logging</h4>
+                    <p className="text-xs text-[#94A3B8] mt-1">Log all tool usage for auditing</p>
+                  </div>
+                  <div 
+                    className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                  >
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={true}
+                    />
+                    <span className="block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform translate-x-5"></span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between py-2 border-b border-[#252525]">
+                  <div>
+                    <h4 className="text-sm font-medium">Approval for External Actions</h4>
+                    <p className="text-xs text-[#94A3B8] mt-1">Require approval before taking external actions</p>
+                  </div>
+                  <div 
+                    className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                  >
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={true}
+                    />
+                    <span className="block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform translate-x-5"></span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between py-2 border-b border-[#252525]">
+                  <div>
+                    <h4 className="text-sm font-medium">Sandbox Mode</h4>
+                    <p className="text-xs text-[#94A3B8] mt-1">Run tools in isolated environment</p>
+                  </div>
+                  <div 
+                    className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                  >
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={false}
+                    />
+                    <span className="block h-5 w-5 rounded-md bg-[#313131] absolute left-0 transition-transform transform translate-x-0"></span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <h4 className="text-sm font-medium">Rate Limiting</h4>
+                    <p className="text-xs text-[#94A3B8] mt-1">Maximum API calls per minute</p>
+                  </div>
+                  <select className="bg-[#252525] border border-[#313131] rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-[#6366F1]">
+                    <option>10 calls/min</option>
+                    <option>30 calls/min</option>
+                    <option>60 calls/min</option>
+                    <option>Unlimited</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -869,22 +1341,7 @@ export default function ProjectDetail() {
   );
 }
 
-// Types
-interface Sender {
-  id: string;
-  name: string;
-  role: string;
-  avatar: string;
-}
-
-interface Message {
-  id: string;
-  sender: Sender;
-  content: string;
-  timestamp: string;
-  status: 'sent' | 'delivered' | 'read';
-}
-
+// Types for activity feed
 interface Activity {
   id: string;
   agentName: string;

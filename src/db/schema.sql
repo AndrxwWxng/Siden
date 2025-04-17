@@ -106,3 +106,7 @@ $$;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user(); 
+
+-- Add agents column to projects table
+ALTER TABLE projects 
+ADD COLUMN IF NOT EXISTS agents TEXT[] DEFAULT '{}'; 

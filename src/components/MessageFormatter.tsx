@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import styles from './MessageFormatter.module.css';
 
 // Extend Window interface to include our custom function
@@ -10,8 +11,29 @@ declare global {
   }
 }
 
+// Define types for multimodal content
+interface TextContent {
+  type: 'text';
+  text: string;
+}
+
+interface ImageContent {
+  type: 'image';
+  data: string;
+  mimeType: string;
+}
+
+interface FileContent {
+  type: 'file';
+  data: string;
+  mimeType: string;
+  name?: string;
+}
+
+type ContentPart = TextContent | ImageContent | FileContent;
+
 interface MessageFormatterProps {
-  content: string | { type: string; data?: string; text?: string; mimeType?: string }[];
+  content: string | ContentPart[] | any;
 }
 
 // Helper function to format markdown content
@@ -78,98 +100,62 @@ const formatMarkdownContent = (content: string) => {
   return processedContent;
 };
 
-export const MessageFormatter: React.FC<MessageFormatterProps> = ({ content }) => {
-  // If content is a string, format it as before
+export default function MessageFormatter({ content }: MessageFormatterProps) {
+  // If content is just a string, render it directly
   if (typeof content === 'string') {
-    const processedContent = formatMarkdownContent(content);
-    return (
-      <div className="message-content-formatted">
-        <div dangerouslySetInnerHTML={{ __html: processedContent }} />
-      </div>
-    );
+    return <div className="whitespace-pre-wrap">{content}</div>;
   }
   
-  // If content is an array (multimodal content), process each part
+  // If content is an array (multimodal content), render each part appropriately
   if (Array.isArray(content)) {
     return (
-      <div className="message-content-formatted">
-        {content.map((part, index) => {
-          if (part.type === 'text' && part.text) {
-            // Text content
-            return (
-              <div key={index} dangerouslySetInnerHTML={{ __html: formatMarkdownContent(part.text) }} />
-            );
-          } else if (part.type === 'image' && part.data) {
-            // Image content
-            return (
-              <div key={index} className="my-2">
-                <img 
-                  src={`data:${part.mimeType || 'image/jpeg'};base64,${part.data}`} 
-                  alt="Uploaded image" 
-                  className="max-w-full rounded-md"
-                  style={{ maxHeight: '400px' }}
-                />
-              </div>
-            );
-          } else if (part.type === 'file' && part.data) {
-            // File attachment (e.g. PDF)
-            if (part.mimeType === 'application/pdf') {
+      <div className="space-y-3">
+        {(content as ContentPart[]).map((part, index) => {
+          if (part.type === 'text') {
+            return <div key={index} className="whitespace-pre-wrap">{part.text}</div>;
+          } else if (part.type === 'image') {
+            // For images, render the actual image
+            try {
               return (
-                <div key={index} className="my-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800">
-                  <div className="flex items-center text-sm">
-                    <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span className="font-medium">PDF Document</span>
+                <div key={index} className="relative">
+                  <div className="relative w-full max-w-md h-auto overflow-hidden rounded-md">
+                    <Image 
+                      src={`data:${part.mimeType};base64,${part.data}`} 
+                      alt="Uploaded image" 
+                      width={400} 
+                      height={300}
+                      className="object-contain"
+                      style={{ maxHeight: '300px' }}
+                    />
                   </div>
-                  <a 
-                    href={`data:application/pdf;base64,${part.data}`}
-                    download="document.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-block px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200 transition duration-150 ease-in-out"
-                  >
-                    Download PDF
-                  </a>
                 </div>
               );
+            } catch (error) {
+              console.error('Error rendering image:', error);
+              return <div key={index} className="text-red-400 text-sm">[Error displaying image]</div>;
             }
-            
+          } else if (part.type === 'file') {
+            // For files like PDFs, just show a placeholder
             return (
-              <div key={index} className="my-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800">
-                <div className="flex items-center text-sm">
-                  <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  <span className="font-medium">File Attachment</span>
-                </div>
-                <a 
-                  href={`data:${part.mimeType || 'application/octet-stream'};base64,${part.data}`}
-                  download="file"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-block px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200 transition duration-150 ease-in-out"
-                >
-                  Download File
-                </a>
+              <div key={index} className="flex items-center p-3 bg-[#252525] rounded-md">
+                <svg className="w-6 h-6 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Attached file: {(part as FileContent).name || 'document'}</span>
               </div>
             );
+          } else {
+            // For unrecognized content types
+            return <div key={index} className="text-xs italic">[Unsupported content type]</div>;
           }
-          return null;
         })}
       </div>
     );
   }
   
-  // Fallback for any other content format
-  return (
-    <div className="message-content-formatted">
-      <div className="text-gray-500 italic">
-        [Content could not be displayed]
-      </div>
-    </div>
-  );
-};
+  // Fallback for other content types - shouldn't normally reach here
+  return <div className="text-xs italic">[Unsupported message format]</div>;
+}
 
 // Add copy functionality
 if (typeof window !== 'undefined') {
@@ -190,6 +176,4 @@ if (typeof window !== 'undefined') {
       }, 2000);
     });
   };
-}
-
-export default MessageFormatter; 
+} 

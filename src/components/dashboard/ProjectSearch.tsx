@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { Search, Filter, Grid } from 'lucide-react';
 import { FilterType } from './types';
 
-interface ProjectSearchProps {
+export interface ProjectSearchProps {
   onSearch: (term: string) => void;
   onFilterChange: (filter: FilterType) => void;
-  selectedFilter: FilterType;
+  currentFilter?: FilterType;
 }
 
 const ProjectSearch: React.FC<ProjectSearchProps> = ({ 
   onSearch, 
   onFilterChange, 
-  selectedFilter 
+  currentFilter = 'all'
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -40,19 +40,19 @@ const ProjectSearch: React.FC<ProjectSearchProps> = ({
         <div className="flex h-[46px] bg-[#202020] border border-[#444] rounded-lg overflow-hidden">
           <button 
             onClick={() => onFilterChange('all')}
-            className={`px-5 h-full flex items-center text-sm font-medium ${selectedFilter === 'all' ? 'bg-[#313030] text-white' : 'bg-transparent text-[#A3A3A3] hover:text-white'} transition-colors`}
+            className={`px-5 h-full flex items-center text-sm font-medium ${currentFilter === 'all' ? 'bg-[#313030] text-white' : 'bg-transparent text-[#A3A3A3] hover:text-white'} transition-colors`}
           >
             All
           </button>
           <button 
             onClick={() => onFilterChange('active')}
-            className={`px-5 h-full flex items-center text-sm font-medium ${selectedFilter === 'active' ? 'bg-[#313030] text-white' : 'bg-transparent text-[#A3A3A3] hover:text-white'} transition-colors`}
+            className={`px-5 h-full flex items-center text-sm font-medium ${currentFilter === 'active' ? 'bg-[#313030] text-white' : 'bg-transparent text-[#A3A3A3] hover:text-white'} transition-colors`}
           >
             Active
           </button>
           <button 
             onClick={() => onFilterChange('archived')}
-            className={`px-5 h-full flex items-center text-sm font-medium ${selectedFilter === 'archived' ? 'bg-[#313030] text-white' : 'bg-transparent text-[#A3A3A3] hover:text-white'} transition-colors`}
+            className={`px-5 h-full flex items-center text-sm font-medium ${currentFilter === 'archived' ? 'bg-[#313030] text-white' : 'bg-transparent text-[#A3A3A3] hover:text-white'} transition-colors`}
           >
             Archived
           </button>

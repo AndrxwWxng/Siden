@@ -6,6 +6,7 @@ export interface ProjectData {
   name: string;
   description: string;
   status?: string;
+  agents?: string[];
 }
 
 /**
@@ -18,29 +19,84 @@ export class ProjectService {
   static async createProject(projectData: ProjectData): Promise<Project | null> {
     try {
       const supabase = createClient();
+      console.log("Supabase client created");
       
       // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!user) {
-        throw new Error('User not authenticated');
+      if (authError) {
+        console.error('Authentication error:', authError);
+        return null;
       }
       
-      // Insert the project
+      if (!user) {
+        console.error('User not authenticated');
+        return null;
+      }
+      
+      console.log('Creating project with user ID:', user.id);
+      
+      // Create a simpler project object (without agents for now)
+      const projectObject = {
+        user_id: user.id,
+        name: projectData.name,
+        description: projectData.description,
+        status: projectData.status || 'active',
+        // Don't include agents field for now to test
+      };
+      
+      console.log('Project data to insert:', projectObject);
+      
+      // Try to insert without returning data first
+      const insertResult = await supabase
+        .from('projects')
+        .insert(projectObject);
+      
+      console.log('Insert result:', insertResult);
+      
+      if (insertResult.error) {
+        console.error('Insert error:', {
+          message: insertResult.error.message,
+          code: insertResult.error.code,
+          details: insertResult.error.details,
+          hint: insertResult.error.hint,
+          fullError: JSON.stringify(insertResult.error)
+        });
+        return null;
+      }
+      
+      // If insert was successful, get the inserted record
       const { data, error } = await supabase
         .from('projects')
-        .insert({
-          user_id: user.id,
-          name: projectData.name,
-          description: projectData.description,
-          status: projectData.status || 'active',
-        })
-        .select()
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
       
       if (error) {
-        console.error('Error creating project:', error);
+        console.error('Error fetching inserted project:', error);
         return null;
+      }
+      
+      if (!data) {
+        console.error('No data returned after project creation');
+        return null;
+      }
+      
+      console.log('Project created successfully:', data);
+      
+      // Now update the project with the agents if needed
+      if (projectData.agents && projectData.agents.length > 0) {
+        const { error: updateError } = await supabase
+          .from('projects')
+          .update({ agents: projectData.agents })
+          .eq('id', data.id);
+          
+        if (updateError) {
+          console.error('Error updating project with agents:', updateError);
+          // Continue anyway since we have the basic project created
+        }
       }
       
       // Transform to Project interface
@@ -49,13 +105,16 @@ export class ProjectService {
         name: data.name,
         description: data.description,
         status: data.status,
-        lastActive: data.last_active,
-        agents: 0, // New projects have no agents
-        progress: 0, // New projects have no progress
-        tags: [] // New projects have no tags
+        lastActive: data.last_active || new Date().toISOString(),
+        agents: projectData.agents?.length || 0,
+        agentIds: projectData.agents || [],
+        progress: 0,
+        tags: []
       };
     } catch (error) {
+      // Log full details of the error
       console.error('Error in createProject:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       return null;
     }
   }
@@ -97,7 +156,8 @@ export class ProjectService {
         description: project.description,
         status: project.status,
         lastActive: project.last_active,
-        agents: 0, // Default for now until we implement agent tracking
+        agents: Array.isArray(project.agents) ? project.agents.length : 0, // Get actual number of agents
+        agentIds: Array.isArray(project.agents) ? project.agents : [], // Get array of agent IDs
         progress: 0, // Default for now until we implement progress tracking
         tags: [] // Default for now until we implement tags
       }));
@@ -146,7 +206,8 @@ export class ProjectService {
         description: data.description,
         status: data.status,
         lastActive: data.last_active,
-        agents: 0, // Default for now until we implement agent tracking
+        agents: Array.isArray(data.agents) ? data.agents.length : 0, // Get actual number of agents
+        agentIds: Array.isArray(data.agents) ? data.agents : [], // Get array of agent IDs
         progress: 0, // Default for now until we implement progress tracking
         tags: [] // Default for now until we implement tags
       };
