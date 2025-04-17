@@ -2,26 +2,84 @@
  * OAuth Providers Configuration
  * This file contains utility functions for third-party OAuth providers
  */
+import React from 'react';
 import { createClient } from '@/utils/supabase/client';
 
 // List of supported OAuth providers
 export type OAuthProvider = 'google' | 'github';
 
-// Function to sign in with an OAuth provider
-export const signInWithProvider = async (provider: OAuthProvider) => {
-  const supabase = createClient();
-  
-  return supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-      // You can add scopes here if needed
-      scopes: provider === 'google' 
-        ? 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/documents' 
-        : 'repo',
+/**
+ * Sign in with OAuth provider
+ * @param provider - The OAuth provider to use (google, github)
+ * @param redirectTo - Optional URL to redirect to after successful authentication
+ */
+export async function signInWithOAuth(provider: OAuthProvider, redirectTo?: string) {
+  try {
+    const supabase = createClient();
+    
+    // Default redirect to auth callback
+    const callbackUrl = redirectTo || `${window.location.origin}/auth/callback`;
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider,
+      options: {
+        redirectTo: callbackUrl,
+        queryParams: provider === 'google' 
+          ? { 
+              access_type: 'offline', 
+              prompt: 'consent' 
+            } 
+          : undefined,
+        scopes: provider === 'github' 
+          ? 'user:email,read:user' 
+          : provider === 'google'
+            ? 'profile email'
+            : undefined,
+      }
+    });
+    
+    if (error) {
+      throw error;
     }
-  });
-};
+    
+    return { data, error: null };
+  } catch (error: any) {
+    console.error(`Error signing in with ${provider}:`, error);
+    return { data: null, error: error.message || `Failed to sign in with ${provider}` };
+  }
+}
+
+/**
+ * Link an OAuth provider to an existing account
+ * @param provider - The OAuth provider to link
+ */
+export async function linkOAuthProvider(provider: OAuthProvider) {
+  try {
+    const supabase = createClient();
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?linking=true`,
+        // Add additional scopes as needed
+        scopes: provider === 'github' 
+          ? 'user:email,read:user' 
+          : provider === 'google'
+            ? 'profile email'
+            : undefined,
+      }
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { data, error: null };
+  } catch (error: any) {
+    console.error(`Error linking ${provider}:`, error);
+    return { data: null, error: error.message || `Failed to link ${provider} account` };
+  }
+}
 
 // Get user's provider accounts
 export const getUserProviderAccounts = async () => {
@@ -46,26 +104,30 @@ export const hasConnectedProvider = async (provider: OAuthProvider): Promise<boo
   return !!accounts?.some(account => account.provider === provider);
 };
 
-// Utility to get provider display name and icon
-export const getProviderInfo = (provider: OAuthProvider) => {
+interface ProviderInfo {
+  name: string;
+  icon: string;
+}
+
+/**
+ * Get provider display information
+ */
+export function getProviderInfo(provider: OAuthProvider): ProviderInfo {
   switch (provider) {
-    case 'google':
-      return {
-        name: 'Google',
-        icon: 'google',
-        color: '#4285F4',
-      };
     case 'github':
       return {
         name: 'GitHub',
-        icon: 'github',
-        color: '#333',
+        icon: 'github'
+      };
+    case 'google':
+      return {
+        name: 'Google',
+        icon: 'google'
       };
     default:
       return {
-        name: String(provider).charAt(0).toUpperCase() + String(provider).slice(1),
-        icon: provider,
-        color: '#555',
+        name: provider,
+        icon: provider
       };
   }
-}; 
+} 

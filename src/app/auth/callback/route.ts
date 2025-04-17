@@ -69,4 +69,4 @@ export async function GET(request: Request) {
     console.error('Unexpected error in auth callback:', error)
     return NextResponse.redirect(new URL('/auth/auth-error?reason=server_error', request.url))
   }
-}
+} 

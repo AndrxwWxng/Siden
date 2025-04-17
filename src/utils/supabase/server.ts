@@ -3,8 +3,8 @@ import { cookies } from 'next/headers'
 import { supabaseConfig } from './config'
 
 export async function createClient() {
-  const cookieStore = cookies()
-  
+  const cookieStore = await cookies()
+
   return createServerClient(
     supabaseConfig.url,
     supabaseConfig.anonKey,
