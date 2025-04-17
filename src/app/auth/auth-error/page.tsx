@@ -6,8 +6,8 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function AuthError() {
   const searchParams = useSearchParams();
-  const reason = searchParams.get('reason');
-  const error = searchParams.get('error');
+  const reason = searchParams?.get('reason');
+  const error = searchParams?.get('error');
 
   const getErrorMessage = () => {
     switch (reason) {

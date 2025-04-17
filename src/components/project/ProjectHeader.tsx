@@ -29,7 +29,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       return true;
     }
     // For nested paths
-    return pathname.startsWith(path) && path !== `/dashboard/project/${project.id}`;
+    return pathname?.startsWith(path) && path !== `/dashboard/project/${project.id}`;
   };
 
   return (

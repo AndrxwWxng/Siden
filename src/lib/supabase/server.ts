@@ -10,13 +10,14 @@ export function createClient() {
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value;
+          const cookie = cookieStore.get(name);
+          return cookie?.value;
         },
         set(name: string, value: string, options: { path?: string }) {
-          cookieStore.set(name, value);
+          cookieStore.set(name, value, options);
         },
         remove(name: string, options: { path?: string }) {
-          cookieStore.delete(name);
+          cookieStore.delete(name, options);
         },
       },
     }

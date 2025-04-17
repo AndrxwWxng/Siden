@@ -1,0 +1,110 @@
+const path = require('path');
+const webpack = require('webpack');
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  /* config options here */
+  serverExternalPackages: [
+    "@mastra/*",
+    "google-auth-library",
+    "googleapis",
+    "@llamaindex/readers",
+    "@llamaindex/azure",
+    "@llamaindex/core",
+    "@llamaindex/cloud",
+    "@llamaindex/env",
+    "@llamaindex/*",
+    "pino-abstract-transport",
+    "pino-pretty"
+  ],
+  
+  // Empty transpilePackages to avoid conflicts with serverExternalPackages
+  transpilePackages: [],
+  
+  webpack: (config, { isServer }) => {
+    // Handle MongoDB client-side encryption issue by stubbing dependencies
+    if (!isServer) {
+      // Add externals configuration to exclude LlamaIndex packages
+      config.externals = [
+        ...(Array.isArray(config.externals) ? config.externals : []),
+        (context, request, callback) => {
+          if (request.startsWith('@llamaindex/') || request.startsWith('@mastra/') || 
+              request === 'pino-abstract-transport' || request === 'pino-pretty' ||
+              request === 'worker_threads') {
+            // Exclude server-only packages from the client bundle
+            return callback(null, 'commonjs ' + request);
+          }
+          callback();
+        },
+      ];
+      
+      // Specifically target the problematic MongoDB module
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        // Stub out the MongoDB client-side encryption manager
+        './client-side-encryption/mongocryptd_manager': false,
+        // Make certain Node built-ins resolve to false
+        'child_process': false,
+        'mongodb-client-encryption': false,
+        'kerberos': false,
+        'aws4': false,
+        '@aws-sdk/credential-providers': false,
+        'googleapis': false,
+        'google-auth-library': false,
+        // Stub all LlamaIndex packages on the client side
+        '@llamaindex/readers': path.resolve(__dirname, './src/lib/stubs/llamaindex-readers.js'),
+        '@llamaindex/readers/obsidian': path.resolve(__dirname, './src/lib/stubs/llamaindex-readers.js'),
+        '@llamaindex/readers/obsidian/dist/index.js': path.resolve(__dirname, './src/lib/stubs/llamaindex-readers.js'),
+        '@llamaindex/core': path.resolve(__dirname, './src/lib/stubs/llamaindex-core.js'),
+        '@llamaindex/azure': path.resolve(__dirname, './src/lib/stubs/llamaindex-azure.js'),
+        '@llamaindex/cloud': false,
+        '@llamaindex/env': false,
+        'worker_threads': path.resolve(__dirname, './src/lib/stubs/worker_threads.js'),
+        'pino-abstract-transport': path.resolve(__dirname, './src/lib/stubs/pino-abstract-transport.js'),
+        'pino-pretty': path.resolve(__dirname, './src/lib/stubs/pino-pretty.js')
+      };
+    }
+    
+    // Stub Node.js modules unconditionally during bundling to avoid 'child_process' errors
+    if (!config.resolve) {
+      config.resolve = {};
+    }
+    config.resolve.fallback = {
+      ...(config.resolve.fallback || {}),
+      child_process: false,
+      fs: false,
+      'node:fs': false,
+      net: false,
+      tls: false,
+      dns: false,
+      os: false,
+      'node:os': false,
+      path: false,
+      'node:path': false,
+      stream: false,
+      http: false,
+      https: false,
+      zlib: false,
+      crypto: false,
+      'worker_threads': path.resolve(__dirname, './src/lib/stubs/worker_threads.js'),
+      process: require.resolve('process/browser'),
+      buffer: require.resolve('buffer/'),
+      util: require.resolve('util/'),
+    };
+    
+    // Add polyfill for buffer and process
+    if (!isServer) {
+      config.plugins = [
+        ...(config.plugins || []),
+        new webpack.ProvidePlugin({
+          Buffer: ['buffer', 'Buffer'],
+          process: 'process/browser',
+        }),
+      ];
+    }
+    
+    return config;
+  },
+};
+
+module.exports = nextConfig; 

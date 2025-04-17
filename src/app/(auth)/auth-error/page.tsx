@@ -10,8 +10,8 @@ export default function AuthError() {
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
-    const reason = searchParams.get('reason') || 'unknown';
-    const error = searchParams.get('error') || '';
+    const reason = searchParams?.get('reason') || 'unknown';
+    const error = searchParams?.get('error') || '';
 
     setErrorReason(reason);
     setErrorMessage(error);

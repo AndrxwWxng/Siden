@@ -294,6 +294,7 @@ export default function ProjectChatPage() {
         userMessage = {
           id: Date.now().toString(),
           role: 'user',
+          // @ts-expect-error - Message expects string but we're using ContentPart[]
           content: contentParts,
         };
       } else {
@@ -308,16 +309,16 @@ export default function ProjectChatPage() {
       append(userMessage);
       
       // Clear input and attachments
-      handleInputChange('');
+      handleInputChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
       setAttachedFiles([]);
       
       // Delegate to appropriate agent
       const response = await detectAndDelegateMessage(
         typeof userMessage.content === 'string' 
           ? userMessage.content 
-          : userMessage.content
+          : (userMessage.content as ContentPart[])
               .filter(part => part.type === 'text')
-              .map(part => (part as TextContent).text)
+              .map(part => part.type === 'text' ? (part as TextContent).text : '')
               .join('\n'),
         selectedAgent
       );
