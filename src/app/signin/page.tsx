@@ -132,14 +132,7 @@ export default function SignIn() {
               {resetMode ? 'Reset your password' : 'Sign in to your account'}
             </h2>
             <p className="mt-2 text-sm text-gray-400">
-              {resetMode
-                ? 'Enter your email and we\'ll send you a reset link'
-                : "Don't have an account? "}
-              {!resetMode && (
-                <Link href="/signup" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
-                  Create one
-                </Link>
-              )}
+              {resetMode && 'Enter your email and we\'ll send you a reset link'}
             </p>
           </div>
           

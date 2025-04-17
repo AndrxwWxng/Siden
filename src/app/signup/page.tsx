@@ -119,10 +119,7 @@ export default function SignUp() {
             
             <h2 className="text-3xl font-bold text-white">Create your account</h2>
             <p className="mt-2 text-sm text-gray-400">
-              Already have an account?{' '}
-              <Link href="/signin" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
-                Sign in
-              </Link>
+              
             </p>
           </div>
           
@@ -213,6 +210,17 @@ export default function SignUp() {
                 </span>
               ) : <span className="relative z-10">Create account</span>}
             </button>
+            
+            <div className="flex items-center justify-center mt-6">
+              <div className="text-center text-sm">
+                <p className="text-[#A0A0A0]">
+                  Already have an account?{' '}
+                  <Link href="/signin" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </div>
           </form>
         </div>
       </div>
