@@ -140,12 +140,11 @@ const [productVisible, setProductVisible] = useState(false);
                     boxShadow: '0 30px 60px -20px rgba(99, 102, 241, 0.2), 0 30px 60px -30px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05)',
                   }}
                 >
-                  {/* Screenshot image */}
                   <Image
                     src="/screen.png"
                     alt="Siden AI dashboard interface"
                     fill
-                    className="object-cover"
+                    className="object-cover object-top"
                     quality={100}
                     priority
                   />
