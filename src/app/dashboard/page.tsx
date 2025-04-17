@@ -222,6 +222,52 @@ const Dashboard = () => {
     }, 3000);
   };
 
+  // Add this function early in the component
+  const verifySchema = async () => {
+    try {
+      const response = await fetch('/api/verify-schema');
+      const result = await response.json();
+      console.log('Schema verification result:', result);
+      
+      if (!result.success) {
+        console.error('Schema verification failed:', result.message);
+        // Show warning to the user
+        alert(`Database schema issue detected: ${result.message}. Please make sure the database is set up correctly.`);
+      }
+      
+      return result.success;
+    } catch (error) {
+      console.error('Error verifying schema:', error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingProjects(true);
+      
+      // Verify schema first
+      const schemaValid = await verifySchema();
+      
+      if (!schemaValid) {
+        setIsLoadingProjects(false);
+        return;
+      }
+      
+      try {
+        // Fetch projects
+        const userProjects = await ProjectService.getUserProjects();
+        setProjects(userProjects || []);
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -319,15 +365,24 @@ const Dashboard = () => {
         return;
       }
       
-      // Create client directly to avoid test-connection issues
-      const supabase = createClient();
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error('Authentication error:', authError);
-        alert('You must be signed in to create a project. Please sign in and try again.');
-        setIsCreatingProject(false);
-        return;
+      // Test Supabase connection
+      try {
+        const response = await fetch('/api/test-connection');
+        const result = await response.json();
+        console.log('Connection test results:', result);
+        
+        if (!result.success) {
+          throw new Error(`Connection test failed: ${result.message}`);
+        }
+        
+        // Warn if not authenticated but proceed anyway
+        if (result.auth.status !== 'authenticated') {
+          console.warn('Not authenticated, but proceeding with project creation');
+        }
+        
+      } catch (connError) {
+        console.error('Connection test error:', connError);
+        // Continue anyway, the project service will check authentication
       }
       
       // Create project in Supabase with selected agents
@@ -356,8 +411,8 @@ const Dashboard = () => {
         // Show success message
         alert('Project created successfully!');
         
-        // Redirect to the project page
-        router.push(`/dashboard/project?id=${newProject.id}`);
+        // Go back to project list view
+        setSelectedView('projects');
       } else {
         console.error('Failed to create project - no project returned');
         // Show error message to user
@@ -365,8 +420,12 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Error creating project:', error);
-      // Show error message to user
-      alert('An error occurred while creating the project. Please try again.');
+      // Show error message to user with more details
+      let errorMessage = 'An error occurred while creating the project.';
+      if (error instanceof Error) {
+        errorMessage += ' Error: ' + error.message;
+      }
+      alert(errorMessage);
     } finally {
       setIsCreatingProject(false);
     }
