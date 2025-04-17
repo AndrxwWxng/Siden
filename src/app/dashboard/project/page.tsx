@@ -59,6 +59,10 @@ export default function ProjectDetail() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [autonomousCommunication, setAutonomousCommunication] = useState<boolean>(true);
+  const [knowledgeSharing, setKnowledgeSharing] = useState<boolean>(true);
+  const [ceoApprovalMode, setCeoApprovalMode] = useState<boolean>(true);
+  const [connectedTools, setConnectedTools] = useState<string[]>([]);
   
   // Load project data
   useEffect(() => {
@@ -87,6 +91,14 @@ export default function ProjectDetail() {
     
     loadProject();
   }, [projectId]);
+
+  // Load connected tools from project data
+  useEffect(() => {
+    if (project && project.integrations && project.integrations.services) {
+      const toolIds = project.integrations.services.map(service => service.id);
+      setConnectedTools(toolIds);
+    }
+  }, [project]);
 
   // Function to navigate to chat page
   const navigateToChat = () => {
@@ -733,11 +745,13 @@ export default function ProjectDetail() {
                   </div>
                   <div 
                     className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                    onClick={() => setAutonomousCommunication(!autonomousCommunication)}
                   >
                     <input 
                       type="checkbox" 
                       className="sr-only" 
-                      checked={true}
+                      checked={autonomousCommunication}
+                      onChange={() => setAutonomousCommunication(!autonomousCommunication)}
                     />
                     <span className="block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform translate-x-5"></span>
                   </div>
@@ -750,11 +764,13 @@ export default function ProjectDetail() {
                   </div>
                   <div 
                     className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                    onClick={() => setKnowledgeSharing(!knowledgeSharing)}
                   >
                     <input 
                       type="checkbox" 
                       className="sr-only" 
-                      checked={true}
+                      checked={knowledgeSharing}
+                      onChange={() => setKnowledgeSharing(!knowledgeSharing)}
                     />
                     <span className="block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform translate-x-5"></span>
                   </div>
@@ -767,11 +783,13 @@ export default function ProjectDetail() {
                   </div>
                   <div 
                     className="relative inline-block w-10 h-5 rounded-md bg-[#252525] cursor-pointer"
+                    onClick={() => setCeoApprovalMode(!ceoApprovalMode)}
                   >
                     <input 
                       type="checkbox" 
                       className="sr-only" 
-                      checked={true}
+                      checked={ceoApprovalMode}
+                      onChange={() => setCeoApprovalMode(!ceoApprovalMode)}
                     />
                     <span className="block h-5 w-5 rounded-md bg-[#6366F1] absolute left-0 transition-transform transform translate-x-5"></span>
                   </div>
@@ -789,6 +807,17 @@ export default function ProjectDetail() {
                     <option>Collaborative</option>
                   </select>
                 </div>
+              </div>
+              
+              {/* Add this at the end of the "space-y-4" div */}
+              <div className="pt-4 flex justify-end">
+                <button
+                  onClick={saveTeamSettings}
+                  className="px-4 py-2 bg-[#6366F1] hover:bg-[#5254CC] text-white rounded transition-colors flex items-center gap-2"
+                >
+                  <Settings size={14} />
+                  <span>Save Settings</span>
+                </button>
               </div>
             </div>
           </div>
@@ -854,7 +883,10 @@ export default function ProjectDetail() {
                             <Settings size={12} />
                             <span>Configure</span>
                           </button>
-                          <button className="px-3 py-1.5 bg-[#252525] hover:bg-[#202020] text-sm rounded-md transition-colors flex items-center justify-center gap-1 w-9 group-hover:text-[#EF4444]">
+                          <button 
+                            onClick={() => disconnectTool(tool.id)}
+                            className="px-3 py-1.5 bg-[#252525] hover:bg-[#202020] text-sm rounded-md transition-colors flex items-center justify-center gap-1 w-9 group-hover:text-[#EF4444]"
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                           </button>
                         </div>
@@ -899,7 +931,10 @@ export default function ProjectDetail() {
                           </div>
                         </div>
                         
-                        <button className="w-full px-3 py-1.5 bg-[#6366F1] hover:bg-[#5254CC] text-white text-sm rounded-md transition-colors">
+                        <button 
+                          onClick={() => connectTool(tool.id)}
+                          className="w-full px-3 py-1.5 bg-[#6366F1] hover:bg-[#5254CC] text-white text-sm rounded-md transition-colors"
+                        >
                           Connect
                         </button>
                       </div>
@@ -1156,6 +1191,176 @@ export default function ProjectDetail() {
       setShowAgentInfo(null);
     } else {
       setShowAgentInfo(agentId);
+    }
+  };
+  
+  // Add this function along with other functions 
+  const saveTeamSettings = async () => {
+    if (!projectId || projectId === 'unknown') return;
+    
+    try {
+      // Create the settings object with all team behavior settings
+      const teamSettings = {
+        autonomousCommunication,
+        knowledgeSharing,
+        ceoApprovalMode
+      };
+      
+      // Call the ProjectService to update project
+      const success = await ProjectService.updateProject(projectId, {
+        // Save the team settings in the project data
+        // This will be stored in the database as JSON
+        teamSettings
+      });
+      
+      if (success) {
+        // You can show a success notification here if needed
+        console.log('Team settings saved successfully');
+      } else {
+        console.error('Failed to save team settings');
+      }
+    } catch (error) {
+      console.error('Error saving team settings:', error);
+    }
+  };
+  
+  // Add this function to handle adding an agent to the team
+  const addAgentToTeam = async (agentId: string) => {
+    if (!projectId || projectId === 'unknown') return;
+    
+    try {
+      // Make sure we don't add duplicate agents
+      if (activeAgents.includes(agentId)) {
+        console.log('Agent already in team');
+        return;
+      }
+      
+      // Add the agent to the active agents list
+      const newActiveAgents = [...activeAgents, agentId];
+      setActiveAgents(newActiveAgents);
+      
+      // Save to the database
+      const success = await ProjectService.updateProject(projectId, {
+        agents: newActiveAgents
+      });
+      
+      if (!success) {
+        // Revert the state change if the save fails
+        setActiveAgents(activeAgents);
+        console.error('Failed to add agent to team');
+      }
+    } catch (error) {
+      console.error('Error adding agent to team:', error);
+    }
+  };
+  
+  // Add this function to handle removing an agent from the team
+  const removeAgentFromTeam = async (agentId: string) => {
+    if (!projectId || projectId === 'unknown') return;
+    
+    try {
+      // Remove the agent from the active agents list
+      const newActiveAgents = activeAgents.filter(id => id !== agentId);
+      setActiveAgents(newActiveAgents);
+      
+      // Save to the database
+      const success = await ProjectService.updateProject(projectId, {
+        agents: newActiveAgents
+      });
+      
+      if (!success) {
+        // Revert the state change if the save fails
+        setActiveAgents(activeAgents);
+        console.error('Failed to remove agent from team');
+      }
+    } catch (error) {
+      console.error('Error removing agent from team:', error);
+    }
+  };
+  
+  // Function to connect a tool
+  const connectTool = async (toolId: string) => {
+    if (!projectId || projectId === 'unknown') return;
+    
+    try {
+      // Find the tool details
+      const tool = mockTools.find(t => t.id === toolId);
+      if (!tool) return;
+      
+      // Add to connected tools state
+      const newConnectedTools = [...connectedTools, toolId];
+      setConnectedTools(newConnectedTools);
+      
+      // Update the tool in mock data (this would be removed in a real implementation)
+      const toolIndex = mockTools.findIndex(t => t.id === toolId);
+      if (toolIndex !== -1) {
+        mockTools[toolIndex].connected = true;
+      }
+      
+      // Get current project integrations
+      const currentIntegrations = project?.integrations || { connected: false, services: [] };
+      
+      // Create updated integrations object
+      const updatedIntegrations = {
+        connected: true,
+        services: [
+          ...currentIntegrations.services,
+          {
+            id: tool.id,
+            name: tool.name,
+            description: tool.description,
+            connectedAt: new Date().toISOString()
+          }
+        ]
+      };
+      
+      // Save to database
+      const success = await ProjectService.updateProjectIntegrations(projectId, updatedIntegrations);
+      
+      if (!success) {
+        // Revert state changes on failure
+        setConnectedTools(connectedTools);
+        console.error('Failed to connect tool');
+      }
+    } catch (error) {
+      console.error('Error connecting tool:', error);
+    }
+  };
+  
+  // Function to disconnect a tool
+  const disconnectTool = async (toolId: string) => {
+    if (!projectId || projectId === 'unknown') return;
+    
+    try {
+      // Remove from connected tools state
+      const newConnectedTools = connectedTools.filter(id => id !== toolId);
+      setConnectedTools(newConnectedTools);
+      
+      // Update the tool in mock data (this would be removed in a real implementation)
+      const toolIndex = mockTools.findIndex(t => t.id === toolId);
+      if (toolIndex !== -1) {
+        mockTools[toolIndex].connected = false;
+      }
+      
+      // Get current project integrations
+      const currentIntegrations = project?.integrations || { connected: false, services: [] };
+      
+      // Create updated integrations object
+      const updatedIntegrations = {
+        connected: newConnectedTools.length > 0,
+        services: currentIntegrations.services.filter(service => service.id !== toolId)
+      };
+      
+      // Save to database
+      const success = await ProjectService.updateProjectIntegrations(projectId, updatedIntegrations);
+      
+      if (!success) {
+        // Revert state changes on failure
+        setConnectedTools(connectedTools);
+        console.error('Failed to disconnect tool');
+      }
+    } catch (error) {
+      console.error('Error disconnecting tool:', error);
     }
   };
   

@@ -8,6 +8,12 @@ export interface ProjectData {
   description: string;
   status?: string;
   agents?: string[];
+  teamSettings?: {
+    autonomousCommunication?: boolean;
+    knowledgeSharing?: boolean;
+    ceoApprovalMode?: boolean;
+    [key: string]: any; // Allow for additional team settings in the future
+  };
 }
 
 /**
@@ -270,33 +276,62 @@ export class ProjectService {
     try {
       const supabase = createClient();
       
-      // Get current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      // Get current user to verify ownership
+      const { data: userData, error: authError } = await supabase.auth.getUser();
       
-      if (authError || !user) {
+      if (authError || !userData?.user) {
         console.error('Authentication error:', authError);
         return false;
       }
       
-      // Create update object with all possible fields
-      const updateObject = {
-        name: projectData.name,
-        description: projectData.description,
-        status: projectData.status,
+      // Build update object with provided fields
+      const updateObj: any = {
         updated_at: new Date().toISOString()
       };
       
-      // Only add agents if it's provided (to avoid overwriting with undefined)
-      if (projectData.agents !== undefined) {
-        updateObject['agents'] = projectData.agents;
+      if (projectData.name !== undefined) {
+        updateObj.name = projectData.name;
       }
       
-      // Update the project
+      if (projectData.description !== undefined) {
+        updateObj.description = projectData.description;
+      }
+      
+      if (projectData.status !== undefined) {
+        updateObj.status = projectData.status;
+      }
+      
+      if (projectData.agents !== undefined) {
+        updateObj.agents = projectData.agents;
+      }
+      
+      if (projectData.teamSettings !== undefined) {
+        // Fetch current project data to merge team settings
+        const { data: currentProject, error: fetchError } = await supabase
+          .from('projects')
+          .select('team_settings')
+          .eq('id', id)
+          .eq('user_id', userData.user.id)
+          .single();
+        
+        if (fetchError) {
+          console.error('Error fetching current project:', fetchError);
+          return false;
+        }
+        
+        // Merge existing settings with new settings
+        updateObj.team_settings = {
+          ...(currentProject?.team_settings || {}),
+          ...projectData.teamSettings
+        };
+      }
+      
+      // Update the project with new data
       const { error } = await supabase
         .from('projects')
-        .update(updateObject)
+        .update(updateObj)
         .eq('id', id)
-        .eq('user_id', user.id); // Make sure user owns the project
+        .eq('user_id', userData.user.id); // Ensure user owns this project
       
       if (error) {
         console.error('Error updating project:', error);
