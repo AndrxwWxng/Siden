@@ -145,6 +145,13 @@ const [productVisible, setProductVisible] = useState(false);
                     quality={100}
                     priority
                   />
+                  {/* Gradient fade overlay at the bottom */}
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(to bottom, rgba(18, 18, 18, 0) 0%, rgba(18, 18, 18, 1) 100%)',
+                    }}
+                  ></div>
                 </div>
               </div>
             </div>
