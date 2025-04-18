@@ -283,7 +283,7 @@ export default function PricingPage() {
               {[
                 {
                   question: "Can I change my plan later?",
-                  answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect at the start of your next billing cycle. When upgrading, you'll get immediate access to the new features and we'll prorate the cost."
+                  answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect at the start of your next billing cycle. When upgrading, you&apos;ll get immediate access to the new features and we&apos;ll prorate the cost."
                 },
                 {
                   question: "What payment methods do you accept?",
@@ -294,12 +294,12 @@ export default function PricingPage() {
                   answer: "Yes, all paid plans include a 14-day free trial with no credit card required. You can upgrade to a paid plan at any time during your trial. If you need more time to evaluate, please contact our sales team."
                 },
                 {
-                  question: "What's your refund policy?",
-                  answer: "If you're not satisfied with our service, you can request a full refund within the first 30 days of your paid subscription. No questions asked. Our support team will process your refund within 3-5 business days."
+                  question: "What&apos;s your refund policy?",
+                  answer: "If you&apos;re not satisfied with our service, you can request a full refund within the first 30 days of your paid subscription. No questions asked. Our support team will process your refund within 3-5 business days."
                 },
                 {
                   question: "Can I cancel my subscription anytime?",
-                  answer: "Yes, you can cancel your subscription at any time from your account settings. After cancellation, you'll still have access to your paid features until the end of your current billing period."
+                  answer: "Yes, you can cancel your subscription at any time from your account settings. After cancellation, you&apos;ll still have access to your paid features until the end of your current billing period."
                 }
               ].map((faq, i) => (
                 <div 

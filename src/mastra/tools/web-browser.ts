@@ -520,12 +520,12 @@ export const webScraperTool = createTool({
       const structuredData = extractStructuredContent(html);
       
       // Basic parsing - for production, use a proper HTML parser
-      let content = parseMainContent ? structuredData.mainText : 
+      const content = parseMainContent ? structuredData.mainText : 
                     selector ? extractSection(html, selector) || html : html;
       
-      let links = [];
-      let images = [];
-      let tables = [];
+      const links = [];
+      const images = [];
+      const tables = [];
       
       // Extract links if requested
       if (extractLinks) {
