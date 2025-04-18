@@ -104,6 +104,10 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[MASTRA API] Starting request processing');
     
+    // Check for the fallback parameter in the URL
+    const url = new URL(request.url);
+    const forceFallback = url.searchParams.has('fallback');
+    
     const { agentId, message, metadata } = await request.json();
     console.log(`[MASTRA API] Received request for agent: ${agentId}`, metadata ? 'with metadata' : '');
 
@@ -113,6 +117,13 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: agentId or message' },
         { status: 400 }
       );
+    }
+
+    // If forceFallback is true or in the metadata, skip Mastra and go straight to OpenAI
+    if (forceFallback || metadata?.forceFallback) {
+      console.log(`[MASTRA API] Force fallback requested, skipping Mastra for agent: ${agentId}`);
+      const fallbackResult = await openAIFallback(agentId, message, metadata);
+      return NextResponse.json(fallbackResult);
     }
 
     try {

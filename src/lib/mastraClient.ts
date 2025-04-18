@@ -69,6 +69,41 @@ export async function callMastraAgent(agentId: string, message: string, options?
       });
     }
 
+    // If the response contains a database connection error, try the direct OpenAI fallback
+    if (response.status === 500) {
+      const errorText = await response.text();
+      if (errorText.includes('ENOTFOUND') || errorText.includes('database') || errorText.includes('supabase')) {
+        console.error('[MASTRA CLIENT] Database connection error detected, using direct OpenAI fallback');
+        
+        // Use a direct OpenAI fallback from the client if possible
+        try {
+          // Try the generate route with a fallback querystring param
+          response = await fetch(`${apiUrl}&fallback=true`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({ 
+              agentId, 
+              message,
+              metadata: {
+                ...options?.metadata || {},
+                forceFallback: true
+              }
+            }),
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            return data;
+          }
+        } catch (fallbackError) {
+          console.error('[MASTRA CLIENT] Direct fallback failed:', fallbackError);
+        }
+      }
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[MASTRA CLIENT] HTTP Error: ${response.status} `);
