@@ -115,18 +115,6 @@ const agentEndpoints: Record<string, string> = {
   research: "/api/chat/research",
 };
 
-// Map from role IDs to agent IDs
-const roleToAgentId: Record<string, string> = {
-  ceo: 'ceoAgent',
-  dev: 'developerAgent',
-  marketing: 'marketingAgent',
-  product: 'productAgent',
-  sales: 'salesAgent',
-  finance: 'financeAgent',
-  design: 'designAgent',
-  research: 'researchAgent',
-};
-
 export default function ProjectChatPage() {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get('id') || 'unknown';
