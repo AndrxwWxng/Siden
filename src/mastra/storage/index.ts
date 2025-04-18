@@ -193,21 +193,21 @@ const mockVectorQueryTool = {
 };
 
 // Conditionally export the real or mock vector tools
-export const vectorQueryTool = isBuildEnvironment 
-  ? mockVectorQueryTool
-  : createVectorQueryTool({
-      vectorStoreName: 'pgVector',
-      indexName: 'knowledge_base',
-      model: openai.embedding('text-embedding-3-small'),
-    });
+// export const vectorQueryTool = isBuildEnvironment 
+//   ? mockVectorQueryTool
+//   : createVectorQueryTool({
+//       vectorStoreName: 'pgVector',
+//       indexName: 'knowledge_base',
+//       model: openai.embedding('text-embedding-3-small'),
+//     });
 
-export const papersVectorQueryTool = isBuildEnvironment
-  ? mockVectorQueryTool
-  : createVectorQueryTool({
-      vectorStoreName: 'pgVector',
-      indexName: 'papers',
-      model: openai.embedding('text-embedding-3-small'),
-    });
+// export const papersVectorQueryTool = isBuildEnvironment
+//   ? mockVectorQueryTool
+//   : createVectorQueryTool({
+//       vectorStoreName: 'pgVector',
+//       indexName: 'papers',
+//       model: openai.embedding('text-embedding-3-small'),
+//     });
 
 // Create a vector document chunker tool for storing new knowledge
 export const documentChunkerTool = {
@@ -222,19 +222,18 @@ export const documentChunkerTool = {
 
     return await safeDbOperation(async () => {
       // Generate embedding using the safe method
-      const embedding = await generateSafeEmbedding(params.content);
+      // const embedding = await createSafeEmbedding(params.content);
       
       // Store in PgVector (use specified index or default to knowledge_base)
       const indexName = params.indexName || 'knowledge_base';
-      
-      await pgVector.upsert({
-        indexName,
-        vectors: [embedding],
-        metadata: [{
-          content: params.content,
-          ...(params.metadata || {})
-        }]
-      });
+      // await pgVector.upsert({
+      //   indexName,
+      //   // vectors: [embedding],
+      //   metadata: [{
+      //     content: params.content,
+      //     ...(params.metadata || {})
+      //   }]
+      // });
       
       return { success: true };
     }, { 

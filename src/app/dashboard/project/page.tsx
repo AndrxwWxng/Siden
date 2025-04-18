@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 // Import the client-side Mastra client instead of server-side
-import mastraClient, { MastraAgentId } from '@/lib/mastraClient';
+import mastraClient from '@/lib/mastraClient';
 import { ProjectService } from '@/services/projectService';
 import { Project } from '@/components/dashboard/types';
 
