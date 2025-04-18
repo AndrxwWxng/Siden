@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -12,7 +11,6 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,12 +32,12 @@ export default function ResetPassword() {
     try {
       const supabase = createClient();
       // Update the user's password using the reset token
-      const { data, error } = await supabase.auth.updateUser({
+      const { error: supabaseError } = await supabase.auth.updateUser({
         password: password
       });
       
-      if (error) {
-        setError(error.message);
+      if (supabaseError) {
+        setError(supabaseError.message);
       } else {
         setSuccess(true);
       }

@@ -3,14 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "init-db": "tsx src/scripts/init-db.ts",
     "mastra": "tsx src/scripts/start-mastra.ts",
     "check": "tsx src/scripts/check-dependencies.ts",
-    "start:all": "concurrently \"npm run dev\" \"npm run mastra\""
+    "start:all": "concurrently \"npm run dev\" \"npm run mastra\"",
+    "start:all:turbo": "concurrently \"npm run dev\" \"npm run mastra\""
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.10",

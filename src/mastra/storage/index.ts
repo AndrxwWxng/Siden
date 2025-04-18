@@ -1,7 +1,5 @@
 import { PgVector } from '@mastra/pg';
 import { openai } from '@ai-sdk/openai';
-import { createVectorQueryTool } from '@mastra/rag';
-import { mastra } from '@/mastra';
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
 import { createDatabaseConnection, safeDbOperation, addTelemetrySupport, createSafeEmbedding } from '@/utils/db-utils';
@@ -186,6 +184,7 @@ if (!isBuildEnvironment) {
 } else {
   console.log('Build environment detected, skipping vector store initialization');
 }
+
 
 // Create mock versions of the vector tools for build environment
 const mockVectorQueryTool = {

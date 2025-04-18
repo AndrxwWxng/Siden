@@ -7,7 +7,6 @@ import { webBrowserTool, webScraperTool } from '../tools/web-browser';
 import { readGoogleSheet, appendGoogleSheet, updateGoogleSheet } from '../tools/googleSheets';
 import { createHubspotContact, getHubspotContact, createHubspotDeal } from '../tools/hubspot';
 import { createGithubIssue, createGithubPullRequest, getGithubRepoInfo, listGithubPullRequests } from '../tools/github';
-import { vectorQueryTool, papersVectorQueryTool } from '../storage';
 import { getSlackChannelHistory, sendSlackMessage, createSlackChannel } from '../tools/slack';
 
 // Initialize models
@@ -66,7 +65,6 @@ export const ceoAgent = new Agent({
     - webResearchTool: For researching specific topics from the web
     - emailTool: For drafting and sending emails
     - databaseTool: For querying internal database information
-    - vectorQueryTool: For searching through past interactions and knowledge stored in the database
     
     When asked about topics you're not familiar with, websites, or content that requires browsing:
     1. FIRST use webSearchTool to find relevant information and URLs
@@ -81,12 +79,7 @@ export const ceoAgent = new Agent({
     - emailTool: For drafting email content
     - webResearchTool: For researching information on the web
     - databaseTool: For querying the database for information
-    - vectorQueryTool: For searching through past interactions and knowledge
-    - Google Sheets tools:
-      * readGoogleSheet: For reading data from Google Sheets
-      * appendGoogleSheet: For adding data to Google Sheets
-      * updateGoogleSheet: For updating existing data in Google Sheets
-      
+    
     Always introduce yourself as Kenard, the CEO. Be decisive, strategic, and solutions-oriented.
   `,
   model: gpt41Mini,
@@ -94,7 +87,6 @@ export const ceoAgent = new Agent({
     emailTool, 
     webResearchTool, 
     databaseTool, 
-    vectorQueryTool, 
     webSearchTool, 
     fallbackWebSearchTool,
     webBrowserTool,
@@ -133,10 +125,8 @@ export const marketingAgent = new Agent({
     - You can use webBrowserTool to navigate marketing websites and extract content.
     - You can use webScraperTool to extract structured content like tables of marketing data.
     - You can use emailTool to draft marketing emails for the user.
-    - You can use databaseTool to access past marketing campaign data and results.
-    - You can use vectorQueryTool to search through past interactions and marketing knowledge.
-
-     You also have access to these specialized tools:
+    
+    You also have access to these specialized tools:
     - HubSpot tools:
       * createHubspotContact: For creating new contacts in HubSpot CRM
       * getHubspotContact: For retrieving contact information from HubSpot
@@ -154,7 +144,6 @@ export const marketingAgent = new Agent({
     emailTool, 
     webResearchTool, 
     databaseTool, 
-    vectorQueryTool,
     webBrowserTool,
     webScraperTool,
     createHubspotDeal,
@@ -231,7 +220,6 @@ export const developerAgent = new Agent({
     - You can use webBrowserTool to navigate through technical documentation websites.
     - You can use webScraperTool to extract code examples and technical documentation.
     - You can use databaseTool to access code snippets and technical documentation.
-    - You can use vectorQueryTool to search through past interactions and technical knowledge.
     
     Your communication style:
     - Be clear and concise in technical explanations
@@ -254,7 +242,6 @@ export const developerAgent = new Agent({
   tools: { 
     webResearchTool, 
     databaseTool, 
-    vectorQueryTool,
     webBrowserTool,
     webScraperTool,
     createGithubIssue,
@@ -295,7 +282,6 @@ export const salesAgent = new Agent({
     - You can use webBrowserTool to navigate company websites and extract relevant information.
     - You can use webScraperTool to extract structured content from sales resources.
     - You can use databaseTool to access sales data, customer information, and performance metrics.
-    - You can use vectorQueryTool to search through past interactions and sales knowledge.
     - HubSpot tools:
       * createHubspotContact: For creating new contacts in HubSpot CRM
       * getHubspotContact: For retrieving contact information from HubSpot
@@ -312,7 +298,6 @@ export const salesAgent = new Agent({
     emailTool, 
     webResearchTool, 
     databaseTool, 
-    vectorQueryTool,
     webBrowserTool,
     webScraperTool,
     createHubspotDeal,
@@ -351,7 +336,6 @@ export const productAgent = new Agent({
     - You can use webBrowserTool to navigate product websites and extract relevant information.
     - You can use webScraperTool to extract structured content from product resources.
     - You can use databaseTool to access user feedback and product metrics.
-    - You can use vectorQueryTool to search through past interactions and product knowledge.
     
      - GitHub tools:
       * createGithubIssue: For creating issues in GitHub repositories
@@ -373,7 +357,6 @@ export const productAgent = new Agent({
   tools: { 
     webResearchTool, 
     databaseTool, 
-    vectorQueryTool,
     webBrowserTool,
     webScraperTool,
     createGithubIssue,
@@ -416,8 +399,7 @@ export const financeAgent = new Agent({
     - You can use webBrowserTool to navigate financial websites and extract relevant information.
     - You can use webScraperTool to extract structured financial data like tables and charts.
     - You can use databaseTool to access financial data and metrics.
-    - You can use vectorQueryTool to search through past interactions and financial knowledge.
-      - HubSpot tools:
+    - HubSpot tools:
       * createHubspotContact: For creating new contacts in HubSpot CRM
       * getHubspotContact: For retrieving contact information from HubSpot
       * createHubspotDeal: For creating new deals in HubSpot CRM
@@ -436,7 +418,6 @@ export const financeAgent = new Agent({
   tools: { 
     webResearchTool, 
     databaseTool, 
-    vectorQueryTool,
     webBrowserTool,
     webScraperTool,
     createHubspotDeal,
@@ -478,7 +459,6 @@ export const designAgent = new Agent({
     - You can use webBrowserTool to navigate design websites and extract visual information.
     - You can use webScraperTool to extract design resources and examples.
     - You can use databaseTool to access design assets and reference materials.
-    - You can use vectorQueryTool to search through past interactions and design knowledge.
     - Slack tools:
       * sendSlackMessage: For sending messages to design channels
       * getSlackChannelHistory: For viewing recent messages in design channels
@@ -490,7 +470,6 @@ export const designAgent = new Agent({
   tools: { 
     webResearchTool, 
     databaseTool, 
-    vectorQueryTool,
     webBrowserTool,
     webScraperTool,
     sendSlackMessage,
@@ -525,8 +504,6 @@ export const researchAgent = new Agent({
     - You can use webResearchTool to gather information from the web.
     - You can use webBrowserTool to navigate directly to research websites and extract content.
     - You can use webScraperTool to extract structured research data like tables, charts, and citations.
-    - You can use papersVectorQueryTool to search through academic papers and technical documents.
-    - You can use vectorQueryTool to search through past research and interactions.
     - Slack tools:
       * sendSlackMessage: For sending messages to research channels
       * getSlackChannelHistory: For viewing recent messages in research channels
@@ -537,15 +514,12 @@ export const researchAgent = new Agent({
     with appropriate extractType to get the content.
     
     Base your responses on the combined information from these sources, and acknowledge if you cannot find sufficient information to answer a question.
-    When using the papersVectorQueryTool, make sure to specify the topic clearly to get the most relevant results.
     
     Always introduce yourself as Garek, the Research Analyst. Be analytical, thorough, and objective.
   `,
   model: claude35Sonnet,
   tools: { 
     webResearchTool, 
-    papersVectorQueryTool, 
-    vectorQueryTool,
     webBrowserTool,
     webScraperTool,
     sendSlackMessage,
