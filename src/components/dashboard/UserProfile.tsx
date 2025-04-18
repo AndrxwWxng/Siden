@@ -144,20 +144,22 @@ const UserProfile: React.FC<UserProfileProps> = ({
             </Link>
             <button 
               onClick={toggleTheme}
-              className="w-full text-left px-4 py-3 text-sm hover:bg-[#252525] transition-colors flex items-center justify-between"
+              className="w-full text-left px-4 py-3 text-sm hover:bg-app-tertiary transition-colors flex items-center justify-between group"
             >
               <div className="flex items-center">
                 {resolvedTheme === 'dark' ? (
                   <Moon size={16} className="mr-3 text-app-secondary" />
                 ) : (
-                  <Sun size={16} className="mr-3 text-app-secondary" />
+                  <Sun size={16} className="mr-3 text-amber-500" />
                 )}
                 <span>{resolvedTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
               </div>
-              <div className="relative inline-block w-10 h-5 rounded-full bg-app-tertiary cursor-pointer">
+              <div className={`relative inline-block w-10 h-5 rounded-full transition-colors duration-300 ${
+                resolvedTheme === 'dark' ? 'bg-gray-700' : 'bg-indigo-100'
+              }`}>
                 <span 
-                  className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full transition-transform transform bg-indigo-500 ${
-                    resolvedTheme === 'light' ? 'translate-x-5' : 'translate-x-0'
+                  className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full transition-transform duration-300 transform ${
+                    resolvedTheme === 'light' ? 'translate-x-5 bg-indigo-600' : 'translate-x-0 bg-indigo-400'
                   }`}
                 ></span>
               </div>
