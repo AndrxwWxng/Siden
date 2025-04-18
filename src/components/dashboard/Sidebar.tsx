@@ -101,7 +101,7 @@ export const Sidebar = ({ projects, selectedProject, onNewProject, onCollapse }:
             {projects.map(project => (
               <button 
                 key={project.id}
-                onClick={() => router.push(`/dashboard/project/${project.id}`)}
+                onClick={() => router.push(`/dashboard/project/?id=${project.id}`)}
                 className={`flex items-center rounded-md transition-colors text-sm group ${isCollapsed 
                   ? 'w-10 h-10 justify-center px-0 py-0 hover:bg-app-tertiary' 
                   : 'w-full px-3 py-2.5 text-app-primary hover:bg-app-tertiary'}`}

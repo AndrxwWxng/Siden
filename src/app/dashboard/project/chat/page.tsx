@@ -269,32 +269,12 @@ export default function ProjectChatPage() {
         transition-all duration-200
       `}>
         <div className="h-16 flex items-center justify-center border-b border-[#313131]">
-          {sidebarCollapsed ? (
-            <Logo size="sm" />
-          ) : (
-            <Logo size="md" />
-          )}
+          <div className="text-sm font-medium">
+            {!sidebarCollapsed && 'Team Members'}
+          </div>
         </div>
         
         <div className="flex-1 pt-6 pb-5 flex flex-col overflow-auto">
-          <div className={`px-4 mb-4 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
-            {!sidebarCollapsed && (
-              <>
-                <h3 className="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider px-1">
-                  {project?.name ? project.name : 'AGENTS'}
-                </h3>
-                {project?.id && (
-                  <button 
-                    onClick={() => router.push(`/dashboard/project?id=${project.id}`)}
-                    className="text-[11px] text-[#6366F1] mt-2 hover:text-[#4F46E5] transition-colors"
-                  >
-                    Back to Project
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-          
           <div className={`space-y-1 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
             {isLoading ? (
               <div className="flex justify-center py-8">
