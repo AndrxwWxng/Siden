@@ -11,7 +11,6 @@ export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [oauthError, setOauthError] = useState('');
   const router = useRouter();
@@ -34,7 +33,6 @@ export default function SignUp() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setMessage('');
     
     // Validate inputs
     if (!email || !password) {
@@ -52,12 +50,12 @@ export default function SignUp() {
     try {
       const supabase = createClient();
       
-      // Create the user account
+      // Create the user account without email confirmation
       const { error: signUpError, data } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          // Skip email confirmation by not setting emailRedirectTo
           data: {
             username: email.split('@')[0], // Default username from email
           }
@@ -86,19 +84,23 @@ export default function SignUp() {
         return;
       }
       
-      // Check if email confirmation is required
-      if (data?.user?.confirmation_sent_at && !data?.session) {
-        setMessage('Success! Check your email to confirm your account before signing in.');
-        setLoading(false);
-        return;
-      }
-      
-      // If email confirmation is not required, or auto-confirmed
-      if (data?.session) {
+      // If user was created, immediately sign them in
+      if (data?.user) {
+        // Attempt to sign in with the credentials they just used
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (signInError) {
+          console.error('Auto sign-in error:', signInError);
+          setError('Account created but could not sign in automatically. Please sign in manually.');
+          setLoading(false);
+          return;
+        }
+        
+        // Redirect to dashboard after successful signup and login
         router.push('/dashboard');
-      } else {
-        setMessage('Account created successfully. You can now sign in.');
-        setLoading(false);
       }
     } catch (err) {
       console.error('Sign up error:', err);
@@ -108,26 +110,20 @@ export default function SignUp() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
+    <div className="flex flex-col min-h-screen bg-app-secondary text-app-primary">
       <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           <div>
-            <Link href="/" className="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-8">
+            <Link href="/" className="flex items-center text-sm text-app-secondary hover:text-app-primary transition-colors mb-8">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to home
             </Link>
             
-            <h2 className="text-3xl font-bold text-white">Create your account</h2>
-            <p className="mt-2 text-sm text-gray-400">
+            <h2 className="text-3xl font-bold text-app-primary">Create your account</h2>
+            <p className="mt-2 text-sm text-app-secondary">
               
             </p>
           </div>
-          
-          {message && (
-            <div className="rounded-lg bg-green-900/30 border border-green-800/50 px-4 py-3">
-              <div className="text-sm text-green-400">{message}</div>
-            </div>
-          )}
           
           {oauthError && (
             <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3 mt-4">
@@ -143,16 +139,16 @@ export default function SignUp() {
           
           <div className="mt-6 relative">
             <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-gray-700" />
+              <div className="w-full border-t border-app-color" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-[#0F0F0F] px-4 text-sm text-gray-500">Or continue with</span>
+              <span className="bg-app-secondary px-4 text-sm text-app-secondary">Or continue with</span>
             </div>
           </div>
           
           <form onSubmit={handleSignUp} className="mt-6 space-y-5">
             <div>
-              <label htmlFor="email" className="block text-xs font-medium text-[#A0A0A0] mb-2">
+              <label htmlFor="email" className="block text-xs font-medium text-app-secondary mb-2">
                 Email
               </label>
               <input
@@ -161,7 +157,7 @@ export default function SignUp() {
                 type="email"
                 autoComplete="email"
                 required
-                className="block w-full rounded-lg border-0 bg-[#1A1A1A] px-4 py-3 text-white shadow-sm ring-1 ring-inset ring-[#333] focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm transition-all"
+                className="block w-full rounded-lg border-0 bg-app-tertiary px-4 py-3 text-app-primary shadow-sm ring-1 ring-inset ring-app-color focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm transition-all"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -169,7 +165,7 @@ export default function SignUp() {
             </div>
             
             <div>
-              <label htmlFor="password" className="block text-xs font-medium text-[#A0A0A0] mb-2">
+              <label htmlFor="password" className="block text-xs font-medium text-app-secondary mb-2">
                 Password
               </label>
               <input
@@ -178,12 +174,12 @@ export default function SignUp() {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="block w-full rounded-lg border-0 bg-[#1A1A1A] px-4 py-3 text-white shadow-sm ring-1 ring-inset ring-[#333] focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm transition-all"
+                className="block w-full rounded-lg border-0 bg-app-tertiary px-4 py-3 text-app-primary shadow-sm ring-1 ring-inset ring-app-color focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm transition-all"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="mt-1 text-xs text-[#A0A0A0]">
+              <p className="mt-1 text-xs text-app-secondary">
                 Password must be at least 6 characters
               </p>
             </div>
@@ -197,7 +193,7 @@ export default function SignUp() {
             <button
               type="submit"
               disabled={loading}
-              className="relative overflow-hidden flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-3 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#0F0F0F] disabled:opacity-70 transition-all group"
+              className="relative overflow-hidden flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-3 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-app-secondary disabled:opacity-70 transition-all group"
             >
               <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/40 to-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
               {loading ? (
@@ -213,7 +209,7 @@ export default function SignUp() {
             
             <div className="flex items-center justify-center mt-6">
               <div className="text-center text-sm">
-                <p className="text-[#A0A0A0]">
+                <p className="text-app-secondary">
                   Already have an account?{' '}
                   <Link href="/signin" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
                     Sign in

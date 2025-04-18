@@ -16,9 +16,23 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark');
   const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('dark');
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent flash of wrong theme
+  useEffect(() => {
+    setMounted(true);
+    
+    // Check for stored theme in localStorage as a fallback
+    const savedTheme = localStorage.getItem('theme') as Theme | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
 
   // Load user's theme preference on mount
   useEffect(() => {
+    if (!mounted) return;
+    
     const loadTheme = async () => {
       try {
         const settings = await UserService.getUserSettings();
@@ -31,10 +45,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     loadTheme();
-  }, []);
+  }, [mounted]);
 
   // Apply the theme
   useEffect(() => {
+    if (!mounted) return;
+    
     // Determine the effective theme
     const effectiveTheme = 
       theme === 'system' 
@@ -53,11 +69,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       document.documentElement.classList.add('light');
       document.documentElement.classList.remove('dark');
     }
-  }, [theme]);
+    
+    // Store in localStorage as fallback
+    localStorage.setItem('theme', theme);
+  }, [theme, mounted]);
 
   // Handle system theme changes
   useEffect(() => {
-    if (theme !== 'system') return;
+    if (!mounted || theme !== 'system') return;
     
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
@@ -74,16 +93,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  }, [theme, mounted]);
 
   // Save theme preference when it changes
   useEffect(() => {
+    if (!mounted) return;
+    
     const saveTheme = async () => {
       await UserService.updateUserSettings({ theme });
     };
 
     saveTheme();
-  }, [theme]);
+  }, [theme, mounted]);
+  
+  // Prevents flash of unstyled content
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>

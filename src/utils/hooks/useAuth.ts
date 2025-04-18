@@ -107,17 +107,38 @@ export function useAuth() {
     
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signUp({ 
+      
+      // Sign up without requiring email confirmation
+      const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          // Skip email confirmation by not specifying emailRedirectTo
           data: metadata
         }
       });
       
       if (error) {
         throw error;
+      }
+      
+      // If account was created successfully, immediately sign in
+      if (data?.user) {
+        // Automatically sign in the user
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (signInError) {
+          throw signInError;
+        }
+        
+        // Refresh the router for server components
+        router.refresh();
+        
+        // Navigate to dashboard
+        window.location.href = '/dashboard';
       }
       
       return { error: null };
