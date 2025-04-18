@@ -1,7 +1,19 @@
 'use client';
-
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { 
+  MessageSquare, Users, Wrench, LineChart, 
+  Settings, PlusCircle, Send, Paperclip,
+  MoreHorizontal, Search, ChevronLeft, ChevronRight,
+  Folder
+} from 'lucide-react';
+import Logo from '@/components/Logo';
+// Import the client-side Mastra client instead of server-side
+import mastraClient from '@/lib/mastraClient';
+import { ProjectService } from '@/services/projectService';
+import { Project } from '@/components/dashboard/types';
 
 export default function ProjectPage() {
   const router = useRouter();

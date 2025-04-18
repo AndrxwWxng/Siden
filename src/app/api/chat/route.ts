@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   if (lastMessage.role === 'user') {
     const content = typeof lastMessage.content === 'string' 
       ? lastMessage.content 
-      : lastMessage.content.map((part: any) => part.text || '').join('');
+      : lastMessage.content.map((part: { text?: string }) => part.text || '').join('');
     
     // Check if it's a research request
     const researchPattern = /research|find (out|information) about|look up|investigate|tell me about/i;

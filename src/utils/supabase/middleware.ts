@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { supabaseConfig } from './config'
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -14,7 +14,7 @@ export async function updateSession(request: NextRequest) {
     supabaseConfig.anonKey,
     {
       cookies: {
-        async get(name) {
+        get(name) {
           try {
             const cookie = request.cookies.get(name)
             return cookie?.value
@@ -23,7 +23,7 @@ export async function updateSession(request: NextRequest) {
             return undefined
           }
         },
-        async set(name, value, options) {
+        set(name, value, options) {
           try {
             // Set cookie on the response
             response.cookies.set({
@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
             console.error('Error setting cookie in middleware:', error)
           }
         },
-        async remove(name, options) {
+        remove(name, options) {
           try {
             // Delete cookie from the response
             response.cookies.delete({

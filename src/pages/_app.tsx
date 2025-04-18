@@ -4,6 +4,11 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 function MyApp({ Component, pageProps }: AppProps) {
+  // Only use the router on the client side to avoid build errors
+  if (typeof window === 'undefined') {
+    return <Component {...pageProps} />;
+  }
+  
   const router = useRouter();
   
   // Redirect from signin to dashboard

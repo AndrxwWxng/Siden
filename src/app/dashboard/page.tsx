@@ -4,15 +4,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { 
-  PlusCircle, Settings, Users, ChevronRight, Briefcase, ArrowRight, 
-  Database, Bell, Search, Grid, Heart, Filter, Home, MessageSquare,
-  BarChart3, Calendar, HelpCircle, ChevronLeft, User, Bot, Paperclip, Send,
-  FileText, Code, BookOpen, LogOut, Shield
+  PlusCircle, Settings, Users, ChevronRight, Briefcase, 
+  Database, MessageSquare, ChevronLeft, User, Bot, Paperclip, Send,
+  FileText, Code, BookOpen
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { ProjectService } from '@/services/projectService';
 import { Project } from '@/components/dashboard/types';
 import SignOutButton from '@/components/SignOutButton';
+import { Session } from '@supabase/supabase-js';
+
 // Agent role definitions with capabilities
 const agentRoles = [
   {
@@ -138,16 +139,6 @@ const Dashboard = () => {
   const [isAddingIntegration, setIsAddingIntegration] = useState(false);
   const [integrationAdded, setIntegrationAdded] = useState(false);
   
-  // Database Connection Modal
-  const [showDatabaseModal, setShowDatabaseModal] = useState(false);
-  const [databaseType, setDatabaseType] = useState<'mysql' | 'postgres' | 'mongodb'>('postgres');
-  const [databaseHost, setDatabaseHost] = useState('');
-  const [databasePort, setDatabasePort] = useState('');
-  const [databaseName, setDatabaseName] = useState('');
-  const [databaseUser, setDatabaseUser] = useState('');
-  const [databasePassword, setDatabasePassword] = useState('');
-  const [isConnectingDatabase, setIsConnectingDatabase] = useState(false);
-  
   // Connection status for integrations
   const [connectedServices, setConnectedServices] = useState<Record<string, boolean>>({
     googleWorkspace: true,
@@ -178,7 +169,6 @@ const Dashboard = () => {
     }
     
     // Show connecting state
-    const [isConnecting, setIsConnecting] = useState<Record<string, boolean>>({});
     setIsConnecting(prev => ({ ...prev, [service]: true }));
     
     // Simulate connection process
@@ -304,7 +294,7 @@ const Dashboard = () => {
     getUser();
     
     // Set up auth state change listener
-    const { data: listener } = createClient().auth.onAuthStateChange((event, session) => {
+    const { data: listener } = createClient().auth.onAuthStateChange((event: string, session: Session | null) => {
       if (event === 'SIGNED_OUT') {
         router.push('/signin');
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -492,7 +482,7 @@ const Dashboard = () => {
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-2">Create New Project</h1>
               <p className="text-[#A3A3A3]">
-                Set up your project details so your AI team can understand what you're building.
+                Set up your project details so your AI team can understand what you&apos;re building.
               </p>
             </div>
             
@@ -620,7 +610,7 @@ const Dashboard = () => {
               <div className="mb-10">
                 <h1 className="text-3xl font-medium mb-3">Select Agent Roles</h1>
                 <p className="text-[#A3A3A3] text-lg">
-                  Choose which AI agents you'd like on your team
+                  Choose which AI agents you&apos;d like on your team
                 </p>
               </div>
               
@@ -1171,6 +1161,7 @@ const Dashboard = () => {
                             <p className="text-sm text-[#A3A3A3]">Allow agents to query your databases securely</p>
                           </div>
                         </div>
+
                         <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
                           Coming Soon
                         </div>
@@ -1564,7 +1555,7 @@ const Dashboard = () => {
                         </div>
                         <h3 className="text-xl font-medium mb-2">Integration Added Successfully</h3>
                         <p className="text-[#A3A3A3] mb-8">
-                          Your custom integration "{customIntegrationName}" has been added to your project.
+                          Your custom integration &quot;{customIntegrationName}&quot; has been added to your project.
                         </p>
                         <div className="bg-[#2E2E2E] rounded-lg p-4 mb-8 text-left">
                           <div className="flex justify-between items-center mb-2">
@@ -1599,7 +1590,7 @@ const Dashboard = () => {
                               <svg className="mr-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                               </svg>
-                              What You'll Need
+                              What You&apos;ll Need
                             </h3>
                             <ul className="space-y-2 text-sm text-[#A3A3A3]">
                               <li className="flex items-start gap-2">
