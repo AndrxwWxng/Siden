@@ -109,11 +109,11 @@ export async function POST(req: NextRequest) {
         throw new Error("Developer agent not found");
       }
       
-      const stream = await developerAgent.stream(processedMessages);
+      const stream = await developerAgent.stream(processedMessages as any); 
       const response = stream.toDataStreamResponse();
       
       // Store the response for potential reuse
-      recentRequests.set(requestKey, { 
+      recentRequests.set(requestKey, {
         timestamp: now, 
         response: response.clone() 
       });
@@ -162,9 +162,12 @@ export async function OPTIONS(req: NextRequest) {
   return new Response(null, {
     status: 204,
     headers: {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": process.env.NODE_ENV === 'production' 
+        ? "https://siden.ai" 
+        : "http://localhost:3000",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Credentials": "true",
     },
   });
 } 

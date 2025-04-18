@@ -273,9 +273,12 @@ export async function OPTIONS(req: NextRequest) {
   return new Response(null, {
     status: 204,
     headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Origin": process.env.NODE_ENV === 'production' 
+        ? "https://siden.ai" 
+        : "http://localhost:3000",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Credentials": "true",
     },
   });
 }
