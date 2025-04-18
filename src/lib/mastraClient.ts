@@ -9,11 +9,17 @@ export async function callMastraAgent(agentId: string, message: string, options?
   try {
     console.log(`[MASTRA CLIENT] Calling agent: ${agentId} with message length: ${message.length}`);
     
-    const response = await fetch('/api/mastra/generate', {
+    // Create the request URL with a cache-busting parameter
+    const timestamp = Date.now();
+    const url = `/api/mastra/generate?t=${timestamp}`;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store',
+        'Pragma': 'no-cache',
       },
       body: JSON.stringify({ 
         agentId, 
@@ -21,6 +27,8 @@ export async function callMastraAgent(agentId: string, message: string, options?
         metadata: options?.metadata || {}
       }),
       credentials: 'same-origin', // Include cookies for authenticated requests
+      cache: 'no-store',
+      mode: 'cors',
     });
 
     if (!response.ok) {

@@ -47,17 +47,28 @@ const pendingRequests = new Map<string, Promise<any>>();
  */
 export async function delegateTask(request: DelegationRequest): Promise<DelegationResponse> {
   try {
-    const response = await fetch('/api/agent-to-agent', {
+    // Create the request URL with a cache-busting parameter
+    const timestamp = Date.now();
+    const url = `/api/agent-to-agent?t=${timestamp}`;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store',
+        'Pragma': 'no-cache',
       },
       body: JSON.stringify(request),
       credentials: 'same-origin', // Include cookies for authenticated requests
+      cache: 'no-store',
+      mode: 'cors',
     });
     
     if (!response.ok) {
+      console.error(`[DELEGATION] HTTP Error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`[DELEGATION] Error Response Body:`, errorText);
       throw new Error(`Delegation failed: ${response.statusText}`);
     }
     
