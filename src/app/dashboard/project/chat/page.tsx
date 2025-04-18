@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useChat, Message } from "@ai-sdk/react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from 'next/navigation';
-import { MessageSquare, Users, RefreshCcwIcon, AlertCircleIcon, SendIcon, ChevronRight, MenuIcon } from "lucide-react";
+import { MessageSquare, Users, RefreshCw, AlertCircle, Send, ChevronRight } from "lucide-react";
 import Logo from '@/components/Logo';
 import MessageFormatter from '@/components/MessageFormatter';
 
@@ -191,8 +191,8 @@ export default function ProjectChatPage() {
 
   // Get the selected agent data
   const selectedAgentData = useMemo(() => {
-    return agentRoles.find(role => role.id === selectedAgent) || agentRoles[0];
-  }, [selectedAgent]);
+    return availableAgents.find(role => role.id === selectedAgent) || availableAgents[0] || agentRoles[0];
+  }, [selectedAgent, availableAgents]);
   
   // Create a synthetic event for handleInputChange
   const setInputValue = (value: string) => {
@@ -253,6 +253,16 @@ export default function ProjectChatPage() {
     setMessages([]);
     setError(null);
   }, [selectedAgent, setMessages]);
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messages]);
   
   // Helper to format timestamp
   const formatTime = (timestamp: string) => {
@@ -337,7 +347,7 @@ export default function ProjectChatPage() {
         {/* Chat header */}
         <div className="border-b border-[#313131] bg-[#343131] p-4 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white mr-2 overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-[#252525] flex items-center justify-center overflow-hidden mr-3">
               <Image 
                 src={selectedAgentData.icon} 
                 alt={selectedAgentData.name} 
@@ -359,44 +369,41 @@ export default function ProjectChatPage() {
             onClick={resetMessages}
             className="text-[#94A3B8] hover:text-white p-2 rounded-md"
           >
-            <RefreshCcwIcon className="h-5 w-5" />
+            <RefreshCw className="h-5 w-5" />
           </button>
         </div>
         
-        {/* Chat messages */}
-        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#252525]">
-          {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl mb-4 overflow-hidden">
-                <Image 
-                  src={selectedAgentData.icon} 
-                  alt={selectedAgentData.name} 
-                  width={64} 
-                  height={64} 
-                  className="w-full h-full object-cover" 
-                />
-              </div>
-              <h2 className="text-xl font-semibold text-white mb-2">
-                Chat with {selectedAgentData.name}
-              </h2>
-              <p className="text-[#94A3B8] max-w-md">
-                {selectedAgentData.description}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                {selectedAgentData.capabilities.map((capability, index) => (
-                  <span 
-                    key={index}
-                    className="px-3 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]"
-                  >
-                    {capability}
-                  </span>
-                ))}
-              </div>
+        {/* Empty State */}
+        {messages.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center bg-[#252525]">
+            <div className="w-16 h-16 rounded-full bg-[#1B1A19] flex items-center justify-center overflow-hidden mb-4">
+              <Image 
+                src={selectedAgentData.icon} 
+                alt={selectedAgentData.name} 
+                width={64} 
+                height={64} 
+                className="w-full h-full object-cover" 
+              />
             </div>
-          ) : (
-            messages.map((message, index) => (
+            <h2 className="text-xl font-semibold mb-2">Chat with {selectedAgentData.name}</h2>
+            <p className="text-[#94A3B8] max-w-md text-center mb-4">{selectedAgentData.description}</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {selectedAgentData.capabilities.map((capability, index) => (
+                <span 
+                  key={index}
+                  className="px-3 py-1 text-xs rounded-full bg-[#343131] text-[#94A3B8]"
+                >
+                  {capability}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Chat Messages */
+          <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#252525]">
+            {messages.map((message) => (
               <div
-                key={index}
+                key={message.id}
                 className={`flex ${
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
@@ -414,58 +421,58 @@ export default function ProjectChatPage() {
                   <MessageFormatter content={message.content} />
                 </div>
               </div>
-            ))
-          )}
-          
-          {isProcessing && (
-            <div className="flex justify-start">
-              <div className="bg-[#343131] px-4 py-3 rounded-2xl rounded-tl-none flex items-center space-x-2">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-[#6366F1] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-[#6366F1] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-[#6366F1] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            ))}
+            
+            {/* Show processing indicator */}
+            {isProcessing && (
+              <div className="flex justify-start">
+                <div className="bg-[#343131] px-4 py-3 rounded-2xl rounded-tl-none flex items-center space-x-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-[#6366F1] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-[#6366F1] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-[#6366F1] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                  <span className="text-sm text-[#94A3B8]">Processing...</span>
                 </div>
-                <span className="text-sm text-[#94A3B8]">Processing...</span>
               </div>
-            </div>
-          )}
-          
-          {error && (
-            <div className="flex justify-center">
-              <div className="bg-red-900/20 border border-red-800 text-red-400 px-4 py-3 rounded-lg max-w-[85%]">
-                <div className="flex items-center mb-1">
-                  <AlertCircleIcon className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Error</span>
+            )}
+            
+            {/* Show error message if there is one */}
+            {error && (
+              <div className="flex justify-center">
+                <div className="bg-red-900/20 border border-red-800 text-red-400 px-4 py-3 rounded-lg max-w-[85%]">
+                  <div className="flex items-center mb-1">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <span className="font-medium">Error</span>
+                  </div>
+                  <p className="text-sm">{error}</p>
                 </div>
-                <p className="text-sm">{error}</p>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
         
         {/* Chat input */}
         <div className="p-4 border-t border-[#313131] bg-[#343131]">
-          <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={handleInputChange}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-3 bg-[#252525] border border-[#313131] rounded-lg text-white placeholder-[#94A3B8] focus:outline-none focus:border-[#6366F1]"
-              />
-              <button
-                type="submit"
-                disabled={isProcessing || !input.trim()}
-                className={`p-3 rounded-lg flex items-center justify-center ${
-                  isProcessing || !input.trim()
-                    ? 'bg-[#313131] text-[#94A3B8]'
-                    : 'bg-[#6366F1] text-white hover:bg-[#5254CC]'
-                } transition-colors`}
-              >
-                <SendIcon className="h-5 w-5" />
-              </button>
-            </div>
+          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={handleInputChange}
+              placeholder={`Message ${selectedAgentData.name}...`}
+              className="flex-1 px-4 py-3 bg-[#252525] border border-[#313131] rounded-lg text-white placeholder-[#94A3B8] focus:outline-none focus:border-[#6366F1]"
+            />
+            <button
+              type="submit"
+              disabled={isProcessing || !input.trim()}
+              className={`p-3 rounded-lg flex items-center justify-center ${
+                isProcessing || !input.trim()
+                  ? 'bg-[#313131] text-[#94A3B8]'
+                  : 'bg-[#6366F1] text-white hover:bg-[#5254CC]'
+              } transition-colors`}
+            >
+              <Send className="h-5 w-5" />
+            </button>
           </form>
         </div>
       </div>
