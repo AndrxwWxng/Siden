@@ -1,10 +1,18 @@
 import { mastra } from "@/mastra";
+import { NextRequest } from "next/server";
+
+// Allow streaming responses up to 30 seconds
+export const maxDuration = 30;
+
+// Define Next.js config for API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Simple in-memory request tracking
 const recentRequests = new Map<string, { timestamp: number, response?: any }>();
 const REQUEST_THROTTLE_MS = 1000; // 1 second minimum between identical requests
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json();
     
@@ -132,4 +140,16 @@ export async function POST(req: Request) {
       },
     });
   }
+}
+
+// Add OPTIONS method handler for CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
 } 

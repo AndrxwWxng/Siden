@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { mastra } from '@/mastra';
 import OpenAI from 'openai';
 
+// Define Next.js config for API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
 // Generate the CEO prompt based on available agents
 function generateCEOPrompt(availableAgentIds: string[] = []) {
   // Always include the CEO
@@ -159,4 +164,16 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Add OPTIONS method handler for CORS preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
 } 

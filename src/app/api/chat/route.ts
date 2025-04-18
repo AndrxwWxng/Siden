@@ -1,7 +1,12 @@
 import { mastra } from "@/mastra";
+import { NextRequest } from "next/server";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
+
+// Define Next.js config for API route to specify allowed methods
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Define valid agent IDs to match what's available in the system
 type AgentId = 'weatherAgent' | 'ceoAgent' | 'marketingAgent' | 'developerAgent' | 
@@ -48,204 +53,229 @@ async function summarizeWithCEO(originalQuery: string, findings: string) {
   }
 }
 
-export async function POST(req: Request) {
-  const { messages } = await req.json();
-  const ceoAgent = mastra.getAgent("ceoAgent");
+export async function POST(req: NextRequest) {
+  try {
+    const { messages } = await req.json();
+    const ceoAgent = mastra.getAgent("ceoAgent");
   
-  // Check if the last user message is asking for research
-  const lastMessage = messages[messages.length - 1];
-  if (lastMessage.role === 'user') {
-    const content = typeof lastMessage.content === 'string' 
-      ? lastMessage.content 
-      : lastMessage.content.map((part: any) => part.text || '').join('');
-    
-    // Check if it's a research request
-    const researchPattern = /research|find (out|information) about|look up|investigate|tell me about/i;
-    if (researchPattern.test(content)) {
-      try {
-        // Create a clean research query
-        const researchQuery = content.replace(/^(can you|please|could you|)\s*(research|tell me about|find out about|investigate|look up)\s*/i, '').trim();
-        
-        // Direct delegation to research agent
-        const researchFindings = await delegateDirectly(
-          'researchAgent',
-          `Conduct research on the following topic and provide a comprehensive analysis: ${researchQuery}`
-        );
-        
-        if (researchFindings) {
-          // Have CEO summarize the findings
-          const ceoResponse = await summarizeWithCEO(researchQuery, researchFindings);
+    // Check if the last user message is asking for research
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role === 'user') {
+      const content = typeof lastMessage.content === 'string' 
+        ? lastMessage.content 
+        : lastMessage.content.map((part: any) => part.text || '').join('');
+      
+      // Check if it's a research request
+      const researchPattern = /research|find (out|information) about|look up|investigate|tell me about/i;
+      if (researchPattern.test(content)) {
+        try {
+          // Create a clean research query
+          const researchQuery = content.replace(/^(can you|please|could you|)\s*(research|tell me about|find out about|investigate|look up)\s*/i, '').trim();
           
-          // Return as stream response
-          return new Response(
-            JSON.stringify({
-              choices: [
-                {
-                  index: 0,
-                  delta: { content: ceoResponse },
-                  finish_reason: "stop"
-                }
-              ]
-            }),
-            {
-              headers: {
-                "Content-Type": "application/json",
-                "Cache-Control": "no-cache, no-transform",
-                "X-Accel-Buffering": "no",
-              },
-            }
+          // Direct delegation to research agent
+          const researchFindings = await delegateDirectly(
+            'researchAgent',
+            `Conduct research on the following topic and provide a comprehensive analysis: ${researchQuery}`
           );
-        }
-        throw new Error("Research delegation returned no results");
-      } catch (error) {
-        console.error("Research delegation failed:", error);
-        
-        // Create a fallback message for CEO agent explaining the situation
-        const fallbackMessages = [
-          ...messages.slice(0, -1),
-          {
-            role: 'user',
-            content: `${content}
+          
+          if (researchFindings) {
+            // Have CEO summarize the findings
+            const ceoResponse = await summarizeWithCEO(researchQuery, researchFindings);
             
-            [Note: I tried to get assistance from the Research team, but there was a technical issue. Please provide a response based on your general knowledge and mention the technical difficulty with the research team.]`
+            // Return as stream response
+            return new Response(
+              JSON.stringify({
+                choices: [
+                  {
+                    index: 0,
+                    delta: { content: ceoResponse },
+                    finish_reason: "stop"
+                  }
+                ]
+              }),
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Cache-Control": "no-cache, no-transform",
+                  "X-Accel-Buffering": "no",
+                },
+              }
+            );
           }
-        ];
-        
-        // Fall back to regular CEO agent response with context about the failure
-        const stream = await ceoAgent.stream(fallbackMessages);
-        return stream.toDataStreamResponse();
+          throw new Error("Research delegation returned no results");
+        } catch (error) {
+          console.error("Research delegation failed:", error);
+          
+          // Create a fallback message for CEO agent explaining the situation
+          const fallbackMessages = [
+            ...messages.slice(0, -1),
+            {
+              role: 'user',
+              content: `${content}
+              
+              [Note: I tried to get assistance from the Research team, but there was a technical issue. Please provide a response based on your general knowledge and mention the technical difficulty with the research team.]`
+            }
+          ];
+          
+          // Fall back to regular CEO agent response with context about the failure
+          const stream = await ceoAgent.stream(fallbackMessages);
+          return stream.toDataStreamResponse();
+        }
+      }
+      
+      // Check if it's a development request
+      const devPattern = /(develop|create|build|code|program|implement|make|design|setup|set up|construct) .*(site|website|app|application|platform|system|page|webpage|landing page)/i;
+      if (devPattern.test(content)) {
+        try {
+          // Check if we need design input too
+          const designEmphasis = /(design|layout|ui|ux|visual|appearance|look and feel)/i;
+          let devPrompt = content;
+          
+          if (designEmphasis.test(content)) {
+            // Get design recommendations first
+            const designFindings = await delegateDirectly(
+              'designAgent',
+              `The CEO has asked to design: ${content}. Please provide detailed design recommendations and visual concepts.`
+            );
+            
+            if (designFindings) {
+              // Include design recommendations in dev prompt
+              devPrompt = `${content}\n\nThe Design team has provided these recommendations: ${designFindings}\n\nPlease implement this design with appropriate code.`;
+            }
+          }
+          
+          // Get developer implementation
+          const devFindings = await delegateDirectly(
+            'developerAgent',
+            `The CEO has asked you to: ${devPrompt}. Please provide a detailed plan and initial code for this project.`
+          );
+          
+          if (devFindings) {
+            // Have CEO summarize the findings
+            const ceoResponse = await summarizeWithCEO(content, devFindings);
+            
+            // Return as stream response
+            return new Response(
+              JSON.stringify({
+                choices: [
+                  {
+                    index: 0,
+                    delta: { content: ceoResponse },
+                    finish_reason: "stop"
+                  }
+                ]
+              }),
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Cache-Control": "no-cache, no-transform",
+                  "X-Accel-Buffering": "no",
+                },
+              }
+            );
+          }
+          throw new Error("Development delegation returned no results");
+        } catch (error) {
+          console.error("Development delegation failed:", error);
+          
+          // Create a fallback message
+          const fallbackMessages = [
+            ...messages.slice(0, -1),
+            {
+              role: 'user',
+              content: `${content}
+              
+              [Note: I tried to coordinate with the Development and Design teams, but there was a technical issue. Please provide a response based on your general knowledge and mention the technical difficulty with the teams.]`
+            }
+          ];
+          
+          // Fall back to regular CEO agent
+          const stream = await ceoAgent.stream(fallbackMessages);
+          return stream.toDataStreamResponse();
+        }
+      }
+      
+      // Check if it's a marketing request
+      const marketingPattern = /(marketing|promote|advertise|brand|content|social media|seo|audience)/i;
+      if (marketingPattern.test(content)) {
+        try {
+          // Direct delegation to marketing agent
+          const marketingFindings = await delegateDirectly(
+            'marketingAgent',
+            `The CEO has asked you to: ${content}. Please provide a comprehensive marketing strategy and content plan.`
+          );
+          
+          if (marketingFindings) {
+            // Have CEO summarize the findings
+            const ceoResponse = await summarizeWithCEO(content, marketingFindings);
+            
+            // Return as stream response
+            return new Response(
+              JSON.stringify({
+                choices: [
+                  {
+                    index: 0,
+                    delta: { content: ceoResponse },
+                    finish_reason: "stop"
+                  }
+                ]
+              }),
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Cache-Control": "no-cache, no-transform",
+                  "X-Accel-Buffering": "no",
+                },
+              }
+            );
+          }
+          throw new Error("Marketing delegation returned no results");
+        } catch (error) {
+          console.error("Marketing delegation failed:", error);
+          
+          // Create a fallback message
+          const fallbackMessages = [
+            ...messages.slice(0, -1),
+            {
+              role: 'user',
+              content: `${content}
+              
+              [Note: I tried to get assistance from the Marketing team, but there was a technical issue. Please provide a response based on your general knowledge and mention the technical difficulty with the marketing team.]`
+            }
+          ];
+          
+          // Fall back to regular CEO agent
+          const stream = await ceoAgent.stream(fallbackMessages);
+          return stream.toDataStreamResponse();
+        }
       }
     }
     
-    // Check if it's a development request
-    const devPattern = /(develop|create|build|code|program|implement|make|design|setup|set up|construct) .*(site|website|app|application|platform|system|page|webpage|landing page)/i;
-    if (devPattern.test(content)) {
-      try {
-        // Check if we need design input too
-        const designEmphasis = /(design|layout|ui|ux|visual|appearance|look and feel)/i;
-        let devPrompt = content;
-        
-        if (designEmphasis.test(content)) {
-          // Get design recommendations first
-          const designFindings = await delegateDirectly(
-            'designAgent',
-            `The CEO has asked to design: ${content}. Please provide detailed design recommendations and visual concepts.`
-          );
-          
-          if (designFindings) {
-            // Include design recommendations in dev prompt
-            devPrompt = `${content}\n\nThe Design team has provided these recommendations: ${designFindings}\n\nPlease implement this design with appropriate code.`;
-          }
+    // Handle regular messages
+    const stream = await ceoAgent.stream(messages);
+    return stream.toDataStreamResponse();
+  } catch (error) {
+    console.error("Error in chat API route:", error);
+    return new Response(
+      JSON.stringify({ error: "An error occurred processing your request" }),
+      { 
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
         }
-        
-        // Get developer implementation
-        const devFindings = await delegateDirectly(
-          'developerAgent',
-          `The CEO has asked you to: ${devPrompt}. Please provide a detailed plan and initial code for this project.`
-        );
-        
-        if (devFindings) {
-          // Have CEO summarize the findings
-          const ceoResponse = await summarizeWithCEO(content, devFindings);
-          
-          // Return as stream response
-          return new Response(
-            JSON.stringify({
-              choices: [
-                {
-                  index: 0,
-                  delta: { content: ceoResponse },
-                  finish_reason: "stop"
-                }
-              ]
-            }),
-            {
-              headers: {
-                "Content-Type": "application/json",
-                "Cache-Control": "no-cache, no-transform",
-                "X-Accel-Buffering": "no",
-              },
-            }
-          );
-        }
-        throw new Error("Development delegation returned no results");
-      } catch (error) {
-        console.error("Development delegation failed:", error);
-        
-        // Create a fallback message
-        const fallbackMessages = [
-          ...messages.slice(0, -1),
-          {
-            role: 'user',
-            content: `${content}
-            
-            [Note: I tried to coordinate with the Development and Design teams, but there was a technical issue. Please provide a response based on your general knowledge and mention the technical difficulty with the teams.]`
-          }
-        ];
-        
-        // Fall back to regular CEO agent
-        const stream = await ceoAgent.stream(fallbackMessages);
-        return stream.toDataStreamResponse();
       }
-    }
-    
-    // Check if it's a marketing request
-    const marketingPattern = /(marketing|promote|advertise|brand|content|social media|seo|audience)/i;
-    if (marketingPattern.test(content)) {
-      try {
-        // Direct delegation to marketing agent
-        const marketingFindings = await delegateDirectly(
-          'marketingAgent',
-          `The CEO has asked you to: ${content}. Please provide a comprehensive marketing strategy and content plan.`
-        );
-        
-        if (marketingFindings) {
-          // Have CEO summarize the findings
-          const ceoResponse = await summarizeWithCEO(content, marketingFindings);
-          
-          // Return as stream response
-          return new Response(
-            JSON.stringify({
-              choices: [
-                {
-                  index: 0,
-                  delta: { content: ceoResponse },
-                  finish_reason: "stop"
-                }
-              ]
-            }),
-            {
-              headers: {
-                "Content-Type": "application/json",
-                "Cache-Control": "no-cache, no-transform",
-                "X-Accel-Buffering": "no",
-              },
-            }
-          );
-        }
-        throw new Error("Marketing delegation returned no results");
-      } catch (error) {
-        console.error("Marketing delegation failed:", error);
-        
-        // Create a fallback message
-        const fallbackMessages = [
-          ...messages.slice(0, -1),
-          {
-            role: 'user',
-            content: `${content}
-            
-            [Note: I tried to get assistance from the Marketing team, but there was a technical issue. Please provide a response based on your general knowledge and mention the technical difficulty with the marketing team.]`
-          }
-        ];
-        
-        // Fall back to regular CEO agent
-        const stream = await ceoAgent.stream(fallbackMessages);
-        return stream.toDataStreamResponse();
-      }
-    }
+    );
   }
-  
-  // Handle regular messages
-  const stream = await ceoAgent.stream(messages);
-  return stream.toDataStreamResponse();
+}
+
+// Add OPTIONS method handler for CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
 }
