@@ -39,57 +39,38 @@ export async function middleware(request: NextRequest) {
       process.env.NODE_ENV === 'production' ? '*' : 'http://localhost:3000');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
-    
-    // For API routes, bypass auth checks to ensure the API works even if Supabase is down
-    if (request.nextUrl.pathname.startsWith('/api/chat') || 
-        request.nextUrl.pathname.startsWith('/api/mastra')) {
-      return response;
-    }
   }
 
-  let session: any = null;
-  
-  try {
-    // Only attempt Supabase connection if required env vars exist and Supabase is not disabled
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && 
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && 
-        process.env.NEXT_PUBLIC_SUPABASE_DISABLE !== 'true') {
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        {
-          cookies: {
-            get(name: string) {
-              return request.cookies.get(name)?.value;
-            },
-            set(name: string, value: string, options: { path?: string }) {
-              response.cookies.set({
-                name,
-                value,
-                ...options,
-                sameSite: 'lax',
-                httpOnly: true,
-              });
-            },
-            remove(name: string, options: { path?: string }) {
-              response.cookies.delete({
-                name,
-                ...options,
-                sameSite: 'lax',
-                httpOnly: true,
-              });
-            },
-          },
-        }
-      );
-
-      const { data } = await supabase.auth.getSession();
-      session = data.session;
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: { path?: string }) {
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+            sameSite: 'lax',
+            httpOnly: true,
+          });
+        },
+        remove(name: string, options: { path?: string }) {
+          response.cookies.delete({
+            name,
+            ...options,
+            sameSite: 'lax',
+            httpOnly: true,
+          });
+        },
+      },
     }
-  } catch (error) {
-    console.error('Supabase connection error in middleware:', error);
-    // Continue without a session if there's an error
-  }
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
 
   // Check if we're in development mode
   const isDevelopment = process.env.NODE_ENV === 'development';
