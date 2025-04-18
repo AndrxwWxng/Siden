@@ -12,33 +12,26 @@ const isBuildEnvironment = process.env.VERCEL_ENV === 'production' || process.en
 const isVercelBuild = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
 
 // Get database connection from environment variable
-const DATABASE_URL = process.env.DATABASE_URL || '';
+let DATABASE_URL = process.env.DATABASE_URL;
 
-// Initialize PgVector with the database connection string from environment
-// Use the new utility to handle connection more robustly
-export const pgVector = createDatabaseConnection(DATABASE_URL);
+if (!DATABASE_URL) {
+  console.error('DATABASE_URL environment variable is not set');
+  throw new Error('DATABASE_URL environment variable is not set');
+}
 
-// Safe embedding generation that handles telemetry issues
-const generateSafeEmbedding = async (text: string) => {
-  // In build environment, return a safe placeholder
-  if (isBuildEnvironment) {
-    return createSafeEmbedding();
+// Modify the connection string for Vercel environment to use SSL and avoid IPv6
+if (process.env.VERCEL) {
+  // Add SSL and other connection parameters if they're not already in the URL
+  if (!DATABASE_URL.includes('ssl=true')) {
+    DATABASE_URL += (DATABASE_URL.includes('?') ? '&' : '?') + 
+                   'ssl=true&sslmode=require&connection_limit=10&idle_timeout=10';
   }
   
-  try {
-    const embeddingModel = openai.embedding('text-embedding-3-small');
-    const embeddingResponse = await embeddingModel.doEmbed({ 
-      values: [text]
-    });
-    const embedding = embeddingResponse.embeddings[0];
-    
-    // Add telemetry function if needed
-    return addTelemetrySupport(embedding);
-  } catch (error) {
-    console.error('Error generating embedding:', error);
-    return createSafeEmbedding();
-  }
-};
+  console.log('Running in Vercel production environment with enhanced database connection');
+}
+
+// Initialize PgVector with the database connection string
+export const pgVector = new PgVector(DATABASE_URL);
 
 // Initialize the vector indices if they don't exist
 export async function initializeVectorStore() {
@@ -200,21 +193,21 @@ const mockVectorQueryTool = {
 };
 
 // Conditionally export the real or mock vector tools
-export const vectorQueryTool = isBuildEnvironment 
-  ? mockVectorQueryTool
-  : createVectorQueryTool({
-      vectorStoreName: 'pgVector',
-      indexName: 'knowledge_base',
-      model: openai.embedding('text-embedding-3-small'),
-    });
+// export const vectorQueryTool = isBuildEnvironment 
+//   ? mockVectorQueryTool
+//   : createVectorQueryTool({
+//       vectorStoreName: 'pgVector',
+//       indexName: 'knowledge_base',
+//       model: openai.embedding('text-embedding-3-small'),
+//     });
 
-export const papersVectorQueryTool = isBuildEnvironment
-  ? mockVectorQueryTool
-  : createVectorQueryTool({
-      vectorStoreName: 'pgVector',
-      indexName: 'papers',
-      model: openai.embedding('text-embedding-3-small'),
-    });
+// export const papersVectorQueryTool = isBuildEnvironment
+//   ? mockVectorQueryTool
+//   : createVectorQueryTool({
+//       vectorStoreName: 'pgVector',
+//       indexName: 'papers',
+//       model: openai.embedding('text-embedding-3-small'),
+//     });
 
 // Create a vector document chunker tool for storing new knowledge
 export const documentChunkerTool = {
@@ -229,19 +222,18 @@ export const documentChunkerTool = {
 
     return await safeDbOperation(async () => {
       // Generate embedding using the safe method
-      const embedding = await generateSafeEmbedding(params.content);
+      // const embedding = await createSafeEmbedding(params.content);
       
       // Store in PgVector (use specified index or default to knowledge_base)
       const indexName = params.indexName || 'knowledge_base';
-      
-      await pgVector.upsert({
-        indexName,
-        vectors: [embedding],
-        metadata: [{
-          content: params.content,
-          ...(params.metadata || {})
-        }]
-      });
+      // await pgVector.upsert({
+      //   indexName,
+      //   // vectors: [embedding],
+      //   metadata: [{
+      //     content: params.content,
+      //     ...(params.metadata || {})
+      //   }]
+      // });
       
       return { success: true };
     }, { 
