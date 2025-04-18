@@ -28,7 +28,10 @@ const nextConfig = {
   },
 
   // Enable Turbopack
-  turbopack: {},
+  turbopack: {
+    // Configure any needed loaders or other Turbopack options here
+    resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+  },
 
   // Generate source maps for better debugging
   productionBrowserSourceMaps: true,
