@@ -16,6 +16,31 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   }
 
+  // Add CORS headers for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Handle preflight OPTIONS request for CORS
+    if (request.method === 'OPTIONS') {
+      const corsResponse = new NextResponse(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
+            ? 'https://siden.ai' 
+            : 'http://localhost:3000',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+      return corsResponse;
+    }
+
+    // Add CORS headers for other API requests
+    response.headers.set('Access-Control-Allow-Origin', 
+      process.env.NODE_ENV === 'production' ? 'https://siden.ai' : 'http://localhost:3000');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

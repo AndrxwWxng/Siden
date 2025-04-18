@@ -5,6 +5,8 @@ import OpenAI from 'openai';
 // Define Next.js config for API route
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 export const maxDuration = 30;
 
 // Generate the CEO prompt based on available agents
@@ -172,8 +174,30 @@ export async function OPTIONS(request: NextRequest) {
     status: 204,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, X-Requested-With",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Max-Age": "86400",
     },
   });
-} 
+}
+
+// Add GET method handler for direct browser requests
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    message: "This API endpoint requires a POST request with agent information.",
+    status: "ok",
+    endpoint: "mastra/generate"
+  });
+}
+
+// Catch-all handler for unsupported HTTP methods
+export async function handler(request: NextRequest) {
+  return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
+    status: 405,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}

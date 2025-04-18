@@ -47,15 +47,28 @@ const pendingRequests = new Map<string, Promise<any>>();
  */
 export async function delegateTask(request: DelegationRequest): Promise<DelegationResponse> {
   try {
-    const response = await fetch('/api/agent-to-agent', {
+    // Create the request URL with a cache-busting parameter
+    const timestamp = Date.now();
+    const url = `/api/agent-to-agent?t=${timestamp}`;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store',
+        'Pragma': 'no-cache',
       },
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
+      credentials: 'same-origin', // Include cookies for authenticated requests
+      cache: 'no-store',
+      mode: 'cors',
     });
     
     if (!response.ok) {
+      console.error(`[DELEGATION] HTTP Error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`[DELEGATION] Error Response Body:`, errorText);
       throw new Error(`Delegation failed: ${response.statusText}`);
     }
     
@@ -167,7 +180,7 @@ export async function detectAndDelegate(
     const designEmphasis = /(design|layout|ui|ux|visual|appearance|look and feel)/i;
     if (designEmphasis.test(query) && canDelegateToAgent('design')) {
       try {
-        // First get design recommendations
+        // First, get design recommendations
         const designResponse = await delegateDesign(query, requesterId);
         
         // Then pass design recommendations to the developer
@@ -335,11 +348,62 @@ export async function detectAndDelegateMessage(
     
     // Create the promise for this request
     console.log(`[AGENT DELEGATOR] Creating new request for ${agentId}`);
-    const requestPromise = mastraClient.getAgent(agentId as any).generate(message, {
-      metadata: {
-        availableAgentIds: availableAgentIds || []
+    
+    // Add error handling wrapper with retry logic
+    const makeAgentRequest = async () => {
+      try {
+        // Make the initial request
+        return await mastraClient.getAgent(agentId as any).generate(message, {
+          metadata: {
+            availableAgentIds: availableAgentIds || []
+          }
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('405')) {
+          console.log(`[AGENT DELEGATOR] Received 405 error for ${agentId}, attempting direct fetch...`);
+          
+          // Try a direct fetch to the endpoint if mastraClient fails with 405
+          try {
+            // Try initializing the route with a GET request first
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+            const apiPath = `/api/chat/${agentId.replace('Agent', '')}`;
+            const apiUrl = baseUrl ? `${baseUrl}${apiPath}` : apiPath;
+            
+            // Initialize the route
+            await fetch(apiUrl, { method: 'GET' });
+            
+            // Wait a bit and try actual POST
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              body: JSON.stringify({ 
+                messages: [{ role: 'user', content: message }]
+              })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              return { text: data.text || data.content || "Response received but no message content found." };
+            } else {
+              throw new Error(`Direct fetch failed: ${response.status} ${response.statusText}`);
+            }
+          } catch (directError) {
+            console.error(`[AGENT DELEGATOR] Direct fetch failed:`, directError);
+            throw error; // Re-throw the original error if direct fetch also failed
+          }
+        } else {
+          throw error; // Re-throw non-405 errors
+        }
       }
-    })
+    };
+    
+    const requestPromise = makeAgentRequest()
       .then(response => {
         // On successful completion, remove from pending requests
         pendingRequests.delete(requestKey);
@@ -366,4 +430,4 @@ export async function detectAndDelegateMessage(
       text: `Sorry, there was an error communicating with the ${currentAgent} agent. Please try again later.`
     };
   }
-} 
+}

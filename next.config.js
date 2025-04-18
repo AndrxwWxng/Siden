@@ -23,8 +23,11 @@ const nextConfig = {
     // Configuration for newer Next.js features
     serverActions: {
       bodySizeLimit: "2mb",
-      allowedOrigins: ["localhost:3000", "https://sidn.ai", "https://www.sidn.ai"]
+      allowedOrigins: ["localhost:3000", "https://siden.ai", "https://www.siden.ai"]
     },
+    optimizeCss: true,
+    esmExternals: 'loose',
+    forceSwcTransforms: true,
   },
 
   // Enable Turbopack
@@ -40,7 +43,16 @@ const nextConfig = {
   async rewrites() {
     return {
       beforeFiles: [
-        // Add any required rewrites here
+        // Add rewrites for dashboard project routes
+        {
+          source: '/dashboard/project/:path*',
+          destination: '/dashboard/project/:path*',
+        },
+        // Handle API routes
+        {
+          source: '/api/:path*',
+          destination: '/api/:path*',
+        }
       ],
     };
   },

@@ -7,6 +7,8 @@ export const maxDuration = 30;
 // Define Next.js config for API route
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 interface RequestData {
   timestamp: number;
@@ -109,11 +111,11 @@ export async function POST(req: NextRequest) {
         throw new Error("Developer agent not found");
       }
       
-      const stream = await developerAgent.stream(processedMessages);
+      const stream = await developerAgent.stream(processedMessages as any); 
       const response = stream.toDataStreamResponse();
       
       // Store the response for potential reuse
-      recentRequests.set(requestKey, { 
+      recentRequests.set(requestKey, {
         timestamp: now, 
         response: response.clone() 
       });
@@ -163,8 +165,35 @@ export async function OPTIONS(req: NextRequest) {
     status: 204,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, X-Requested-With",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
+
+// Add GET method handler for direct browser requests
+export async function GET(req: NextRequest) {
+  return new Response(JSON.stringify({
+    message: "This API endpoint requires a POST request with messages.",
+    status: "ok",
+    endpoint: "chat/developer"
+  }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
     },
   });
 } 
+
+// Catch-all handler for unsupported HTTP methods
+export async function handler(req: Request) {
+  return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
+    status: 405,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}
