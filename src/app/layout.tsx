@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Siden - Agents that just work',
+  title: 'Siden - A Team of Agents That Just Work',
   description: 'Create and deploy a team of AI agents that work together on complex tasks.',
   authors: [{ name: 'Siden' }],
   keywords: [
@@ -30,6 +30,25 @@ export const metadata: Metadata = {
     'AI orchestration',
     'Enterprise AI',
   ],
+  openGraph: {
+    title: 'Siden - A Team of Agents That Just Work',
+    description: 'Create and deploy a team of AI agents that work together on complex tasks.',
+    images: [
+      {
+        url: '/screen.png',
+        width: 1200,
+        height: 630,
+        alt: 'Siden - AI agents that just work',
+      }
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Siden - A Team of Agents That Just Work',
+    description: 'Create and deploy a team of AI agents that work together on complex tasks.',
+    images: ['/screen.png'],
+  },
 };
 
 export default function RootLayout({
