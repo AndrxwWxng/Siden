@@ -4,7 +4,7 @@ import { createVectorQueryTool } from '@mastra/rag';
 import { mastra } from '@/mastra';
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
-import { createDatabaseConnection, safeDbOperation } from '@/utils/db-utils';
+import { createDatabaseConnection, safeDbOperation, addTelemetrySupport, createSafeEmbedding } from '@/utils/db-utils';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -19,6 +19,28 @@ const DATABASE_URL = process.env.DATABASE_URL || '';
 // Initialize PgVector with the database connection string from environment
 // Use the new utility to handle connection more robustly
 export const pgVector = createDatabaseConnection(DATABASE_URL);
+
+// Safe embedding generation that handles telemetry issues
+const generateSafeEmbedding = async (text: string) => {
+  // In build environment, return a safe placeholder
+  if (isBuildEnvironment) {
+    return createSafeEmbedding();
+  }
+  
+  try {
+    const embeddingModel = openai.embedding('text-embedding-3-small');
+    const embeddingResponse = await embeddingModel.doEmbed({ 
+      values: [text]
+    });
+    const embedding = embeddingResponse.embeddings[0];
+    
+    // Add telemetry function if needed
+    return addTelemetrySupport(embedding);
+  } catch (error) {
+    console.error('Error generating embedding:', error);
+    return createSafeEmbedding();
+  }
+};
 
 // Initialize the vector indices if they don't exist
 export async function initializeVectorStore() {
@@ -36,7 +58,7 @@ export async function initializeVectorStore() {
           // Check if we can query the index
           await pgVector.query({
             indexName,
-            queryVector: new Array(1536).fill(0),
+            queryVector: createSafeEmbedding(),
             topK: 1
           });
           return true; // If query succeeds, index exists
@@ -111,7 +133,7 @@ async function seedPapersIndex() {
     // Check if there's already data in the index before seeding
     const existingData = await pgVector.query({
       indexName: 'papers',
-      queryVector: new Array(1536).fill(0),
+      queryVector: createSafeEmbedding(),
       topK: 1
     });
     
@@ -120,14 +142,17 @@ async function seedPapersIndex() {
       return;
     }
     
-    const placeholderVector = new Array(1536).fill(0); // Placeholder embedding
+    // Create safe embeddings for seeding with telemetry support
+    const placeholderVector1 = createSafeEmbedding();
+    const placeholderVector2 = createSafeEmbedding();
+    const placeholderVector3 = createSafeEmbedding();
     
     await pgVector.upsert({
       indexName: 'papers',
       vectors: [
-        placeholderVector,
-        placeholderVector,
-        placeholderVector
+        placeholderVector1,
+        placeholderVector2,
+        placeholderVector3
       ],
       metadata: [
         {
@@ -162,20 +187,35 @@ if (!isBuildEnvironment) {
   console.log('Build environment detected, skipping vector store initialization');
 }
 
-// Restore the original vector query tools with the fixed dependencies
-// Create a vector query tool for general knowledge search
-export const vectorQueryTool = createVectorQueryTool({
-  vectorStoreName: 'pgVector',
-  indexName: 'knowledge_base', // This will be the table name in PostgreSQL
-  model: openai.embedding('text-embedding-3-small'),
-});
+// Create mock versions of the vector tools for build environment
+const mockVectorQueryTool = {
+  name: 'mockVectorQuery',
+  description: 'Mock vector query for build environment',
+  execute: async ({ query }: { query: string }) => {
+    console.log('[Build] Mock vector query executed with:', query);
+    return {
+      results: [],
+      message: 'Mock search performed during build'
+    };
+  }
+};
 
-// Create a vector query tool specifically for papers (research)
-export const papersVectorQueryTool = createVectorQueryTool({
-  vectorStoreName: 'pgVector',
-  indexName: 'papers', // This will be the table name in PostgreSQL
-  model: openai.embedding('text-embedding-3-small'),
-});
+// Conditionally export the real or mock vector tools
+export const vectorQueryTool = isBuildEnvironment 
+  ? mockVectorQueryTool
+  : createVectorQueryTool({
+      vectorStoreName: 'pgVector',
+      indexName: 'knowledge_base',
+      model: openai.embedding('text-embedding-3-small'),
+    });
+
+export const papersVectorQueryTool = isBuildEnvironment
+  ? mockVectorQueryTool
+  : createVectorQueryTool({
+      vectorStoreName: 'pgVector',
+      indexName: 'papers',
+      model: openai.embedding('text-embedding-3-small'),
+    });
 
 // Create a vector document chunker tool for storing new knowledge
 export const documentChunkerTool = {
@@ -189,12 +229,8 @@ export const documentChunkerTool = {
     }
 
     return await safeDbOperation(async () => {
-      // Generate embedding using OpenAI
-      const embeddingModel = openai.embedding('text-embedding-3-small');
-      const embeddingResponse = await embeddingModel.doEmbed({ 
-        values: [params.content]
-      });
-      const embedding = embeddingResponse.embeddings[0];
+      // Generate embedding using the safe method
+      const embedding = await generateSafeEmbedding(params.content);
       
       // Store in PgVector (use specified index or default to knowledge_base)
       const indexName = params.indexName || 'knowledge_base';

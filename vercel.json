@@ -7,6 +7,9 @@
   "build": {
     "env": {
       "SKIP_DATABASE_INIT": "true",
+      "SKIP_API_COLLECTION": "true",
+      "NEXT_DISABLE_NEXTJS_OG": "true",
+      "NEXT_DISABLE_OPEN_GRAPH": "true",
       "NODE_OPTIONS": "--max-old-space-size=4096"
     }
   },

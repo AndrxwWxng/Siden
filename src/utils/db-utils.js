@@ -13,6 +13,27 @@ const dummyImplementation = {
 };
 
 /**
+ * Adds telemetry function to vector arrays if missing to prevent build errors
+ * @param {any[]} vector - The vector to enhance with telemetry support
+ * @returns {any[]} - The same vector with telemetry support added
+ */
+export function addTelemetrySupport(vector) {
+  if (Array.isArray(vector)) {
+    // Only add if it doesn't exist already
+    if (!vector.__setTelemetry) {
+      // Use Object.defineProperty to avoid TypeScript errors
+      Object.defineProperty(vector, '__setTelemetry', {
+        value: function() { return this; },
+        writable: true,
+        configurable: true,
+        enumerable: false
+      });
+    }
+  }
+  return vector;
+}
+
+/**
  * Creates a database connection with fallback support
  * @param {string} connectionString - The database connection URL
  * @returns {Object} A PgVector instance or dummy implementation 
@@ -43,6 +64,16 @@ export function createDatabaseConnection(connectionString) {
     // Return dummy implementation as fallback
     return dummyImplementation;
   }
+}
+
+/**
+ * Creates a safe embedding vector with telemetry support
+ * @param {number} dimension - The dimension size for the vector
+ * @returns {number[]} - A vector with zeros and telemetry support
+ */
+export function createSafeEmbedding(dimension = 1536) {
+  const embedding = new Array(dimension).fill(0);
+  return addTelemetrySupport(embedding);
 }
 
 /**
