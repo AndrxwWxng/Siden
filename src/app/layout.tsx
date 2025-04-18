@@ -17,9 +17,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Mastra - AI Agent Workforces',
+  title: 'Siden - Agents that just work',
   description: 'Create and deploy a team of AI agents that work together on complex tasks.',
-  authors: [{ name: 'Mastra' }],
+  authors: [{ name: 'Siden' }],
   keywords: [
     'AI agents',
     'Artificial intelligence',

@@ -1148,35 +1148,13 @@ const Dashboard = () => {
                           </div>
                         </div>
                         {connectedServices.googleWorkspace ? (
-                          <div className="flex items-center gap-3">
-                            <button 
-                              onClick={() => initiateOAuthFlow('googleWorkspace')}
-                              className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
-                              disabled={isConnecting.googleWorkspace}
-                            >
-                              {isConnecting.googleWorkspace ? (
-                                <>
-                                  <div className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
-                                  Reconnecting...
-                                </>
-                              ) : 'Connected'}
-                            </button>
+                          <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                            Coming Soon
                           </div>
                         ) : (
-                          <button 
-                            onClick={() => initiateOAuthFlow('googleWorkspace')}
-                            disabled={isConnecting.googleWorkspace}
-                            className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center"
-                          >
-                            {isConnecting.googleWorkspace ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
-                                Connecting...
-                              </>
-                            ) : (
-                              'Connect'
-                            )}
-                          </button>
+                          <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                            Coming Soon
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1193,13 +1171,8 @@ const Dashboard = () => {
                             <p className="text-sm text-[#A3A3A3]">Allow agents to query your databases securely</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <button 
-                            onClick={() => setShowDatabaseModal(true)} 
-                            className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
-                          >
-                            Connected
-                          </button>
+                        <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                          Coming Soon
                         </div>
                       </div>
                     </div>
@@ -1219,29 +1192,13 @@ const Dashboard = () => {
                           </div>
                         </div>
                         {connectedServices.github ? (
-                          <div className="flex items-center gap-3">
-                            <button 
-                              onClick={() => console.log('Configuring GitHub')}
-                              className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
-                            >
-                              Connected
-                            </button>
+                          <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                            Coming Soon
                           </div>
                         ) : (
-                          <button 
-                            onClick={() => initiateOAuthFlow('github')}
-                            disabled={isConnecting.github}
-                            className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center"
-                          >
-                            {isConnecting.github ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
-                                Connecting...
-                              </>
-                            ) : (
-                              'Connect'
-                            )}
-                          </button>
+                          <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                            Coming Soon
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1259,29 +1216,13 @@ const Dashboard = () => {
                           </div>
                         </div>
                         {connectedServices.slack ? (
-                          <div className="flex items-center gap-3">
-                            <button 
-                              onClick={() => console.log('Configuring Slack')}
-                              className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
-                            >
-                              Connected
-                            </button>
+                          <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                            Coming Soon
                           </div>
                         ) : (
-                          <button 
-                            onClick={() => initiateOAuthFlow('slack')}
-                            disabled={isConnecting.slack}
-                            className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center"
-                          >
-                            {isConnecting.slack ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
-                                Connecting...
-                              </>
-                            ) : (
-                              'Connect'
-                            )}
-                          </button>
+                          <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                            Coming Soon
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1299,29 +1240,13 @@ const Dashboard = () => {
                           </div>
                         </div>
                         {connectedServices.hubspot ? (
-                          <div className="flex items-center gap-3">
-                            <button 
-                              onClick={() => console.log('Configuring HubSpot')}
-                              className="px-4 py-2 rounded-md border border-[#444] text-white hover:border-[#6366F1] transition-colors"
-                            >
-                              Connected
-                            </button>
+                          <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                            Coming Soon
                           </div>
                         ) : (
-                          <button 
-                            onClick={() => initiateOAuthFlow('hubspot')}
-                            disabled={isConnecting.hubspot}
-                            className="px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center"
-                          >
-                            {isConnecting.hubspot ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
-                                Connecting...
-                              </>
-                            ) : (
-                              'Connect'
-                            )}
-                          </button>
+                          <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                            Coming Soon
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1338,22 +1263,9 @@ const Dashboard = () => {
                             <p className="text-sm text-[#A3A3A3]">Connect a custom API endpoint for your agents</p>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => setShowCustomIntegrationModal(true)}
-                          className={`px-4 py-2 rounded-md border border-[#6366F1] text-[#6366F1] hover:bg-[#6366F1] hover:text-white transition-colors flex items-center ${
-                            isConnecting.customIntegration ? 'opacity-75 cursor-wait' : ''
-                          }`}
-                          disabled={isConnecting.customIntegration}
-                        >
-                          {isConnecting.customIntegration ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin mr-2"></div>
-                              Setting Up...
-                            </>
-                          ) : (
-                            'Set Up'
-                          )}
-                        </button>
+                        <div className="px-2.5 py-1.5 text-xs bg-[#333] rounded text-[#A3A3A3]">
+                          Coming Soon
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -8,20 +9,21 @@ interface ProjectHeaderProps {
     name: string;
     status: string;
   };
+  title: string;
+  section?: string;
 }
 
-export function ProjectHeader({ project }: ProjectHeaderProps) {
+export const ProjectHeader = ({ project, title, section }: ProjectHeaderProps) => {
   const pathname = usePathname();
   
   // Define tab paths
   const tabs = [
-    { name: 'Overview', path: `/dashboard/project/${project.id}` },
-    { name: 'Team Chat', path: `/dashboard/project/${project.id}/chat` },
-    { name: 'Analytics', path: `/dashboard/project/${project.id}/analytics` },
-    { name: 'Knowledge Base', path: `/dashboard/project/${project.id}/knowledge` },
-    { name: 'Settings', path: `/dashboard/project/${project.id}/settings` },
+    { name: 'Chat', path: `/dashboard/project/chat/${project.id}` },
+    { name: 'Team', path: `/dashboard/project/team/${project.id}` },
+    { name: 'Settings', path: `/dashboard/project/settings/${project.id}` },
+    { name: 'Tools', path: `/dashboard/project/tools${project.id}` },
   ];
-  
+
   // Check if current path matches the tab
   const isActivePath = (path: string) => {
     // For root project path
@@ -45,9 +47,10 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           </Link>
           
           <div className="flex items-center space-x-2">
-            <h1 className="text-lg font-semibold">{project.name}</h1>
-            <span className="text-app-secondary">•</span>
-            <span className="text-sm text-app-secondary capitalize">{project.status}</span>
+            <h1 className="text-lg font-semibold">
+              <span className="text-indigo-500">{title}</span>
+              {section && <span className="text-app-secondary">• {section}</span>}
+            </h1>
           </div>
         </div>
 
@@ -69,4 +72,6 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
       </div>
     </header>
   );
-} 
+};
+
+export default ProjectHeader; 
