@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { Analytics } from '@/components/Analytics';
 
 // Configure the fonts
 const plusJakarta = Plus_Jakarta_Sans({
@@ -57,6 +58,7 @@ export default function RootLayout({
             </div>
           </div>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

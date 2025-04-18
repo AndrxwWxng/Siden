@@ -1,7 +1,12 @@
 import { mastra } from "@/mastra";
+import { NextRequest } from "next/server";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
+
+// Define Next.js config for API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Define the valid agent IDs based on what's available in the system
 type AgentId = 'weatherAgent' | 'ceoAgent' | 'marketingAgent' | 'developerAgent' | 
@@ -14,7 +19,7 @@ interface AgentRequest {
   originalQuery?: string;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { requesterId, targetAgentId, prompt, originalQuery } = await req.json() as AgentRequest;
     
@@ -62,4 +67,16 @@ export async function POST(req: Request) {
       error: "An error occurred during agent-to-agent communication" 
     }, { status: 500 });
   }
+}
+
+// Add OPTIONS method handler for CORS preflight requests
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
 } 

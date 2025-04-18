@@ -7,7 +7,14 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import OAuthProviders from '@/components/OAuthProviders';
 
+/**
+ * SignUp Page Component
+ * 
+ * Handles user registration with email/password and OAuth providers.
+ * Includes form validation and error handling.
+ */
 export default function SignUp() {
+  // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -29,6 +36,9 @@ export default function SignUp() {
     checkSession();
   }, [router]);
 
+  /**
+   * Handle form submission for user registration
+   */
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -110,33 +120,44 @@ export default function SignUp() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-app-secondary text-app-primary">
+    <main className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
       <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
-          <div>
-            <Link href="/" className="flex items-center text-sm text-app-secondary hover:text-app-primary transition-colors mb-8">
+          {/* Header section */}
+          <header>
+            <Link href="/" className="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-8">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to home
             </Link>
             
-            <h2 className="text-3xl font-bold text-app-primary">Create your account</h2>
-            <p className="mt-2 text-sm text-app-secondary">
-              
+            <h1 className="text-3xl font-bold text-white">Create your account</h1>
+            <p className="mt-2 text-sm text-gray-400">
+              Join our platform to access all features
             </p>
-          </div>
+          </header>
           
+          {/* Success message */}
+          {message && (
+            <div className="rounded-lg bg-green-900/30 border border-green-800/50 px-4 py-3" role="alert">
+              <div className="text-sm text-green-400">{message}</div>
+            </div>
+          )}
+          
+          {/* OAuth error */}
           {oauthError && (
-            <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3 mt-4">
+            <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3 mt-4" role="alert">
               <div className="text-sm text-red-400">{oauthError}</div>
             </div>
           )}
 
-          <div className="mt-8">
+          {/* OAuth providers section */}
+          <section className="mt-8">
             <OAuthProviders 
               onError={setOauthError}
             />
-          </div>
+          </section>
           
+          {/* Divider */}
           <div className="mt-6 relative">
             <div className="absolute inset-0 flex items-center" aria-hidden="true">
               <div className="w-full border-t border-app-color" />
@@ -146,6 +167,7 @@ export default function SignUp() {
             </div>
           </div>
           
+          {/* Sign up form */}
           <form onSubmit={handleSignUp} className="mt-6 space-y-5">
             <div>
               <label htmlFor="email" className="block text-xs font-medium text-app-secondary mb-2">
@@ -161,6 +183,7 @@ export default function SignUp() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-describedby="email-description"
               />
             </div>
             
@@ -178,27 +201,31 @@ export default function SignUp() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                aria-describedby="password-description"
               />
-              <p className="mt-1 text-xs text-app-secondary">
+              <p className="mt-1 text-xs text-[#A0A0A0]" id="password-description">
                 Password must be at least 6 characters
               </p>
             </div>
 
+            {/* Form error */}
             {error && (
-              <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3">
+              <div className="rounded-lg bg-red-900/30 border border-red-800/50 px-4 py-3" role="alert">
                 <div className="text-sm text-red-400">{error}</div>
               </div>
             )}
 
+            {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
-              className="relative overflow-hidden flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-3 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-app-secondary disabled:opacity-70 transition-all group"
+              className="relative overflow-hidden flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-3 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#0F0F0F] disabled:opacity-70 transition-all group"
+              aria-live="polite"
             >
               <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/40 to-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
               {loading ? (
                 <span className="flex items-center relative z-10">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -207,7 +234,8 @@ export default function SignUp() {
               ) : <span className="relative z-10">Create account</span>}
             </button>
             
-            <div className="flex items-center justify-center mt-6">
+            {/* Sign in link */}
+            <footer className="flex items-center justify-center mt-6">
               <div className="text-center text-sm">
                 <p className="text-app-secondary">
                   Already have an account?{' '}
@@ -216,10 +244,10 @@ export default function SignUp() {
                   </Link>
                 </p>
               </div>
-            </div>
+            </footer>
           </form>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
