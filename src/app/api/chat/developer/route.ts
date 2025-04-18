@@ -186,3 +186,14 @@ export async function GET(req: NextRequest) {
     },
   });
 } 
+
+// Catch-all handler for unsupported HTTP methods
+export async function handler(req: Request) {
+  return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
+    status: 405,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}
