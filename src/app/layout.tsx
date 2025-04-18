@@ -17,9 +17,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Mastra - AI Agent Workforces',
-  description: 'Create and deploy a team of AI agents that work together on complex tasks.',
-  authors: [{ name: 'Mastra' }],
+  title: 'Mastra - Build & Deploy AI Agent Teams',
+  description: 'Build, deploy, and manage powerful AI agent teams for your business. Automate complex tasks with a collaborative AI workforce.',
+  authors: [{ name: 'Mastra', url: 'https://mastra.ai' }],
   keywords: [
     'AI agents',
     'Artificial intelligence',
@@ -28,7 +28,22 @@ export const metadata: Metadata = {
     'AI automation',
     'AI orchestration',
     'Enterprise AI',
+    'AI collaboration',
+    'Business automation',
+    'AI platform',
   ],
+  metadataBase: new URL('https://mastra.ai'),
+  openGraph: {
+    title: 'Mastra - Build & Deploy AI Agent Teams',
+    description: 'Build, deploy, and manage powerful AI agent teams for your business. Automate complex tasks with a collaborative AI workforce.',
+    images: ['/og-image.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Mastra - Build & Deploy AI Agent Teams',
+    description: 'Build, deploy, and manage powerful AI agent teams for your business. Automate complex tasks with a collaborative AI workforce.',
+    images: ['/og-image.png'],
+  },
 };
 
 export default function RootLayout({
