@@ -7,15 +7,25 @@ import * as dotenv from 'dotenv';
 // Load environment variables
 dotenv.config({ path: '.env.local' });
 
+// Check if we're in a build/static environment
+const isBuildEnvironment = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+const isVercelBuild = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
+
 async function initializeDatabase() {
   console.log('Initializing database...');
+  
+  // Skip database initialization during build
+  if (isBuildEnvironment) {
+    console.log('Build environment detected, skipping actual database initialization');
+    return true;
+  }
   
   // Get database connection string from env
   const connectionString = process.env.DATABASE_URL;
   
   if (!connectionString) {
     console.error('DATABASE_URL environment variable is not set');
-    process.exit(1);
+    return false;
   }
   
   try {
