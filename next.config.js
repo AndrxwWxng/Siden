@@ -23,7 +23,7 @@ const nextConfig = {
     // Configuration for newer Next.js features
     serverActions: {
       bodySizeLimit: "2mb",
-      allowedOrigins: ["localhost:3000"]
+      allowedOrigins: ["localhost:3000", "siden.ai", "www.siden.ai"]
     },
   },
 
