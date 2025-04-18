@@ -24,6 +24,8 @@ const nextConfig = {
       allowedOrigins: ["localhost:3000"]
     },
   },
+  // Enable Turbopack
+  turbopack: {},
   serverExternalPackages: [
     "@mastra/*",
     "google-auth-library",
@@ -48,8 +50,12 @@ const nextConfig = {
   
   // Empty transpilePackages to avoid conflicts with serverExternalPackages
   transpilePackages: [],
-  
-  webpack: (config, { isServer }) => {
+};
+
+// Only add webpack config when not using Turbopack
+// This prevents the warning about webpack being configured while Turbopack is in use
+if (process.env.NEXT_RUNTIME !== 'edge' && !process.env.TURBOPACK) {
+  nextConfig.webpack = (config, { isServer }) => {
     // Handle MongoDB client-side encryption issue by stubbing dependencies
     if (!isServer) {
       // Add externals configuration to exclude LlamaIndex packages
@@ -140,7 +146,7 @@ const nextConfig = {
     };
     
     return config;
-  },
-};
+  };
+}
 
 module.exports = nextConfig; 

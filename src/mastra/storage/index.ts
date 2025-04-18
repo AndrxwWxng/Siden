@@ -1,7 +1,5 @@
 import { PgVector } from '@mastra/pg';
 import { openai } from '@ai-sdk/openai';
-import { createVectorQueryTool } from '@mastra/rag';
-import { mastra } from '@/mastra';
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
 
@@ -140,21 +138,6 @@ async function seedPapersIndex() {
 
 // Call initialization on startup
 initializeVectorStore().catch(console.error);
-
-// Restore the original vector query tools with the fixed dependencies
-// Create a vector query tool for general knowledge search
-export const vectorQueryTool = createVectorQueryTool({
-  vectorStoreName: 'pgVector',
-  indexName: 'knowledge_base', // This will be the table name in PostgreSQL
-  model: openai.embedding('text-embedding-3-small'),
-});
-
-// Create a vector query tool specifically for papers (research)
-export const papersVectorQueryTool = createVectorQueryTool({
-  vectorStoreName: 'pgVector',
-  indexName: 'papers', // This will be the table name in PostgreSQL
-  model: openai.embedding('text-embedding-3-small'),
-});
 
 // Create a vector document chunker tool for storing new knowledge
 export const documentChunkerTool = {
