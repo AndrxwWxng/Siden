@@ -9,107 +9,24 @@ export async function callMastraAgent(agentId: string, message: string, options?
   try {
     console.log(`[MASTRA CLIENT] Calling agent: ${agentId} with message length: ${message.length}`);
     
-    // Create the request URL with a cache-busting parameter
-    const timestamp = Date.now();
-    const url = `/api/mastra/generate?t=${timestamp}`;
-    
-    // Fix for Vercel production: ensure proper absolute URL handling
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-    const apiUrl = baseUrl ? `${baseUrl}${url}` : url;
-    
-    // Try a direct POST request first
-    let response = await fetch(apiUrl, {
+    const response = await fetch('/api/mastra/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Cache-Control': 'no-cache, no-store',
-        'Pragma': 'no-cache',
       },
       body: JSON.stringify({ 
         agentId, 
         message,
         metadata: options?.metadata || {}
       }),
-      cache: 'no-store',
     });
-
-    // If we get a 405, try an OPTIONS request first to warm up the endpoint
-    if (response.status === 405) {
-      console.log('[MASTRA CLIENT] Received 405 error, attempting OPTIONS preflight...');
-      
-      // Make an OPTIONS request first
-      await fetch(apiUrl, { 
-        method: 'OPTIONS',
-        headers: {
-          'Access-Control-Request-Method': 'POST',
-          'Access-Control-Request-Headers': 'Content-Type, Accept, X-Requested-With',
-        }
-      });
-      
-      // Wait a moment for the route to be properly initialized
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Try the POST request again
-      response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Cache-Control': 'no-cache, no-store',
-        },
-        body: JSON.stringify({ 
-          agentId, 
-          message,
-          metadata: options?.metadata || {}
-        }),
-        cache: 'no-store',
-      });
-    }
-
-    // If the response contains a database connection error, try the direct OpenAI fallback
-    if (response.status === 500) {
-      const errorText = await response.text();
-      if (errorText.includes('ENOTFOUND') || errorText.includes('database') || errorText.includes('supabase')) {
-        console.error('[MASTRA CLIENT] Database connection error detected, using direct OpenAI fallback');
-        
-        // Use a direct OpenAI fallback from the client if possible
-        try {
-          // Try the generate route with a fallback querystring param
-          response = await fetch(`${apiUrl}&fallback=true`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ 
-              agentId, 
-              message,
-              metadata: {
-                ...options?.metadata || {},
-                forceFallback: true
-              }
-            }),
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            return data;
-          }
-        } catch (fallbackError) {
-          console.error('[MASTRA CLIENT] Direct fallback failed:', fallbackError);
-        }
-      }
-    }
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[MASTRA CLIENT] HTTP Error: ${response.status} `);
+      console.error(`[MASTRA CLIENT] HTTP Error: ${response.status} ${response.statusText}`);
       console.error(`[MASTRA CLIENT] Error Response Body:`, errorText);
       
-      let errorMessage = `Error calling Mastra agent:`;
+      let errorMessage = `Error calling Mastra agent: ${response.statusText}`;
       try {
         // Try to parse as JSON if possible
         const errorJson = JSON.parse(errorText);
