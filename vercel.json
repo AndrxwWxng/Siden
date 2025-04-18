@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "build": {
+    "env": {
+      "SKIP_DATABASE_INIT": "true",
+      "SKIP_API_COLLECTION": "true",
+      "NEXT_DISABLE_NEXTJS_OG": "true",
+      "NEXT_DISABLE_OPEN_GRAPH": "true",
+      "NODE_OPTIONS": "--max-old-space-size=4096"
+    }
+  },
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" },
+        { "key": "x-middleware-cache", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/dashboard/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" },
+        { "key": "x-middleware-cache", "value": "no-cache" }
+      ]
+    }
+  ]
+} 
