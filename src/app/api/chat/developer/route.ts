@@ -7,6 +7,8 @@ export const maxDuration = 30;
 // Define Next.js config for API route
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 interface RequestData {
   timestamp: number;
@@ -162,11 +164,9 @@ export async function OPTIONS(req: NextRequest) {
   return new Response(null, {
     status: 204,
     headers: {
-      "Access-Control-Allow-Origin": process.env.NODE_ENV === 'production' 
-        ? "https://siden.ai" 
-        : "http://localhost:3000",
+      "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, X-Requested-With",
       "Access-Control-Allow-Credentials": "true",
       "Access-Control-Max-Age": "86400",
     },
