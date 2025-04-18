@@ -37,7 +37,7 @@ export default function NavBar() {
         transition-all duration-300
       `}
     >
-      <div className="container mx-auto h-full px-6">
+      <div className="max-w-7xl mx-auto h-full px-6">
         <div className="flex items-center justify-between h-full">
           {/* Logo */}
           <Link 
