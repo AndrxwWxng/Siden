@@ -7,14 +7,25 @@ import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
 // Get database connection from environment variable
-const DATABASE_URL = process.env.DATABASE_URL;
+let DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
   console.error('DATABASE_URL environment variable is not set');
   throw new Error('DATABASE_URL environment variable is not set');
 }
 
-// Initialize PgVector with the database connection string from environment
+// Modify the connection string for Vercel environment to use SSL and avoid IPv6
+if (process.env.VERCEL) {
+  // Add SSL and other connection parameters if they're not already in the URL
+  if (!DATABASE_URL.includes('ssl=true')) {
+    DATABASE_URL += (DATABASE_URL.includes('?') ? '&' : '?') + 
+                   'ssl=true&sslmode=require&connection_limit=10&idle_timeout=10';
+  }
+  
+  console.log('Running in Vercel production environment with enhanced database connection');
+}
+
+// Initialize PgVector with the database connection string
 export const pgVector = new PgVector(DATABASE_URL);
 
 // Initialize the vector indices if they don't exist

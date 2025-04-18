@@ -1,0 +1,19 @@
+{
+  "buildCommand": "pnpm run build",
+  "ignoreCommand": "exit 0",
+  "outputDirectory": "build",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "functions": {
+    "api/**/*": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "crons": [],
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
+} 

@@ -16,6 +16,8 @@ const nextConfig = {
   },
   // Use a different output directory than .next
   distDir: 'build',
+  // Add proper output configuration for Vercel
+  output: 'standalone',
   // Set all dashboard routes to force-dynamic rendering
   experimental: {
     // Configuration for newer Next.js features
