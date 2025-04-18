@@ -5,19 +5,24 @@ const webpack = require('webpack');
 const nextConfig = {
   /* config options here */
   eslint: {
-    // Disable ESLint during production builds
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Disable TypeScript checking during builds
+    // Warning: This allows production builds to successfully complete even if
+    // your project has TypeScript errors.
     ignoreBuildErrors: true,
   },
-  // Set to development to enforce dynamic rendering
-  distDir: '.next',
+  // Use a different output directory than .next
+  distDir: 'build',
+  // Set all dashboard routes to force-dynamic rendering
   experimental: {
-    // Disable static optimization
-    appDir: true,
-    serverActions: true,
+    // Configuration for newer Next.js features
+    serverActions: {
+      bodySizeLimit: "2mb",
+      allowedOrigins: ["localhost:3000"]
+    },
   },
   serverExternalPackages: [
     "@mastra/*",
@@ -30,7 +35,15 @@ const nextConfig = {
     "@llamaindex/env",
     "@llamaindex/*",
     "pino-abstract-transport",
-    "pino-pretty"
+    "pino-pretty",
+    '@node-postgres/pg-typed',
+    'pgvector',
+    'postgres',
+    'pg',
+    'pg-native',
+    'better-sqlite3',
+    'libsql',
+    'crypto-js',
   ],
   
   // Empty transpilePackages to avoid conflicts with serverExternalPackages
@@ -117,6 +130,14 @@ const nextConfig = {
         }),
       ];
     }
+    
+    config.externals.push({
+      'crypto-js': 'crypto-js',
+    });
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      'pg-native': false,
+    };
     
     return config;
   },

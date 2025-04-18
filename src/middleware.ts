@@ -2,11 +2,19 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // Set dynamic rendering for routes that use cookies
   const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
+
+  // Add dynamic rendering header for all dashboard routes to force dynamic rendering
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    response.headers.set('x-middleware-next-dynamic', '1');
+    response.headers.set('x-middleware-cache', '0');
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
