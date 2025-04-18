@@ -1,8 +1,8 @@
 const path = require('path');
 const webpack = require('webpack');
 
-// Check if we're in a build environment on Vercel
-const isVercelBuild = process.env.VERCEL === '1';
+// Check if we're in a Vercel build environment
+const isVercelBuild = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
 const skipApiCollection = process.env.SKIP_API_COLLECTION === 'true';
 
 /** @type {import('next').NextConfig} */
@@ -18,10 +18,6 @@ const nextConfig = {
     // your project has TypeScript errors.
     ignoreBuildErrors: true,
   },
-  // Use a different output directory than .next
-  distDir: 'build',
-  // Add proper output configuration for Vercel
-  output: 'standalone',
   // Set all dashboard routes to force-dynamic rendering
   experimental: {
     // Configuration for newer Next.js features
@@ -34,21 +30,9 @@ const nextConfig = {
   // Enable Turbopack
   turbopack: {},
 
-  // Skip type checks during build
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  // Skip ESLint during build
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   // Generate source maps for better debugging
   productionBrowserSourceMaps: true,
-  // Skip collecting certain routes during build
-  onDemandEntries: {
-    // Skip API routes during build on Vercel
-    exclude: isVercelBuild && skipApiCollection ? ['/api/chat/ceo/research'] : [],
-  },
+
   // Override specific routes
   async rewrites() {
     return {
