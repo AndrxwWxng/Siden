@@ -57,6 +57,7 @@ export default function SignUp() {
         email, 
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             username: email.split('@')[0], // Default username from email
           }
@@ -85,23 +86,20 @@ export default function SignUp() {
         return;
       }
       
-      // Even if email confirmation would be required, bypass that check
-      // and immediately sign the user in and redirect them
-      setLoading(false);
-      
-      // Sign in the user right after signup
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (signInError) {
-        setError('Account created but could not sign in automatically. Please sign in manually.');
+      // Check if email confirmation is required
+      if (data?.user?.confirmation_sent_at && !data?.session) {
+        setMessage('Success! Check your email to confirm your account before signing in.');
+        setLoading(false);
         return;
       }
       
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // If email confirmation is not required, or auto-confirmed
+      if (data?.session) {
+        router.push('/dashboard');
+      } else {
+        setMessage('Account created successfully. You can now sign in.');
+        setLoading(false);
+      }
     } catch (err) {
       console.error('Sign up error:', err);
       setError('An unexpected error occurred. Please try again later.');
