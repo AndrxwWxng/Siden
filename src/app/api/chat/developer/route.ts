@@ -165,9 +165,24 @@ export async function OPTIONS(req: NextRequest) {
       "Access-Control-Allow-Origin": process.env.NODE_ENV === 'production' 
         ? "https://siden.ai" 
         : "http://localhost:3000",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
       "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
+
+// Add GET method handler for direct browser requests
+export async function GET(req: NextRequest) {
+  return new Response(JSON.stringify({
+    message: "This API endpoint requires a POST request with messages.",
+    status: "ok",
+    endpoint: "chat/developer"
+  }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
     },
   });
 } 

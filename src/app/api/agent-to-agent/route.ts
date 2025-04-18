@@ -69,6 +69,15 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Add GET method handler for direct browser requests
+export async function GET(req: NextRequest) {
+  return Response.json({
+    message: "This API endpoint requires a POST request with agent information.",
+    status: "ok",
+    endpoint: "agent-to-agent"
+  });
+}
+
 // Add OPTIONS method handler for CORS preflight requests
 export async function OPTIONS(req: NextRequest) {
   return new Response(null, {
@@ -77,9 +86,10 @@ export async function OPTIONS(req: NextRequest) {
       "Access-Control-Allow-Origin": process.env.NODE_ENV === 'production' 
         ? "https://siden.ai" 
         : "http://localhost:3000",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
       "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Max-Age": "86400",
     },
   });
 } 
