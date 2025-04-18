@@ -20,6 +20,7 @@ export default function SignUp() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [oauthError, setOauthError] = useState('');
+  const [message, setMessage] = useState('');
   const router = useRouter();
 
   // Check if user is already authenticated

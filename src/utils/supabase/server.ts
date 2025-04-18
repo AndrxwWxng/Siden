@@ -3,25 +3,26 @@ import { cookies } from 'next/headers'
 import { supabaseConfig } from './config'
 
 export const createClient = () => {
-  const cookieStore = cookies()
-
   return createServerClient(
     supabaseConfig.url,
     supabaseConfig.anonKey,
     {
       cookies: {
-        get(name) {
+        async get(name) {
+          const cookieStore = await cookies()
           return cookieStore.get(name)?.value
         },
-        set(name, value, options) {
+        async set(name, value, options) {
+          const cookieStore = await cookies()
           cookieStore.set(name, value, {
             ...options,
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production',
           })
         },
-        remove(name, options) {
-          cookieStore.set(name, '', { ...options, maxAge: 0 })
+        async remove(name, options) {
+          const cookieStore = await cookies()
+          cookieStore.delete(name)
         },
       },
     }
