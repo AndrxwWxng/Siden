@@ -52,7 +52,7 @@ importers:
         version: 0.2.10(pg-query-stream@4.8.1(pg@8.14.1))(react@19.1.0)
       '@mastra/rag':
         specifier: ^0.1.17
-        version: 0.1.18(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(ai@4.3.5(react@19.1.0)(zod@3.24.2))(cohere-ai@7.16.0)(gcp-metadata@5.3.0)(gpt-tokenizer@2.9.0)(lightningcss@1.29.2)(openai@4.94.0(ws@8.18.1)(zod@3.24.2))(pg-query-stream@4.8.1(pg@8.14.1))(pg@8.14.1)(react@19.1.0)(terser@5.39.0)(tree-sitter@0.22.4)(typescript@5.8.3)(web-tree-sitter@0.24.7)(ws@8.18.1)
+        version: 0.1.18(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(ai@4.3.5(react@19.1.0)(zod@3.24.2))(cohere-ai@7.16.0)(gcp-metadata@5.3.0)(gpt-tokenizer@2.9.0)(lightningcss@1.29.2)(openai@4.95.0(ws@8.18.1)(zod@3.24.2))(pg-query-stream@4.8.1(pg@8.14.1))(pg@8.14.1)(react@19.1.0)(terser@5.39.0)(tree-sitter@0.22.4)(typescript@5.8.3)(web-tree-sitter@0.24.7)(ws@8.18.1)
       '@mastra/server':
         specifier: ^1.0.2
         version: 1.0.3(@mastra/core@0.8.2(react@19.1.0))
@@ -107,6 +107,9 @@ importers:
       node-fetch:
         specifier: '2'
         version: 2.7.0
+      openai:
+        specifier: ^4.95.0
+        version: 4.95.0(ws@8.18.1)(zod@3.24.2)
       pg:
         specifier: ^8.14.1
         version: 8.14.1
@@ -5233,8 +5236,8 @@ packages:
     resolution: {integrity: sha512-zy1wx4+P3PfhXSEPJNtZmJXfhkkIaxU1VauWIrDZw1O7uJRDRJtKr9n3Ic4NgbA16KyOxOXO2ng9gYwCdXuSXA==}
     engines: {node: '>=18'}
 
-  openai@4.94.0:
-    resolution: {integrity: sha512-WVmr9HWcwfouLJ7R3UHd2A93ClezTPuJljQxkCYQAL15Sjyt+FBNoqEz5MHSdH/ebQrVyvRhFyn/bvdqtSPyIA==}
+  openai@4.95.0:
+    resolution: {integrity: sha512-tWHLTA+/HHyWlP8qg0mQLDSpI2NQLhk6zHLJL8yb59qn2pEI8rbEiAGSDPViLvi3BRDoQZIX5scaJ3xYGr2nhw==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -7902,11 +7905,11 @@ snapshots:
       - supports-color
       - tiktoken
 
-  '@llamaindex/chroma@0.0.4(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(cohere-ai@7.16.0)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(openai@4.94.0(ws@8.18.1)(zod@3.24.2))(pathe@2.0.3)':
+  '@llamaindex/chroma@0.0.4(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(cohere-ai@7.16.0)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(openai@4.95.0(ws@8.18.1)(zod@3.24.2))(pathe@2.0.3)':
     dependencies:
       '@llamaindex/core': 0.4.23(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)
       '@llamaindex/env': 0.1.27(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)
-      chromadb: 1.10.3(cohere-ai@7.16.0)(openai@4.94.0(ws@8.18.1)(zod@3.24.2))
+      chromadb: 1.10.3(cohere-ai@7.16.0)(openai@4.95.0(ws@8.18.1)(zod@3.24.2))
       chromadb-default-embed: 2.14.0
     transitivePeerDependencies:
       - '@aws-crypto/sha256-js'
@@ -8144,7 +8147,7 @@ snapshots:
     dependencies:
       '@llamaindex/core': 0.4.23(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)
       '@llamaindex/env': 0.1.27(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)
-      openai: 4.94.0(ws@8.18.1)(zod@3.24.2)
+      openai: 4.95.0(ws@8.18.1)(zod@3.24.2)
     transitivePeerDependencies:
       - '@aws-crypto/sha256-js'
       - '@huggingface/transformers'
@@ -8476,7 +8479,7 @@ snapshots:
       - valibot
       - zod-openapi
 
-  '@mastra/rag@0.1.18(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(ai@4.3.5(react@19.1.0)(zod@3.24.2))(cohere-ai@7.16.0)(gcp-metadata@5.3.0)(gpt-tokenizer@2.9.0)(lightningcss@1.29.2)(openai@4.94.0(ws@8.18.1)(zod@3.24.2))(pg-query-stream@4.8.1(pg@8.14.1))(pg@8.14.1)(react@19.1.0)(terser@5.39.0)(tree-sitter@0.22.4)(typescript@5.8.3)(web-tree-sitter@0.24.7)(ws@8.18.1)':
+  '@mastra/rag@0.1.18(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(ai@4.3.5(react@19.1.0)(zod@3.24.2))(cohere-ai@7.16.0)(gcp-metadata@5.3.0)(gpt-tokenizer@2.9.0)(lightningcss@1.29.2)(openai@4.95.0(ws@8.18.1)(zod@3.24.2))(pg-query-stream@4.8.1(pg@8.14.1))(pg@8.14.1)(react@19.1.0)(terser@5.39.0)(tree-sitter@0.22.4)(typescript@5.8.3)(web-tree-sitter@0.24.7)(ws@8.18.1)':
     dependencies:
       '@llamaindex/core': 0.4.23(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)
       '@llamaindex/env': 0.1.29(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)
@@ -8484,7 +8487,7 @@ snapshots:
       '@paralleldrive/cuid2': 2.2.2
       ai: 4.3.5(react@19.1.0)(zod@3.24.2)
       js-tiktoken: 1.0.19
-      llamaindex: 0.8.37(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(cohere-ai@7.16.0)(gcp-metadata@5.3.0)(js-tiktoken@1.0.19)(lightningcss@1.29.2)(openai@4.94.0(ws@8.18.1)(zod@3.24.2))(pathe@2.0.3)(pg-query-stream@4.8.1(pg@8.14.1))(pg@8.14.1)(terser@5.39.0)(tree-sitter@0.22.4)(typescript@5.8.3)(web-tree-sitter@0.24.7)(ws@8.18.1)(zod@3.24.2)
+      llamaindex: 0.8.37(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(cohere-ai@7.16.0)(gcp-metadata@5.3.0)(js-tiktoken@1.0.19)(lightningcss@1.29.2)(openai@4.95.0(ws@8.18.1)(zod@3.24.2))(pathe@2.0.3)(pg-query-stream@4.8.1(pg@8.14.1))(pg@8.14.1)(terser@5.39.0)(tree-sitter@0.22.4)(typescript@5.8.3)(web-tree-sitter@0.24.7)(ws@8.18.1)(zod@3.24.2)
       node-html-better-parser: 1.4.11
       pathe: 2.0.3
       zod: 3.24.2
@@ -10794,13 +10797,13 @@ snapshots:
     transitivePeerDependencies:
       - bare-buffer
 
-  chromadb@1.10.3(cohere-ai@7.16.0)(openai@4.94.0(ws@8.18.1)(zod@3.24.2)):
+  chromadb@1.10.3(cohere-ai@7.16.0)(openai@4.95.0(ws@8.18.1)(zod@3.24.2)):
     dependencies:
       cliui: 8.0.1
       isomorphic-fetch: 3.0.0
     optionalDependencies:
       cohere-ai: 7.16.0
-      openai: 4.94.0(ws@8.18.1)(zod@3.24.2)
+      openai: 4.95.0(ws@8.18.1)(zod@3.24.2)
     transitivePeerDependencies:
       - encoding
 
@@ -11356,7 +11359,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.29.1(eslint@9.24.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.0(eslint-plugin-import@2.31.0)(eslint@9.24.0(jiti@2.4.2)))(eslint@9.24.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.29.1(eslint@9.24.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.0)(eslint@9.24.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -11378,7 +11381,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.24.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.29.1(eslint@9.24.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.0(eslint-plugin-import@2.31.0)(eslint@9.24.0(jiti@2.4.2)))(eslint@9.24.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.29.1(eslint@9.24.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.0)(eslint@9.24.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -12483,12 +12486,12 @@ snapshots:
 
   list@2.0.19: {}
 
-  llamaindex@0.8.37(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(cohere-ai@7.16.0)(gcp-metadata@5.3.0)(js-tiktoken@1.0.19)(lightningcss@1.29.2)(openai@4.94.0(ws@8.18.1)(zod@3.24.2))(pathe@2.0.3)(pg-query-stream@4.8.1(pg@8.14.1))(pg@8.14.1)(terser@5.39.0)(tree-sitter@0.22.4)(typescript@5.8.3)(web-tree-sitter@0.24.7)(ws@8.18.1)(zod@3.24.2):
+  llamaindex@0.8.37(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(cohere-ai@7.16.0)(gcp-metadata@5.3.0)(js-tiktoken@1.0.19)(lightningcss@1.29.2)(openai@4.95.0(ws@8.18.1)(zod@3.24.2))(pathe@2.0.3)(pg-query-stream@4.8.1(pg@8.14.1))(pg@8.14.1)(terser@5.39.0)(tree-sitter@0.22.4)(typescript@5.8.3)(web-tree-sitter@0.24.7)(ws@8.18.1)(zod@3.24.2):
     dependencies:
       '@llamaindex/anthropic': 0.0.33(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(@types/node@22.14.1)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(lightningcss@1.29.2)(pathe@2.0.3)(terser@5.39.0)
       '@llamaindex/astra': 0.0.4(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)
       '@llamaindex/azure': 0.0.4(@aws-crypto/sha256-js@5.2.0)(@aws-sdk/credential-providers@3.787.0)(@huggingface/transformers@3.4.2)(gcp-metadata@5.3.0)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)
-      '@llamaindex/chroma': 0.0.4(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(cohere-ai@7.16.0)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(openai@4.94.0(ws@8.18.1)(zod@3.24.2))(pathe@2.0.3)
+      '@llamaindex/chroma': 0.0.4(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(cohere-ai@7.16.0)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(openai@4.95.0(ws@8.18.1)(zod@3.24.2))(pathe@2.0.3)
       '@llamaindex/clip': 0.0.35(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)(ws@8.18.1)(zod@3.24.2)
       '@llamaindex/cloud': 2.0.24(@llamaindex/core@0.4.23(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3))(@llamaindex/env@0.1.27(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3))
       '@llamaindex/cohere': 0.0.4(@aws-crypto/sha256-js@5.2.0)(@huggingface/transformers@3.4.2)(gpt-tokenizer@2.9.0)(js-tiktoken@1.0.19)(pathe@2.0.3)
@@ -12993,7 +12996,7 @@ snapshots:
       is-inside-container: 1.0.0
       is-wsl: 3.1.0
 
-  openai@4.94.0(ws@8.18.1)(zod@3.24.2):
+  openai@4.95.0(ws@8.18.1)(zod@3.24.2):
     dependencies:
       '@types/node': 18.19.86
       '@types/node-fetch': 2.6.12
