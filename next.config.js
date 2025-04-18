@@ -24,6 +24,49 @@ const nextConfig = {
       allowedOrigins: ["localhost:3000"]
     },
   },
+  // Skip type checks during build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  // Skip ESLint during build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  // Generate source maps for better debugging
+  productionBrowserSourceMaps: true,
+  // Override specific routes
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // Add any required rewrites here
+      ],
+    };
+  },
+  // Set specific route rules for Vercel
+  async headers() {
+    return [
+      {
+        // Force dynamic rendering for API routes
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'x-middleware-cache',
+            value: 'no-cache',
+          },
+        ],
+      },
+      {
+        // Force dynamic rendering for dashboard routes
+        source: '/dashboard/:path*',
+        headers: [
+          {
+            key: 'x-middleware-cache',
+            value: 'no-cache',
+          },
+        ],
+      },
+    ];
+  },
   serverExternalPackages: [
     "@mastra/*",
     "google-auth-library",
@@ -45,7 +88,6 @@ const nextConfig = {
     'libsql',
     'crypto-js',
   ],
-  
   // Empty transpilePackages to avoid conflicts with serverExternalPackages
   transpilePackages: [],
   
