@@ -297,3 +297,43 @@ export async function GET(req: NextRequest) {
     },
   });
 }
+
+export async function HEAD(req: NextRequest) {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}
+
+export async function PUT(req: NextRequest) {
+  return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
+    status: 405,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}
+
+export async function DELETE(req: NextRequest) {
+  return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
+    status: 405,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}
+
+export async function PATCH(req: NextRequest) {
+  return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
+    status: 405,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}

@@ -24,11 +24,10 @@ export async function middleware(request: NextRequest) {
         status: 204,
         headers: {
           'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
-            ? 'https://siden.ai' 
+            ? '*' 
             : 'http://localhost:3000',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
-          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
           'Access-Control-Max-Age': '86400',
         },
       });
@@ -37,8 +36,9 @@ export async function middleware(request: NextRequest) {
 
     // Add CORS headers for other API requests
     response.headers.set('Access-Control-Allow-Origin', 
-      process.env.NODE_ENV === 'production' ? 'https://siden.ai' : 'http://localhost:3000');
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
+      process.env.NODE_ENV === 'production' ? '*' : 'http://localhost:3000');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
   }
 
   const supabase = createServerClient(
