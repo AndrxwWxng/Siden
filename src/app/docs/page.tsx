@@ -427,7 +427,7 @@ const agent = createAgent({
                               <tr className="border-b border-[#2a2a2a]">
                                 <td className="py-3 px-4">name</td>
                                 <td className="py-3 px-4 text-[#6366F1]">string</td>
-                                <td className="py-3 px-4">Agent's identifier</td>
+                                <td className="py-3 px-4">Agent&apos;s identifier</td>
                               </tr>
                               <tr className="border-b border-[#2a2a2a]">
                                 <td className="py-3 px-4">model</td>

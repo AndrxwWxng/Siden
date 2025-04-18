@@ -1,20 +1,13 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { supabaseConfig } from './config'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-export function createClient() {
+export const createClient = () => {
+  const supabase = createClientComponentClient(supabaseConfig);
   try {
-    // Try the SSR approach first
-    return createBrowserClient(
-      supabaseConfig.url,
-      supabaseConfig.anonKey
-    )
-  } catch (error) {
-    console.log("Falling back to direct client creation");
-    // Fall back to direct client creation if SSR approach fails
-    return createSupabaseClient(
-      supabaseConfig.url,
-      supabaseConfig.anonKey
-    )
+    return supabase;
+  } catch {
+    return supabase;
   }
-}
+};

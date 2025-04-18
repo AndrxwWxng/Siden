@@ -1,12 +1,27 @@
 import { mastra } from "@/mastra";
 
+interface RequestData {
+  timestamp: number;
+  response?: Response;
+}
+
+interface Message {
+  role: string;
+  content: string | MessageContent[];
+}
+
+interface MessageContent {
+  type: string;
+  data?: string;
+}
+
 // Simple in-memory request tracking
-const recentRequests = new Map<string, { timestamp: number, response?: any }>();
+const recentRequests = new Map<string, RequestData>();
 const REQUEST_THROTTLE_MS = 1000; // 1 second minimum between identical requests
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { messages } = await req.json() as { messages: Message[] };
     
     // Check if this is an implementation request
     const lastMessage = messages[messages.length - 1];
@@ -66,13 +81,13 @@ export async function POST(req: Request) {
     
     // Enhanced debugging for multimodal content
     console.log('Developer Agent received messages:', 
-      JSON.stringify(messages.map((m: any) => ({
+      JSON.stringify(messages.map((m: Message) => ({
         role: m.role,
         contentType: typeof m.content,
         isArray: Array.isArray(m.content),
         length: Array.isArray(m.content) ? m.content.length : (typeof m.content === 'string' ? m.content.length : 'unknown'),
         contentSample: Array.isArray(m.content) 
-          ? m.content.map((part: any) => ({ type: part.type, dataLength: part.data ? part.data.substring(0, 20) + '...' : 'no data' }))
+          ? m.content.map((part: MessageContent) => ({ type: part.type, dataLength: part.data ? part.data.substring(0, 20) + '...' : 'no data' }))
           : (typeof m.content === 'string' ? m.content.substring(0, 30) + '...' : 'non-string content')
       })))
     );

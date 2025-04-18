@@ -22,25 +22,64 @@ export const pgVector = new PgVector(DATABASE_URL);
 // Initialize the vector indices if they don't exist
 export async function initializeVectorStore() {
   try {
-    // Create the knowledge_base index if it doesn't exist
-    await pgVector.createIndex({
-      indexName: 'knowledge_base',
-      dimension: 1536, // Dimensions for text-embedding-3-small
-    });
-    console.log('Created knowledge_base index');
+    // Check if indices exist before creating them to avoid errors
+    async function doesIndexExist(indexName: string): Promise<boolean> {
+      try {
+        // Check if we can query the index
+        await pgVector.query({
+          indexName,
+          queryVector: new Array(1536).fill(0),
+          topK: 1
+        });
+        return true; // If query succeeds, index exists
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        // If error contains specific text about relation not existing, index doesn't exist
+        return !errorMsg.includes('does not exist') && !errorMsg.includes('relation');
+      }
+    }
+
+    // Create knowledge_base index if it doesn't exist
+    const knowledgeBaseExists = await doesIndexExist('knowledge_base');
+    if (!knowledgeBaseExists) {
+      try {
+        await pgVector.createIndex({
+          indexName: 'knowledge_base',
+          dimension: 1536, // Dimensions for text-embedding-3-small
+        });
+        console.log('Created knowledge_base index');
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('duplicate key')) {
+          console.log('Knowledge base index already exists, skipping creation');
+        } else {
+          console.error('Error creating knowledge_base index:', error);
+        }
+      }
+    } else {
+      console.log('Knowledge base index already exists, skipping creation');
+    }
     
-    // Create the papers index for reaearch agent if it doesn't exist
-    await pgVector.createIndex({
-      indexName: 'papers',
-      dimension: 1536, // Dimensions for text-embedding-3-small
-    });
-    console.log('Created papers index');
-    
-    // Seed the papers index with some initial data
-    try {
-      await seedPapersIndex();
-    } catch (error) {
-      console.error('Error seeding papers index:', error);
+    // Create papers index if it doesn't exist
+    const papersExists = await doesIndexExist('papers');
+    if (!papersExists) {
+      try {
+        await pgVector.createIndex({
+          indexName: 'papers',
+          dimension: 1536, // Dimensions for text-embedding-3-small
+        });
+        console.log('Created papers index');
+        
+        // Seed the papers index with some initial data
+        await seedPapersIndex();
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('duplicate key')) {
+          console.log('Papers index already exists, skipping creation');
+        } else {
+          console.error('Error creating papers index:', error);
+        }
+      }
+    } else {
+      console.log('Papers index already exists, skipping creation');
     }
   } catch (error) {
     console.error('Error initializing vector store:', error);
@@ -50,6 +89,18 @@ export async function initializeVectorStore() {
 // Seed the papers index with some initial content
 async function seedPapersIndex() {
   try {
+    // Check if there's already data in the index before seeding
+    const existingData = await pgVector.query({
+      indexName: 'papers',
+      queryVector: new Array(1536).fill(0),
+      topK: 1
+    });
+    
+    if (existingData && existingData.length > 0) {
+      console.log('Papers index already has data, skipping seeding');
+      return;
+    }
+    
     const placeholderVector = new Array(1536).fill(0); // Placeholder embedding
     
     await pgVector.upsert({

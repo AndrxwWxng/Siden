@@ -1,24 +1,34 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
-export default function AuthError() {
+// Component that uses useSearchParams
+function ErrorContent() {
   const searchParams = useSearchParams();
-  const reason = searchParams?.get('reason');
-  const error = searchParams?.get('error');
+  const [errorReason, setErrorReason] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const getErrorMessage = () => {
-    switch (reason) {
+  useEffect(() => {
+    const reason = searchParams?.get('reason') || 'unknown';
+    const error = searchParams?.get('error') || '';
+
+    setErrorReason(reason);
+    setErrorMessage(error);
+  }, [searchParams]);
+
+  const getErrorDetails = () => {
+    switch (errorReason) {
       case 'missing_token':
         return 'Authentication failed due to a missing token.';
       case 'code_exchange_failed':
         return 'Authentication failed while exchanging the authorization code.';
       case 'recovery_failed':
-        return `Password reset failed: ${error || 'Invalid or expired token'}`;
+        return `Password reset failed: ${errorMessage || 'Invalid or expired token'}`;
       case 'verification_failed':
-        return `Email verification failed: ${error || 'Invalid or expired token'}`;
+        return `Email verification failed: ${errorMessage || 'Invalid or expired token'}`;
       case 'auth_error':
         return 'An error occurred during authentication.';
       case 'server_error':
@@ -29,43 +39,56 @@ export default function AuthError() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0F0F0F] text-white">
-      <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md">
-          <Link href="/" className="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-8">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to home
-          </Link>
-          
+    <div className="flex flex-col items-center justify-center min-h-screen py-12 sm:px-6 lg:px-8 bg-black">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="py-8 px-4 sm:px-10 bg-[#111111] rounded-lg border border-[#222222] shadow-xl">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mx-auto mb-4">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
             
             <h1 className="text-3xl font-bold text-white mb-2">Authentication Error</h1>
-            <p className="text-[#A0A0A0] text-base mb-8">{getErrorMessage()}</p>
+            <p className="text-[#A0A0A0] text-base mb-8">{getErrorDetails()}</p>
             
             <div className="flex flex-col space-y-4">
               <Link
                 href="/signin"
-                className="relative overflow-hidden w-full flex items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-3 text-sm font-medium text-white hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#0F0F0F] transition-all group"
+                className="inline-flex items-center justify-center space-x-2 rounded bg-[#6366F1] px-4 py-2 font-semibold text-white transition hover:bg-[#4F46E5] hover:shadow-md"
               >
-                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-500/40 to-indigo-600/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                <span className="relative z-10">Return to sign in</span>
+                <ArrowLeft className="h-4 w-4" /> <span>Return to Sign In</span>
               </Link>
               
               <Link
                 href="/"
-                className="text-[#A0A0A0] hover:text-white text-sm text-center transition-colors"
+                className="text-[#888888] hover:text-white font-medium transition-colors"
               >
-                Return to home
+                Go to Home Page
               </Link>
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// Fallback for suspense
+function ErrorFallback() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen py-12 sm:px-6 lg:px-8 bg-black">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="py-8 px-4 sm:px-10 bg-[#111111] rounded-lg border border-[#222222] shadow-xl">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-white mb-2">Authentication Error</h1>
+            <p className="text-[#A0A0A0] text-base mb-8">Loading error details...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AuthError() {
+  return (
+    <Suspense fallback={<ErrorFallback />}>
+      <ErrorContent />
+    </Suspense>
   );
 } 

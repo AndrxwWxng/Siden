@@ -137,7 +137,6 @@ export const fallbackWebSearchTool = createTool({
       
       let linkMatch;
       let snippetMatch;
-      let position = 1;
       
       const links: string[] = [];
       const titles: string[] = [];

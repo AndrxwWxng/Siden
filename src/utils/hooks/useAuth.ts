@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { OAuthProvider, signInWithOAuth } from '@/utils/oauth';
+import { Session, User } from '@supabase/supabase-js';
 
 export function useAuth() {
-  const [session, setSession] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -94,14 +95,14 @@ export function useAuth() {
       }
       
       return { error: null };
-    } catch (error: any) {
-      return { error: error.message || 'Failed to sign in' };
+    } catch (error: unknown) {
+      return { error: error instanceof Error ? error.message : 'Failed to sign in' };
     } finally {
       setLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string, metadata?: any) => {
+  const signUp = async (email: string, password: string, metadata?: Record<string, unknown>) => {
     setLoading(true);
     
     try {
@@ -120,8 +121,8 @@ export function useAuth() {
       }
       
       return { error: null };
-    } catch (error: any) {
-      return { error: error.message || 'Failed to sign up' };
+    } catch (error: unknown) {
+      return { error: error instanceof Error ? error.message : 'Failed to sign up' };
     } finally {
       setLoading(false);
     }
@@ -138,8 +139,8 @@ export function useAuth() {
       }
       
       return { error: null };
-    } catch (error: any) {
-      return { error: error.message || `Failed to sign in with ${provider}` };
+    } catch (error: unknown) {
+      return { error: error instanceof Error ? error.message : `Failed to sign in with ${provider}` };
     } finally {
       setLoading(false);
     }
@@ -159,8 +160,8 @@ export function useAuth() {
       }
       
       return { error: null };
-    } catch (error: any) {
-      return { error: error.message || 'Failed to send password reset email' };
+    } catch (error: unknown) {
+      return { error: error instanceof Error ? error.message : 'Failed to send password reset email' };
     } finally {
       setLoading(false);
     }
@@ -178,8 +179,8 @@ export function useAuth() {
       }
       
       return { error: null };
-    } catch (error: any) {
-      return { error: error.message || 'Failed to update password' };
+    } catch (error: unknown) {
+      return { error: error instanceof Error ? error.message : 'Failed to update password' };
     } finally {
       setLoading(false);
     }
