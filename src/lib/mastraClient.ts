@@ -17,7 +17,8 @@ export async function callMastraAgent(agentId: string, message: string, options?
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
     const apiUrl = baseUrl ? `${baseUrl}${url}` : url;
     
-    const response = await fetch(apiUrl, {
+    // Try a direct POST request first
+    let response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,45 +33,48 @@ export async function callMastraAgent(agentId: string, message: string, options?
         metadata: options?.metadata || {}
       }),
       cache: 'no-store',
-      // Don't use credentials or mode for cross-origin requests in production
-      credentials: 'same-origin',
     });
+
+    // If we get a 405, try an OPTIONS request first to warm up the endpoint
+    if (response.status === 405) {
+      console.log('[MASTRA CLIENT] Received 405 error, attempting OPTIONS preflight...');
+      
+      // Make an OPTIONS request first
+      await fetch(apiUrl, { 
+        method: 'OPTIONS',
+        headers: {
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'Content-Type, Accept, X-Requested-With',
+        }
+      });
+      
+      // Wait a moment for the route to be properly initialized
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Try the POST request again
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Cache-Control': 'no-cache, no-store',
+        },
+        body: JSON.stringify({ 
+          agentId, 
+          message,
+          metadata: options?.metadata || {}
+        }),
+        cache: 'no-store',
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[MASTRA CLIENT] HTTP Error: ${response.status} ${response.statusText}`);
+      console.error(`[MASTRA CLIENT] HTTP Error: ${response.status} `);
       console.error(`[MASTRA CLIENT] Error Response Body:`, errorText);
       
-      // Specific handling for 405 errors - retry with GET first to initialize route
-      if (response.status === 405) {
-        console.log('[MASTRA CLIENT] Received 405 error, attempting route initialization...');
-        
-        // Make a quick GET request to initialize the route in Vercel
-        try {
-          await fetch(`${apiUrl.split('?')[0]}`, { method: 'GET' });
-          
-          // Try the original request again after short delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          const retryResponse = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ agentId, message, metadata: options?.metadata || {} }),
-          });
-          
-          if (retryResponse.ok) {
-            return await retryResponse.json();
-          }
-        } catch (retryError) {
-          console.error('[MASTRA CLIENT] Retry failed:', retryError);
-        }
-      }
-      
-      let errorMessage = `Error calling Mastra agent: ${response.statusText}`;
+      let errorMessage = `Error calling Mastra agent:`;
       try {
         // Try to parse as JSON if possible
         const errorJson = JSON.parse(errorText);

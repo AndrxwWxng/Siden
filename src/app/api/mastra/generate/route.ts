@@ -192,7 +192,37 @@ export async function GET(request: NextRequest) {
 }
 
 // Catch-all handler for unsupported HTTP methods
-export async function handler(request: NextRequest) {
+export async function HEAD(request: NextRequest) {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}
+
+export async function PUT(request: NextRequest) {
+  return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
+    status: 405,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}
+
+export async function DELETE(request: NextRequest) {
+  return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
+    status: 405,
+    headers: {
+      'Content-Type': 'application/json',
+      'Allow': 'POST, OPTIONS, GET',
+    },
+  });
+}
+
+export async function PATCH(request: NextRequest) {
   return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
     status: 405,
     headers: {

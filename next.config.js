@@ -26,8 +26,6 @@ const nextConfig = {
       allowedOrigins: ["localhost:3000", "https://siden.ai", "https://www.siden.ai"]
     },
     optimizeCss: true,
-    esmExternals: 'loose',
-    forceSwcTransforms: true,
   },
 
   // Enable Turbopack
