@@ -364,16 +364,13 @@ export async function detectAndDelegateMessage(
           
           // Try a direct fetch to the endpoint if mastraClient fails with 405
           try {
-            // Try initializing the route with a GET request first
+            // Use our consolidated proxy endpoint instead of direct API calls
+            const timestamp = Date.now();
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-            const apiPath = `/api/chat/${agentId.replace('Agent', '')}`;
+            const apiPath = `/api/proxy?t=${timestamp}`;
             const apiUrl = baseUrl ? `${baseUrl}${apiPath}` : apiPath;
             
-            // Initialize the route
-            await fetch(apiUrl, { method: 'GET' });
-            
-            // Wait a bit and try actual POST
-            await new Promise(resolve => setTimeout(resolve, 500));
+            console.log(`[AGENT DELEGATOR] Falling back to proxy endpoint: ${apiUrl}`);
             
             const response = await fetch(apiUrl, {
               method: 'POST',
@@ -382,8 +379,11 @@ export async function detectAndDelegateMessage(
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
               },
-              body: JSON.stringify({ 
-                messages: [{ role: 'user', content: message }]
+              body: JSON.stringify({
+                target: agentId,
+                payload: {
+                  messages: [{ role: 'user', content: message }]
+                }
               })
             });
             
