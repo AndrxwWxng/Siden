@@ -13,12 +13,14 @@ export async function callMastraAgent(agentId: string, message: string, options?
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({ 
         agentId, 
         message,
         metadata: options?.metadata || {}
       }),
+      credentials: 'same-origin', // Include cookies for authenticated requests
     });
 
     if (!response.ok) {

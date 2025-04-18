@@ -51,8 +51,10 @@ export async function delegateTask(request: DelegationRequest): Promise<Delegati
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: JSON.stringify(request)
+      body: JSON.stringify(request),
+      credentials: 'same-origin', // Include cookies for authenticated requests
     });
     
     if (!response.ok) {
@@ -366,4 +368,4 @@ export async function detectAndDelegateMessage(
       text: `Sorry, there was an error communicating with the ${currentAgent} agent. Please try again later.`
     };
   }
-} 
+}
