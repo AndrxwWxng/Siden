@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv';
 import { createDatabaseConnection, safeDbOperation, addTelemetrySupport, createSafeEmbedding } from '@/utils/db-utils';
 
 // Load environment variables
-dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
 
 // Check if we're in a build/static environment
 const isBuildEnvironment = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
