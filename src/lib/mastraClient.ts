@@ -16,12 +16,12 @@ export async function callMastraAgent(agentId: string, message: string, options?
     
     // Try multiple endpoints in order, with the direct serverless function first
     const endpoints = [
-      // Direct serverless function endpoint
+      // Direct Vercel serverless function endpoint
       `${baseUrl}/api/mastra-generate`,
       // Standard Next.js API route
       `${baseUrl}/api/mastra/generate`,
-      // Fallback API route
-      `${baseUrl}/api/chat/${agentId.replace('Agent', '')}`
+      // Fallback API route with agent ID
+      `${baseUrl}/api/chat-agent/${agentId.replace('Agent', '')}`
     ];
     
     let lastError: Error | null = null;
@@ -38,7 +38,7 @@ export async function callMastraAgent(agentId: string, message: string, options?
             'Accept': 'application/json',
           },
           body: JSON.stringify(
-            endpoint.includes('chat') 
+            endpoint.includes('chat-agent') 
               ? { 
                   messages: [{ role: 'user', content: message }],
                   metadata: options?.metadata || {}

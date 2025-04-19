@@ -1,5 +1,5 @@
 // Direct serverless function to handle agent chat requests
-import { createClient } from '@supabase/supabase-js';
+const fetch = require('node-fetch');
 
 // Agent prompts for chat route
 const agentPrompts = {
@@ -22,7 +22,7 @@ const agentPrompts = {
   weather: `You are a helpful weather assistant that provides accurate weather information and forecasts.`
 };
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Extract agent ID from URL
   const url = new URL(req.url, `https://${req.headers.host}`);
   const pathParts = url.pathname.split('/');

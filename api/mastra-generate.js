@@ -1,5 +1,5 @@
 // This is a direct serverless function that will handle the request
-import { createClient } from '@supabase/supabase-js';
+const fetch = require('node-fetch');
 
 // Agent prompts for fallback mode
 const agentPrompts = {
@@ -22,7 +22,7 @@ const agentPrompts = {
   weatherAgent: `You are a helpful weather assistant that provides accurate weather information and forecasts.`
 };
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
