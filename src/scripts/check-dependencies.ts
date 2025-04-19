@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { Client } from 'pg';
 
 // Load environment variables
-dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
 
 async function checkDependencies() {
   console.log('Checking required dependencies...');

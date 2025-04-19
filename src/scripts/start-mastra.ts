@@ -3,7 +3,7 @@ import { initializeVectorStore } from '../mastra/storage';
 import dotenv from 'dotenv';
 
 // Load environment variables
-dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
 
 // Fix for @mastra/server import error
 const createServer = async (config: { mastra: any; port: number; host: string }) => {
