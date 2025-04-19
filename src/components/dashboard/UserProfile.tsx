@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { User } from './types';
-import { Settings, HelpCircle, LogOut, ChevronDown, User as UserIcon, Moon, Sun } from 'lucide-react';
+import { Settings, HelpCircle, LogOut, ChevronDown, User as UserIcon } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useTheme } from '@/context/ThemeContext';
 
 interface UserProfileProps extends Partial<User> {
   username?: string;
@@ -25,19 +24,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
   });
   const router = useRouter();
   
-  // Safely get theme context with fallback values
-  const defaultTheme = { theme: 'dark', setTheme: () => {}, resolvedTheme: 'dark' as const };
-  let themeContext;
-  
-  try {
-    themeContext = useTheme();
-  } catch (e) {
-    console.error('Theme context not available:', e);
-    themeContext = defaultTheme;
-  }
-  
-  const { theme, setTheme, resolvedTheme } = themeContext;
-
   useEffect(() => {
     async function getUserData() {
       try {
@@ -81,14 +67,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
       console.error('Error signing out:', error);
     } finally {
       setIsLoggingOut(false);
-    }
-  };
-
-  const toggleTheme = () => {
-    try {
-      setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-    } catch (e) {
-      console.error('Unable to toggle theme:', e);
     }
   };
 
@@ -163,28 +141,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
               <Settings size={16} className="mr-3 text-app-secondary" />
               <span>Settings</span>
             </Link>
-            <button 
-              onClick={toggleTheme}
-              className="w-full text-left px-4 py-3 text-sm hover:bg-app-tertiary transition-colors flex items-center justify-between group"
-            >
-              <div className="flex items-center">
-                {resolvedTheme === 'dark' ? (
-                  <Moon size={16} className="mr-3 text-app-secondary" />
-                ) : (
-                  <Sun size={16} className="mr-3 text-amber-500" />
-                )}
-                <span>{resolvedTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-              </div>
-              <div className={`relative inline-block w-10 h-5 rounded-full transition-colors duration-300 ${
-                resolvedTheme === 'dark' ? 'bg-gray-700' : 'bg-indigo-100'
-              }`}>
-                <span 
-                  className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full transition-transform duration-300 transform ${
-                    resolvedTheme === 'light' ? 'translate-x-5 bg-indigo-600' : 'translate-x-0 bg-indigo-400'
-                  }`}
-                ></span>
-              </div>
-            </button>
             <div className="flex items-center justify-between px-4 py-3 text-sm hover:bg-[#252525] transition-colors">
               <div className="flex items-center">
                 <HelpCircle size={16} className="mr-3 text-app-secondary" />
