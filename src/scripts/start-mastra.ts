@@ -5,10 +5,6 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config({ path: '.env' });
 
-// Check if we're in a build environment
-const isBuildEnvironment = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
-const skipDbInit = process.env.SKIP_DB_INIT === 'true';
-
 // Fix for @mastra/server import error
 const createServer = async (config: { mastra: any; port: number; host: string }) => {
   try {
@@ -34,12 +30,6 @@ const createServer = async (config: { mastra: any; port: number; host: string })
 
 async function main() {
   console.log('Starting Mastra orchestration server...');
-  
-  // Skip in build environment
-  if (isBuildEnvironment || skipDbInit) {
-    console.log('Build environment detected or database initialization skipped, not starting Mastra server');
-    return;
-  }
   
   // Initialize vector store (if possible)
   console.log('Initializing vector database...');
@@ -97,12 +87,7 @@ async function main() {
   }
 }
 
-// Only run if not in build environment
-if (!isBuildEnvironment && !skipDbInit) {
-  main().catch((error) => {
-    console.error('Error starting Mastra server:', error);
-    process.exit(1);
-  });
-} else {
-  console.log('Build environment detected or database initialization skipped, skipping Mastra server startup');
-} 
+main().catch((error) => {
+  console.error('Error starting Mastra server:', error);
+  process.exit(1);
+}); 
