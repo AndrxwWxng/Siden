@@ -1,5 +1,5 @@
 // Direct serverless function to handle agent chat requests
-const fetch = require('node-fetch');
+// We can use global fetch in Node.js 18+, which is what Vercel uses
 
 // Agent prompts for chat route
 const agentPrompts = {
@@ -74,7 +74,7 @@ module.exports = async (req, res) => {
     // Get the appropriate system prompt
     const systemPrompt = agentPrompts[agentId] || agentPrompts.ceo;
     
-    // Set up the OpenAI call
+    // Set up the OpenAI call using global fetch
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {

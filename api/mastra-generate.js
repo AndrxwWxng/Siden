@@ -1,5 +1,5 @@
 // This is a direct serverless function that will handle the request
-const fetch = require('node-fetch');
+// We can use global fetch in Node.js 18+, which is what Vercel uses
 
 // Agent prompts for fallback mode
 const agentPrompts = {
@@ -61,7 +61,7 @@ module.exports = async (req, res) => {
     // Use OpenAI directly since we can't access Mastra from the edge function
     const systemPrompt = agentPrompts[agentId] || agentPrompts.ceoAgent;
     
-    // Set up the OpenAI call (using fetch directly since we can't use the OpenAI SDK in edge functions)
+    // Set up the OpenAI call (using global fetch in Node.js 18+)
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
