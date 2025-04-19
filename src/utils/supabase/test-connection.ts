@@ -6,7 +6,7 @@ import { Client } from 'pg';
 import * as dotenv from 'dotenv';
 
 // Load environment variables
-dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
 
 // Function to test Supabase connection
 async function testSupabaseConnection() {
@@ -18,7 +18,7 @@ async function testSupabaseConnection() {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Supabase configuration missing. Check your .env.local file');
+    console.error('Supabase configuration missing. Check your .env file');
     return false;
   }
 
