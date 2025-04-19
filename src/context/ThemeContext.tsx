@@ -41,6 +41,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Error loading theme:', error);
+        // Fallback to localStorage if user settings can't be loaded
+        const savedTheme = localStorage.getItem('theme') as Theme | null;
+        if (savedTheme) {
+          setTheme(savedTheme);
+        }
       }
     };
 
@@ -100,9 +105,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (!mounted) return;
     
     const saveTheme = async () => {
-      await UserService.updateUserSettings({ theme });
+      try {
+        await UserService.updateUserSettings({ theme });
+      } catch (error) {
+        console.error('Error saving theme:', error);
+        // Still save to localStorage as fallback
+        localStorage.setItem('theme', theme);
+      }
     };
 
+    // Save to localStorage immediately as a reliable fallback
+    localStorage.setItem('theme', theme);
+    
+    // Also try to save to user settings in the background
     saveTheme();
   }, [theme, mounted]);
   

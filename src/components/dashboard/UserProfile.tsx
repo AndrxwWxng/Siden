@@ -24,23 +24,40 @@ const UserProfile: React.FC<UserProfileProps> = ({
     email
   });
   const router = useRouter();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  
+  // Safely get theme context with fallback values
+  const defaultTheme = { theme: 'dark', setTheme: () => {}, resolvedTheme: 'dark' as const };
+  let themeContext;
+  
+  try {
+    themeContext = useTheme();
+  } catch (e) {
+    console.error('Theme context not available:', e);
+    themeContext = defaultTheme;
+  }
+  
+  const { theme, setTheme, resolvedTheme } = themeContext;
 
   useEffect(() => {
     async function getUserData() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Use user metadata for name if available, otherwise create initials from email
-        const displayName = user.user_metadata?.name || 
-                           user.user_metadata?.full_name || 
-                           (user.email ? user.email.split('@')[0] : 'User');
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         
-        setUserData({
-          username: displayName,
-          email: user.email
-        });
+        if (user) {
+          // Use user metadata for name if available, otherwise create initials from email
+          const displayName = user.user_metadata?.name || 
+                             user.user_metadata?.full_name || 
+                             (user.email ? user.email.split('@')[0] : 'User');
+          
+          setUserData({
+            username: displayName,
+            email: user.email
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Keep existing data if fetching fails
       }
     }
     
@@ -68,7 +85,11 @@ const UserProfile: React.FC<UserProfileProps> = ({
   };
 
   const toggleTheme = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+    try {
+      setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+    } catch (e) {
+      console.error('Unable to toggle theme:', e);
+    }
   };
 
   // Generate initials from username
