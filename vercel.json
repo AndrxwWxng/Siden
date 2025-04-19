@@ -39,5 +39,20 @@
       "source": "/api/mastra/generate",
       "destination": "/api/mastra/generate"
     }
-  ]
+  ],
+  "routes": [
+    {
+      "src": "/api/mastra/generate",
+      "methods": ["POST", "OPTIONS", "GET"],
+      "dest": "/api/mastra/generate"
+    },
+    {
+      "src": "/api/chat/.*",
+      "methods": ["POST", "OPTIONS", "GET"],
+      "continue": true
+    }
+  ],
+  "env": {
+    "SKIP_DB_INIT": "true"
+  }
 } 

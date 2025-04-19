@@ -1,0 +1,14 @@
+{
+  "routes": [
+    {
+      "src": "/api/mastra/generate",
+      "methods": ["OPTIONS", "POST", "GET"],
+      "dest": "/api/mastra/generate"
+    },
+    {
+      "src": "/api/chat/(.*)",
+      "methods": ["OPTIONS", "POST", "GET"],
+      "dest": "/api/chat/$1"
+    }
+  ]
+} 
