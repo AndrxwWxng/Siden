@@ -18,16 +18,14 @@
       ]
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/chat",
-      "methods": ["POST", "GET", "OPTIONS"],
-      "dest": "/api/chat"
+      "source": "/api/chat",
+      "destination": "/api/chat"
     },
     {
-      "src": "/api/mastra/generate",
-      "methods": ["POST", "GET", "OPTIONS"],
-      "dest": "/api/mastra/generate"
+      "source": "/api/mastra/generate",
+      "destination": "/api/mastra/generate"
     }
   ]
 } 
