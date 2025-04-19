@@ -5,6 +5,12 @@ const webpack = require('webpack');
 const isVercelBuild = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
 const skipApiCollection = process.env.SKIP_API_COLLECTION === 'true';
 
+// Skip database connection during build
+if (isVercelBuild) {
+  console.log('Running in Vercel build environment, skipping database initialization');
+  process.env.SKIP_DB_INIT = 'true';
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
@@ -74,6 +80,28 @@ const nextConfig = {
           {
             key: 'x-middleware-cache',
             value: 'no-cache',
+          },
+        ],
+      },
+      {
+        // Special headers for Mastra API
+        source: '/api/mastra/generate',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, Accept',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate',
           },
         ],
       },

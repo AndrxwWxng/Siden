@@ -10,13 +10,14 @@ dotenv.config({ path: '.env' });
 // Check if we're in a build/static environment
 const isBuildEnvironment = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
 const isVercelBuild = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
+const skipDbInit = process.env.SKIP_DB_INIT === 'true';
 
 async function initializeDatabase() {
   console.log('Initializing database...');
   
-  // Skip database initialization during build
-  if (isBuildEnvironment) {
-    console.log('Build environment detected, skipping actual database initialization');
+  // Skip database initialization during build or if explicitly requested
+  if (isBuildEnvironment || skipDbInit) {
+    console.log('Build environment detected or database initialization skipped, not initializing database');
     return true;
   }
   
