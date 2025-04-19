@@ -101,14 +101,38 @@ async function openAIFallback(agentId: string, message: string, metadata?: any) 
 }
 
 export async function POST(request: NextRequest) {
+  console.log('[MASTRA API] Received POST request to /api/mastra/generate');
+  
   try {
     console.log('[MASTRA API] Starting request processing');
+    
+    // Check if it's a valid POST request
+    if (request.method !== 'POST') {
+      console.log(`[MASTRA API] Invalid method: ${request.method}`);
+      return NextResponse.json(
+        { error: 'Method not allowed' },
+        { status: 405, headers: { 'Allow': 'POST' } }
+      );
+    }
     
     // Check for the fallback parameter in the URL
     const url = new URL(request.url);
     const forceFallback = url.searchParams.has('fallback');
     
-    const { agentId, message, metadata } = await request.json();
+    // Get request body and log
+    let body;
+    try {
+      body = await request.json();
+      console.log(`[MASTRA API] Request body parsed successfully: ${JSON.stringify(body)}`);
+    } catch (e) {
+      console.error('[MASTRA API] Failed to parse request body:', e);
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      );
+    }
+    
+    const { agentId, message, metadata } = body;
     console.log(`[MASTRA API] Received request for agent: ${agentId}`, metadata ? 'with metadata' : '');
 
     if (!agentId || !message) {
@@ -152,12 +176,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         text: result.text,
         object: result.object
+      }, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+          'Cache-Control': 'no-store, no-cache',
+        }
       });
     } catch (mastraError) {
       // If Mastra fails, use the OpenAI fallback
       console.error('[MASTRA API] Error with Mastra, using fallback:', mastraError);
       const fallbackResult = await openAIFallback(agentId, message, metadata);
-      return NextResponse.json(fallbackResult);
+      return NextResponse.json(fallbackResult, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS, GET'
+        }
+      });
     }
   } catch (error) {
     console.error('[MASTRA API] Error in API route:', error);
@@ -174,13 +209,20 @@ export async function POST(request: NextRequest) {
         error: 'An error occurred processing your request',
         message: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      { 
+        status: 500, 
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS, GET'
+        }
+      }
     );
   }
 }
 
 // Add OPTIONS method handler for CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
+  console.log('[MASTRA API OPTIONS] Handling OPTIONS request');
   return new Response(null, {
     status: 204,
     headers: {
@@ -195,6 +237,7 @@ export async function OPTIONS(request: NextRequest) {
 
 // Add GET method handler for direct browser requests
 export async function GET(request: NextRequest) {
+  console.log('[MASTRA API GET] Handling GET request');
   return NextResponse.json({
     message: "This API endpoint requires a POST request with agent information.",
     status: "ok",
@@ -204,41 +247,57 @@ export async function GET(request: NextRequest) {
 
 // Catch-all handler for unsupported HTTP methods
 export async function HEAD(request: NextRequest) {
+  console.log('[MASTRA API HEAD] Handling HEAD request');
   return new Response(null, {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
       'Allow': 'POST, OPTIONS, GET',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
 
 export async function PUT(request: NextRequest) {
+  console.log('[MASTRA API PUT] Received PUT request when only POST is supported');
   return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
     status: 405,
     headers: {
       'Content-Type': 'application/json',
       'Allow': 'POST, OPTIONS, GET',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
 
 export async function DELETE(request: NextRequest) {
+  console.log('[MASTRA API DELETE] Received DELETE request when only POST is supported');
   return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
     status: 405,
     headers: {
       'Content-Type': 'application/json',
       'Allow': 'POST, OPTIONS, GET',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
 
 export async function PATCH(request: NextRequest) {
+  console.log('[MASTRA API PATCH] Received PATCH request when only POST is supported');
   return new Response(JSON.stringify({ error: 'Method Not Allowed', code: 'METHOD_NOT_ALLOWED' }), {
     status: 405,
     headers: {
       'Content-Type': 'application/json',
       'Allow': 'POST, OPTIONS, GET',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
