@@ -1,7 +1,7 @@
 {
   "buildCommand": "pnpm run build",
   "framework": "nextjs",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "git": {
     "deploymentEnabled": {
       "main": true
@@ -38,6 +38,17 @@
     {
       "source": "/api/mastra/generate",
       "destination": "/api/mastra/generate"
+    },
+    {
+      "source": "/api/mastra-generate",
+      "destination": "/api/mastra-generate.js"
+    },
+    {
+      "source": "/api/chat-agent/:path*",
+      "destination": "/api/chat-agent.js"
     }
-  ]
+  ],
+  "env": {
+    "SKIP_DB_INIT": "true"
+  }
 } 

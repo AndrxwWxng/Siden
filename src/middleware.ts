@@ -2,6 +2,11 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // Skip middleware for API routes - they will be handled by Next.js API routes directly
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   // Set dynamic rendering for routes that use cookies
   const response = NextResponse.next({
     request: {
@@ -14,55 +19,6 @@ export async function middleware(request: NextRequest) {
     response.headers.set('x-middleware-next-dynamic', '1');
     response.headers.set('x-middleware-cache', '0');
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-  }
-
-  // Add CORS headers for API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
-    // Special handling for Mastra API route
-    if (request.nextUrl.pathname === '/api/mastra/generate') {
-      // Handle preflight OPTIONS request for CORS
-      if (request.method === 'OPTIONS') {
-        return new NextResponse(null, {
-          status: 204,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
-            'Access-Control-Max-Age': '86400',
-          },
-        });
-      }
-      
-      // For POST requests to /api/mastra/generate, set appropriate headers and continue
-      if (request.method === 'POST') {
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
-        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-        return response;
-      }
-    }
-    
-    // Handle preflight OPTIONS request for CORS (for other API routes)
-    if (request.method === 'OPTIONS') {
-      const corsResponse = new NextResponse(null, {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
-            ? 'https://siden.ai' 
-            : 'http://localhost:3000',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
-          'Access-Control-Max-Age': '86400',
-        },
-      });
-      return corsResponse;
-    }
-
-    // Add CORS headers for other API requests
-    response.headers.set('Access-Control-Allow-Origin', 
-      process.env.NODE_ENV === 'production' ? 'https://siden.ai' : 'http://localhost:3000');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
   }
 
   const supabase = createServerClient(
@@ -117,7 +73,7 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// Configure the middleware to run on all routes except static files
+// Configure the middleware to run on all routes except static files and API routes
 export const config = {
   matcher: [
     /*
@@ -126,7 +82,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public (public files)
+     * - api (API routes)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public|api).*)',
   ],
 }

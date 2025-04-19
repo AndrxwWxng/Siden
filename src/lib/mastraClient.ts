@@ -14,89 +14,66 @@ export async function callMastraAgent(agentId: string, message: string, options?
       ? window.location.origin 
       : (process.env.NEXT_PUBLIC_BASE_URL || '');
     
-    // First try with the primary endpoint
-    try {
-      console.log(`[MASTRA CLIENT] Making POST request to ${baseUrl}/api/mastra/generate`);
-      
-      const response = await fetch(`${baseUrl}/api/mastra/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ 
-          agentId, 
-          message,
-          metadata: options?.metadata || {}
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`[MASTRA CLIENT] Successfully received response from ${agentId}`);
-        return data;
-      }
-      
-      const errorText = await response.text();
-      console.error(`[MASTRA CLIENT] HTTP Error: ${response.status} ${response.statusText}`);
-      console.error(`[MASTRA CLIENT] Error Response Body:`, errorText);
-      
-      // If we got a 405 error, try the fallback endpoint
-      if (response.status === 405) {
-        throw new Error(`405 Method Not Allowed, trying fallback endpoint`);
-      }
-      
-      // For other errors, process normally
-      let errorMessage = `Error calling Mastra agent: ${response.statusText}`;
+    // Try multiple endpoints in order, with the direct serverless function first
+    const endpoints = [
+      // Direct Vercel serverless function endpoint
+      `${baseUrl}/api/mastra-generate`,
+      // Standard Next.js API route
+      `${baseUrl}/api/mastra/generate`,
+      // Fallback API route with agent ID
+      `${baseUrl}/api/chat-agent/${agentId.replace('Agent', '')}`
+    ];
+    
+    let lastError: Error | null = null;
+    
+    // Try each endpoint in order
+    for (const endpoint of endpoints) {
       try {
-        // Try to parse as JSON if possible
-        const errorJson = JSON.parse(errorText);
-        if (errorJson.message) {
-          errorMessage = `Error calling Mastra agent: ${errorJson.message}`;
+        console.log(`[MASTRA CLIENT] Trying endpoint: ${endpoint}`);
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(
+            endpoint.includes('chat-agent') 
+              ? { 
+                  messages: [{ role: 'user', content: message }],
+                  metadata: options?.metadata || {}
+                }
+              : { 
+                  agentId, 
+                  message,
+                  metadata: options?.metadata || {}
+                }
+          ),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`[MASTRA CLIENT] Successfully received response from ${endpoint}`);
+          return {
+            text: data.text || data.content || data.message || "Response received without content",
+            object: data.object || null
+          };
         }
-        if (errorJson.detailedError) {
-          console.error(`[MASTRA CLIENT] Detailed Error:`, errorJson.detailedError);
-        }
-      } catch (e) {
-        // If it's not valid JSON, use the text as is
+        
+        const errorText = await response.text();
+        console.error(`[MASTRA CLIENT] HTTP Error from ${endpoint}: ${response.status} ${response.statusText}`);
+        console.error(`[MASTRA CLIENT] Error Response Body:`, errorText);
+        
+        // Create an error object to throw if all endpoints fail
+        lastError = new Error(`Error from ${endpoint}: ${response.status} ${response.statusText}`);
+      } catch (error) {
+        console.error(`[MASTRA CLIENT] Error with endpoint ${endpoint}:`, error);
+        lastError = error instanceof Error ? error : new Error(String(error));
       }
-      
-      throw new Error(errorMessage);
-    } catch (error) {
-      // If primary endpoint fails with 405, try the API route directly
-      console.log(`[MASTRA CLIENT] Primary endpoint failed, trying fallback: ${error}`);
-      
-      // Try the fallback endpoint via /api/chat/{agent}
-      const apiPath = `/api/chat/${agentId.replace('Agent', '')}`;
-      const apiUrl = `${baseUrl}${apiPath}`;
-      
-      console.log(`[MASTRA CLIENT] Making POST request to fallback endpoint: ${apiUrl}`);
-      
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({ 
-          messages: [{ role: 'user', content: message }],
-          metadata: options?.metadata || {}
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`[MASTRA CLIENT] Successfully received response from fallback endpoint`);
-        return { 
-          text: data.text || data.content || data.message || "Response received but no content found.",
-          object: data.object || null
-        };
-      }
-      
-      // If fallback also fails, throw the original error
-      throw error;
     }
+    
+    // If all endpoints failed, throw the last error
+    throw lastError || new Error('All endpoints failed');
   } catch (error) {
     console.error('[MASTRA CLIENT] Error calling Mastra agent:', error);
     return {
