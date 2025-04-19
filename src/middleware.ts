@@ -18,7 +18,31 @@ export async function middleware(request: NextRequest) {
 
   // Add CORS headers for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    // Handle preflight OPTIONS request for CORS
+    // Special handling for Mastra API route
+    if (request.nextUrl.pathname === '/api/mastra/generate') {
+      // Handle preflight OPTIONS request for CORS
+      if (request.method === 'OPTIONS') {
+        return new NextResponse(null, {
+          status: 204,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
+            'Access-Control-Max-Age': '86400',
+          },
+        });
+      }
+      
+      // For POST requests to /api/mastra/generate, set appropriate headers and continue
+      if (request.method === 'POST') {
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+        return response;
+      }
+    }
+    
+    // Handle preflight OPTIONS request for CORS (for other API routes)
     if (request.method === 'OPTIONS') {
       const corsResponse = new NextResponse(null, {
         status: 204,

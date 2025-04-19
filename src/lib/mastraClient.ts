@@ -9,7 +9,12 @@ export async function callMastraAgent(agentId: string, message: string, options?
   try {
     console.log(`[MASTRA CLIENT] Calling agent: ${agentId} with message length: ${message.length}`);
     
-    const response = await fetch('/api/mastra/generate', {
+    // Get the base URL - either the current origin or the environment variable
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_BASE_URL || '');
+    
+    const response = await fetch(`${baseUrl}/api/mastra/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

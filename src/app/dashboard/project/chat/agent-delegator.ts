@@ -365,7 +365,9 @@ export async function detectAndDelegateMessage(
           // Try a direct fetch to the endpoint if mastraClient fails with 405
           try {
             // Try initializing the route with a GET request first
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+            const baseUrl = typeof window !== 'undefined' 
+              ? window.location.origin 
+              : (process.env.NEXT_PUBLIC_BASE_URL || '');
             const apiPath = `/api/chat/${agentId.replace('Agent', '')}`;
             const apiUrl = baseUrl ? `${baseUrl}${apiPath}` : apiPath;
             
