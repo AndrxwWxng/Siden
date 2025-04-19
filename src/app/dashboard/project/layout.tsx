@@ -1,9 +1,9 @@
-import ProjectWithSidebar from './ProjectWithSidebar';
+import ProjectThemeWrapper from './ProjectThemeWrapper';
 
 export default function ProjectLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <ProjectWithSidebar>{children}</ProjectWithSidebar>;
+  return <ProjectThemeWrapper>{children}</ProjectThemeWrapper>;
 } 
