@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description: 'Create and deploy a team of AI agents that work together on complex tasks.',
     images: [
       {
-        url: '/screen.png',
+        url: '/preview.png',
         width: 1200,
         height: 630,
         alt: 'Siden - AI agents that just work',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Siden - A Team of Agents That Just Work',
     description: 'Create and deploy a team of AI agents that work together on complex tasks.',
-    images: ['/screen.png'],
+    images: ['/preview.png'],
   },
 };
 
